@@ -1,0 +1,37 @@
+# --- Artefactos de Compilación ---
+bin/
+gen/
+out/
+build/
+.gradle/
+app/build/
+
+# --- Configuración del IDE (Android Studio / IntelliJ) ---
+# Ignoramos toda la carpeta .idea de un solo golpe
+.idea/
+# Excepto estas carpetas por si querés compartir configuraciones de run/estilo
+!.idea/runConfigurations/
+!.idea/codeStyles/
+!.idea/copyright/
+*.iml
+*.iws
+*.ipr
+
+# --- Archivos Locales y Sensibles (¡MUY IMPORTANTE!) ---
+local.properties
+.bundle/
+.externalNativeBuild/
+.cxx/
+capture/
+google-services.json
+
+# --- Archivos de Sistema ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# --- Logs y Temporales ---
+*.log
+.temp/
+.tmp/
