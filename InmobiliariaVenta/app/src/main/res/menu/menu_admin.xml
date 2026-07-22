@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_inicio"
+        android:icon="@drawable/ic_home"
+        android:title="Inicio" />
+
+    <item
+        android:id="@+id/nav_propiedades"
+        android:icon="@drawable/ic_propiedades"
+        android:title="Propiedades" />
+
+    <item
+        android:id="@+id/nav_contratos"
+        android:icon="@drawable/ic_contratos"
+        android:title="Contratos" />
+
+    <item
+        android:id="@+id/nav_perfil"
+        android:icon="@drawable/ic_person"
+        android:title="Perfil" />
+
+</menu>

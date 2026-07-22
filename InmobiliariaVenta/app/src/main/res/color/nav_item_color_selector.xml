@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Color cuando el botón de navegación está seleccionado -->
+    <item android:color="#FF6200EE" android:state_checked="true" />
+    <item android:color="#FF6200EE" android:state_selected="true" />
+    <item android:color="#FF6200EE" android:state_pressed="true" />
+    <!-- Color por defecto cuando no está seleccionado -->
+    <item android:color="#FF888888" />
+</selector>
