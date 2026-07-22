@@ -44,4 +44,7 @@ dependencies {
     // Room components
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
+    
+    // Gson para TypeConverters
+    implementation("com.google.code.gson:gson:2.10.1")
 }

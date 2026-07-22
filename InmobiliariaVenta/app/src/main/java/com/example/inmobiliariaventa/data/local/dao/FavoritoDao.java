@@ -17,5 +17,8 @@ public interface FavoritoDao {
     void eliminar(Favorito favorito);
 
     @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
-    List<Propiedad> obtenerFavoritosDeUsuario(int usuarioId);
+    List<Propiedad> obtenerFavoritosDeUsuario(String usuarioId);
+
+    @Query("SELECT * FROM favoritos WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
+    List<Favorito> obtenerPendientesDeSubir();
 }

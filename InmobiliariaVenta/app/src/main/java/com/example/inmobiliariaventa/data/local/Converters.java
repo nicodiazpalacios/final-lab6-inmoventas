@@ -35,4 +35,20 @@ public class Converters {
     public Date timestampToDate(Long value) {
         return value == null ? null : new Date(value);
     }
+
+    @TypeConverter
+    public String fromStringList(java.util.List<String> list) {
+        if (list == null) return null;
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<java.util.List<String>>() {}.getType();
+        return gson.toJson(list, type);
+    }
+
+    @TypeConverter
+    public java.util.List<String> toStringList(String data) {
+        if (data == null) return null;
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<java.util.List<String>>() {}.getType();
+        return gson.fromJson(data, type);
+    }
 }

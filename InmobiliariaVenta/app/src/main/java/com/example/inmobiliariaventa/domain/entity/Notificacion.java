@@ -5,6 +5,7 @@ import androidx.room.PrimaryKey;
 import androidx.room.ForeignKey;
 import androidx.room.ColumnInfo;
 import androidx.room.Index;
+import androidx.annotation.NonNull;
 
 @Entity(
     tableName = "notificaciones",
@@ -12,14 +13,19 @@ import androidx.room.Index;
     indices = {@Index("usuario_id")}
 )
 public class Notificacion {
-    @PrimaryKey(autoGenerate = true)
-    public int id;
+    @PrimaryKey
+    @NonNull
+    public String id;
 
     @ColumnInfo(name = "usuario_id")
-    public int usuario_id;
+    @NonNull
+    public String usuario_id;
 
     public String titulo;
     public String mensaje;
     public long fecha;
     public boolean isLeida;
+    
+    @ColumnInfo(name = "estadoSincronizacion")
+    public String estadoSincronizacion;
 }

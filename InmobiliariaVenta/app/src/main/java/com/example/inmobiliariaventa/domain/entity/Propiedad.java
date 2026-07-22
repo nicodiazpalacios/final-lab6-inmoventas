@@ -3,11 +3,14 @@ package com.example.inmobiliariaventa.domain.entity;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.ColumnInfo;
+import androidx.annotation.NonNull;
+import java.util.List;
 
 @Entity(tableName = "propiedades")
 public class Propiedad {
-    @PrimaryKey(autoGenerate = true)
-    public int id;
+    @PrimaryKey
+    @NonNull
+    public String id;
 
     public TipoPropiedad tipoPropiedad;
     public Disposicion disposicion;
@@ -29,4 +32,10 @@ public class Propiedad {
     
     @ColumnInfo(name = "depto")
     public String depto;
+
+    @ColumnInfo(name = "estadoSincronizacion")
+    public String estadoSincronizacion;
+
+    @ColumnInfo(name = "imagenes")
+    public List<String> imagenes;
 }

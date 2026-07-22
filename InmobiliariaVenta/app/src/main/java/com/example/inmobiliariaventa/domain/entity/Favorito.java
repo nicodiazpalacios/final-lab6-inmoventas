@@ -4,6 +4,7 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.ColumnInfo;
 import androidx.room.Index;
+import androidx.annotation.NonNull;
 
 @Entity(
     tableName = "favoritos",
@@ -15,7 +16,12 @@ import androidx.room.Index;
     indices = {@Index("propiedadId")}
 )
 public class Favorito {
-    public int usuarioId;
-    public int propiedadId;
+    @NonNull
+    public String usuarioId;
+    @NonNull
+    public String propiedadId;
     public long fechaGuardado;
+    
+    @ColumnInfo(name = "estadoSincronizacion")
+    public String estadoSincronizacion;
 }

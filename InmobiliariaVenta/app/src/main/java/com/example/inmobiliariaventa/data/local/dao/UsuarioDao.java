@@ -10,7 +10,7 @@ import com.example.inmobiliariaventa.domain.entity.Usuario;
 @Dao
 public interface UsuarioDao {
     @Insert
-    long insertar(Usuario usuario);
+    void insertar(Usuario usuario);
 
     @Update
     void actualizar(Usuario usuario);
@@ -19,5 +19,8 @@ public interface UsuarioDao {
     void eliminar(Usuario usuario);
     
     @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
-    Usuario obtenerPorId(int id);
+    androidx.lifecycle.LiveData<Usuario> obtenerPorId(String id);
+
+    @Query("SELECT * FROM usuarios WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
+    java.util.List<Usuario> obtenerPendientesDeSubir();
 }
