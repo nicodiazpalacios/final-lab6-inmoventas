@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_inicio">
+
+    <fragment
+        android:id="@+id/nav_inicio"
+        android:name="com.example.inmobiliariaventa.ui.home.HomeUsuarioFragment"
+        android:label="Inicio"
+        tools:layout="@layout/fragment_home_usuario">
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_search_location"
+            app:destination="@id/nav_search_location"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_search_location"
+        android:name="com.example.inmobiliariaventa.ui.home.SearchLocationFragment"
+        android:label="Ubicación"
+        tools:layout="@layout/fragment_search_location" />
+
+</navigation>
