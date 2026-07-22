@@ -1,6 +1,6 @@
 # HomeFinder - Sistema de Gestión Inmobiliaria (App Móvil) 📱🏢
 
-**HomeFinder**, una aplicación móvil nativa para Android desarrollada. Este sistema está diseñado para la compra y venta de propiedades para una Agencia Inmobiliaria.
+**HomeFinder**, una aplicación móvil nativa para Android desarrollada. Este sistema está diseñado para la venta de propiedades para una Agencia Inmobiliaria.
 
 ## 👤 Autor
 * **Nicolás Gerardo Díaz Palacios**
@@ -9,9 +9,9 @@
 
 ## 📊 Estudio de Dominio de Aplicación
 
-El dominio principal de esta aplicación es el sector de **Bienes Raíces (Real Estate)**, enfocado exclusivamente en la **compra y venta de inmuebles** (casas, departamentos, locales comerciales y terrenos). 
+El dominio principal de esta aplicación es el sector de **Bienes Raíces (Real Estate)**, enfocado exclusivamente en la **venta de inmuebles** (casas y departamentos). 
 
-Para el diseño funcional y de experiencia de usuario (UX/UI), se analizaron los estándares de las aplicaciones líderes en el mercado inmobiliario regional:
+Para el diseño funcional y de experiencia de usuario (UX/UI), se tomaron como referencia las aplicaciones líderes en el mercado inmobiliario regional:
 * **ZonaProp:** Se tomó como referencia la jerarquía visual de las tarjetas de propiedades y la claridad en la exposición de precios.
 * **ArgenProp:** Se analizó el flujo de filtrado y búsqueda por zonas geográficas.
 
