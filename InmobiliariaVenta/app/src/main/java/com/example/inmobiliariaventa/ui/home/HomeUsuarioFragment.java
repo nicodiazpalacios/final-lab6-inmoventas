@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.widget.LinearLayout;
+import com.google.android.material.button.MaterialButton;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
@@ -40,6 +41,16 @@ public class HomeUsuarioFragment extends Fragment {
 
         searchContainer.setOnClickListener(v -> {
             Navigation.findNavController(v).navigate(R.id.action_nav_inicio_to_nav_search_location);
+        });
+
+        MaterialButton filterButton = view.findViewById(R.id.filterButton);
+        filterButton.setOnClickListener(v -> {
+            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_navigation);
+            if (bottomNav != null) {
+                bottomNav.setSelectedItemId(R.id.nav_buscar);
+            } else {
+                Navigation.findNavController(v).navigate(R.id.nav_buscar);
+            }
         });
 
         setupCategories();

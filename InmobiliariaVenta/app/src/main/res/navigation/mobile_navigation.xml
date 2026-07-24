@@ -25,4 +25,10 @@
         android:label="Ubicación"
         tools:layout="@layout/fragment_search_location" />
 
+    <fragment
+        android:id="@+id/nav_buscar"
+        android:name="com.example.inmobiliariaventa.ui.home.FiltrosFragment"
+        android:label="Filtros"
+        tools:layout="@layout/fragment_filtros" />
+
 </navigation>
