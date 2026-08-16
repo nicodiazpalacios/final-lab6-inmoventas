@@ -51,6 +51,12 @@ public class FiltrosFragment extends Fragment {
         // Navigation
         toolbar.setNavigationOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
+        // Location Search
+        LinearLayout searchContainer = view.findViewById(R.id.filtrosSearchContainer);
+        searchContainer.setOnClickListener(v -> {
+            Navigation.findNavController(v).navigate(R.id.nav_search_location);
+        });
+
         // Setup Disposicion dropdown
         String[] disposiciones = {"Cualquiera", Disposicion.FRENTE.name(), Disposicion.CONTRAFRENTE.name(), Disposicion.LATERAL.name(), Disposicion.INTERNO.name()};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, disposiciones);

@@ -63,6 +63,50 @@
             android:orientation="vertical"
             android:padding="24dp">
 
+            <!-- Ubicación -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ubicación"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"/>
+
+            <LinearLayout
+                android:id="@+id/filtrosSearchContainer"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/search_background"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+                
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/colorOnSurfaceVariant" />
+                    
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@null"
+                    android:text="Ingresá ciudades o barrios"
+                    android:textSize="14sp"
+                    android:textColor="@color/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+            <!-- Separador -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="24dp"
+                android:background="@color/colorSurfaceContainerHighest" />
+
             <!-- Tipo de propiedad -->
             <TextView
                 android:layout_width="wrap_content"
