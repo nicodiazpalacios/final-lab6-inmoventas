@@ -102,8 +102,8 @@ public class FiltrosFragment extends Fragment {
         });
 
         btnAplicarFiltros.setOnClickListener(v -> {
-            // Here you would gather filter data and pass it back or navigate
-            Navigation.findNavController(v).navigateUp();
+            // No es necesario completar todos los campos. Los vacíos se asumen como 'cualquiera'.
+            Navigation.findNavController(v).navigate(R.id.nav_resultados_busqueda);
         });
 
         return view;

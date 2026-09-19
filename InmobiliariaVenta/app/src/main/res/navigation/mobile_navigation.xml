@@ -49,4 +49,10 @@
         android:label="Detalles de Propiedad"
         tools:layout="@layout/fragment_propiedad_detalle" />
 
+    <fragment
+        android:id="@+id/nav_resultados_busqueda"
+        android:name="com.example.inmobiliariaventa.ui.list.ResultadosBusquedaFragment"
+        android:label="Resultados de Búsqueda"
+        tools:layout="@layout/fragment_resultados_busqueda" />
+
 </navigation>
