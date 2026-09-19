@@ -42,9 +42,9 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         holder.titleTextView.setText(prop.domicilio);
         holder.locationTextView.setText(prop.descripcion != null ? prop.descripcion : "Ubicación");
         
-        holder.bedsTextView.setText(String.valueOf(prop.ambientes));
-        holder.bathsTextView.setText(String.valueOf(prop.banos));
-        holder.sqftTextView.setText("N/A"); // No hay m2 en la entidad actual
+        holder.bedsTextView.setText("🛏 " + prop.ambientes);
+        holder.bathsTextView.setText("🚿 " + prop.banos);
+        holder.sqftTextView.setText("📐 N/A"); // No hay m2 en la entidad actual
         
         // Toggle logic for favorite button
         holder.favoriteButton.setOnClickListener(v -> {
@@ -71,7 +71,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         ImageView propertyImageView;
         TextView priceTextView, titleTextView, locationTextView;
         TextView bedsTextView, bathsTextView, sqftTextView;
-        android.widget.ImageButton favoriteButton;
+        android.widget.ImageView favoriteButton;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);

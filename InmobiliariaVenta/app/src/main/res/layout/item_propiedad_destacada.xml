@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -21,135 +21,144 @@
         <!-- Image Container -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="@color/colorSurfaceVariant">
-
+            android:layout_height="180dp">
+            
             <ImageView
                 android:id="@+id/propertyImageView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:background="#D3D3D3" /> <!-- Placeholder color -->
-
-            <!-- Tag (OBRA NUEVA) -->
-            <TextView
-                android:id="@+id/tagTextView"
+                android:background="@color/colorSurfaceContainerHigh"
+                android:src="@android:drawable/ic_menu_gallery"/>
+                
+            <androidx.cardview.widget.CardView
+                android:id="@+id/tagCardView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/tag_background"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"
-                android:text="OBRA NUEVA"
-                android:textColor="@color/colorOnSecondaryContainer"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:visibility="gone" /> <!-- Gone by default -->
-
-            <!-- Favorite Button -->
-            <ImageButton
-                android:id="@+id/favoriteButton"
+                android:layout_margin="16dp"
+                app:cardBackgroundColor="@color/colorOnSecondaryContainer"
+                app:cardCornerRadius="16dp">
+                <TextView
+                    android:id="@+id/tagTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="OBRA NUEVA"
+                    android:textColor="@color/colorOnPrimary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"/>
+            </androidx.cardview.widget.CardView>
+            
+            <androidx.cardview.widget.CardView
+                android:id="@+id/favoriteButtonCard"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_gravity="end|top"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:background="@drawable/circle_background_light"
-                android:src="@drawable/ic_favorite_border"
-                app:tint="@color/colorOnSurface" />
+                android:layout_gravity="top|end"
+                android:layout_margin="16dp"
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="20dp">
+                <ImageView
+                    android:id="@+id/favoriteButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_favorite_border"
+                    app:tint="@color/colorPrimary" />
+            </androidx.cardview.widget.CardView>
         </FrameLayout>
 
-        <!-- Details Container -->
+        <!-- Content Area -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-
+            
             <TextView
                 android:id="@+id/priceTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="$4,250,000"
-                android:textColor="@color/colorOnSurface"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp" />
-
+                android:text="$2,450,000"
+                android:textColor="@color/colorPrimary"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+                
             <TextView
                 android:id="@+id/titleTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="1042 Oceanview Promenade"
+                android:layout_marginTop="4dp"
+                android:text="The Glass Pavilion"
                 android:textColor="@color/colorOnSurface"
-                android:textSize="18sp"
+                android:textSize="20sp"
+                android:textStyle="bold"
                 android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/locationTextView"
+                android:ellipsize="end"/>
+                
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Santa Monica, CA 90403"
-                android:textColor="@color/colorOnSurfaceVariant"
-                android:textSize="16sp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:layout_marginTop="4dp" />
-
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_dialog_map"
+                    app:tint="@color/colorOnSurfaceVariant" />
+                <TextView
+                    android:id="@+id/locationTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Beverly Hills, CA"
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="14sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+            </LinearLayout>
+            
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="@color/colorSurfaceContainerHigh"
+                android:background="@color/colorOutlineVariant"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Amenities Row -->
+                android:layout_marginBottom="16dp"/>
+                
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
+                
                 <TextView
                     android:id="@+id/bedsTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:drawablePadding="6dp"
-                    android:text="5"
+                    android:text="🛏 4"
                     android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="14sp" />
-
-                <Space
-                    android:layout_width="24dp"
-                    android:layout_height="wrap_content" />
-
+                    android:textSize="14sp"
+                    android:layout_marginEnd="16dp"/>
+                    
                 <TextView
                     android:id="@+id/bathsTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:drawablePadding="6dp"
-                    android:text="6"
+                    android:text="🚿 5"
                     android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="14sp" />
-
-                <Space
-                    android:layout_width="24dp"
-                    android:layout_height="wrap_content" />
-
+                    android:textSize="14sp"
+                    android:layout_marginEnd="16dp"/>
+                    
                 <TextView
                     android:id="@+id/sqftTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:drawablePadding="6dp"
-                    android:text="4,800"
+                    android:text="📐 4,200"
                     android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="14sp" />
-
+                    android:textSize="14sp"/>
             </LinearLayout>
-
         </LinearLayout>
-
     </LinearLayout>
-
-</com.google.android.material.card.MaterialCardView>
+</androidx.cardview.widget.CardView>

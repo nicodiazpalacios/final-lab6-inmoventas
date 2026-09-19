@@ -26,7 +26,7 @@ public class HomeUsuarioFragment extends Fragment {
 
     private RecyclerView categoriesRecyclerView;
     private RecyclerView featuredRecyclerView;
-    private RecyclerView latestRecyclerView;
+
     private LinearLayout searchContainer;
 
     @Nullable
@@ -36,7 +36,7 @@ public class HomeUsuarioFragment extends Fragment {
 
         categoriesRecyclerView = view.findViewById(R.id.categoriesRecyclerView);
         featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
-        latestRecyclerView = view.findViewById(R.id.latestRecyclerView);
+
         searchContainer = view.findViewById(R.id.searchContainer);
 
         searchContainer.setOnClickListener(v -> {
@@ -55,7 +55,7 @@ public class HomeUsuarioFragment extends Fragment {
 
         setupCategories();
         setupFeaturedProperties();
-        setupLatestProperties();
+
 
         return view;
     }
@@ -98,32 +98,5 @@ public class HomeUsuarioFragment extends Fragment {
         featuredRecyclerView.setAdapter(adapter);
     }
 
-    private void setupLatestProperties() {
-        List<Propiedad> ultimas = new ArrayList<>();
-        
-        Propiedad p1 = new Propiedad();
-        p1.id = UUID.randomUUID().toString();
-        p1.precio = 895000;
-        p1.domicilio = "Skyline Penthouse Suite";
-        p1.descripcion = "Downtown Seattle, WA 98101";
-        p1.ambientes = 2;
-        p1.banos = 2;
-        p1.tipoPropiedad = TipoPropiedad.DEPARTAMENTO;
-        
-        Propiedad p2 = new Propiedad();
-        p2.id = UUID.randomUUID().toString();
-        p2.precio = 1150000;
-        p2.domicilio = "Modern Suburban Retreat";
-        p2.descripcion = "Cherry Creek, CO 80206";
-        p2.ambientes = 3;
-        p2.banos = 2;
-        p2.tipoPropiedad = TipoPropiedad.CASA;
-        
-        ultimas.add(p1);
-        ultimas.add(p2);
 
-        PropiedadListaAdapter adapter = new PropiedadListaAdapter(ultimas);
-        latestRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        latestRecyclerView.setAdapter(adapter);
-    }
 }

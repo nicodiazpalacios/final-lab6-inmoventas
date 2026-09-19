@@ -168,42 +168,6 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_propiedad_destacada" />
 
-            <!-- Latest Properties -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
-                android:text="Últimas Publicaciones"
-                android:textColor="@color/colorOnSurface"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"
-                android:background="@color/colorSurfaceContainerHighest" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/latestRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/item_propiedad_lista" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/loadMoreButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="16dp"
-                android:text="Cargar más propiedades"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/colorOutlineVariant"
-                android:textColor="@color/colorPrimary" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
