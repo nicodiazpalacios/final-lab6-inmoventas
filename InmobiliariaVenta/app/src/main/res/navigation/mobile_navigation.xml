@@ -43,4 +43,10 @@
         android:label="Mis Favoritos"
         tools:layout="@layout/fragment_mis_favoritos" />
 
+    <fragment
+        android:id="@+id/nav_detalle_propiedad"
+        android:name="com.example.inmobiliariaventa.ui.propiedades.PropiedadDetalleFragment"
+        android:label="Detalles de Propiedad"
+        tools:layout="@layout/fragment_propiedad_detalle" />
+
 </navigation>

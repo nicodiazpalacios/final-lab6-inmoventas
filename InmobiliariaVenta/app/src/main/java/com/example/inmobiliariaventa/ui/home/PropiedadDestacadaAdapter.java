@@ -12,6 +12,7 @@ import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import java.util.List;
 import java.text.NumberFormat;
 import java.util.Locale;
+import androidx.navigation.Navigation;
 
 public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDestacadaAdapter.ViewHolder> {
 
@@ -60,6 +61,11 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         // Default state
         holder.favoriteButton.setImageResource(R.drawable.ic_favorite_border);
         holder.favoriteButton.setTag(false);
+        
+        // Navigate to details screen on click
+        holder.itemView.setOnClickListener(v -> {
+            Navigation.findNavController(v).navigate(R.id.nav_detalle_propiedad);
+        });
     }
 
     @Override
