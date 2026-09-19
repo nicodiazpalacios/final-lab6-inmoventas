@@ -20,4 +20,5 @@
     <color name="colorSurfaceContainerHigh">#E9E7EF</color>
     <color name="colorError">#BA1A1A</color>
     <color name="colorOutline">#757682</color>
+    <color name="colorSurfaceContainerLow">#F4F3FA</color>
 </resources>

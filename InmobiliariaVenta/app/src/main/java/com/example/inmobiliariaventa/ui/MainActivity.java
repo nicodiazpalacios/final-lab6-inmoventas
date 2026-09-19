@@ -25,9 +25,21 @@ public class MainActivity extends AppCompatActivity {
             // Vincular el BottomNavigationView con el NavController
             BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
             NavigationUI.setupWithNavController(bottomNav, navController);
+            
+            // Interceptar clicks si el usuario no está registrado
+            bottomNav.setOnItemSelectedListener(item -> {
+                boolean isUserRegistered = false; // TODO: Cambiar por estado real de autenticación
+                
+                if (!isUserRegistered && (item.getItemId() == R.id.nav_guardados || item.getItemId() == R.id.nav_perfil)) {
+                    navController.navigate(R.id.nav_login);
+                    return false; // No marcamos la pestaña como seleccionada visualmente
+                }
+                
+                return NavigationUI.onNavDestinationSelected(item, navController);
+            });
 
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-                if (destination.getId() == R.id.nav_search_location) {
+                if (destination.getId() == R.id.nav_search_location || destination.getId() == R.id.nav_login || destination.getId() == R.id.nav_registro) {
                     bottomNav.setVisibility(View.GONE);
                 } else {
                     bottomNav.setVisibility(View.VISIBLE);

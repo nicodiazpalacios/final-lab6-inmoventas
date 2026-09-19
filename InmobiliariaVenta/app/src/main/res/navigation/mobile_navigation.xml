@@ -55,4 +55,16 @@
         android:label="Resultados de Búsqueda"
         tools:layout="@layout/fragment_resultados_busqueda" />
 
+    <fragment
+        android:id="@+id/nav_login"
+        android:name="com.example.inmobiliariaventa.ui.usuarios.LoginFragment"
+        android:label="Iniciar Sesión"
+        tools:layout="@layout/fragment_login" />
+
+    <fragment
+        android:id="@+id/nav_registro"
+        android:name="com.example.inmobiliariaventa.ui.usuarios.RegistroFragment"
+        android:label="Registro"
+        tools:layout="@layout/fragment_registro" />
+
 </navigation>
