@@ -53,6 +53,13 @@ public class HomeUsuarioFragment extends Fragment {
             }
         });
 
+        MaterialButton btnAdminMode = view.findViewById(R.id.btnAdminMode);
+        if (btnAdminMode != null) {
+            btnAdminMode.setOnClickListener(v -> {
+                Navigation.findNavController(v).navigate(R.id.nav_admin_home);
+            });
+        }
+
         setupCategories();
         setupFeaturedProperties();
 

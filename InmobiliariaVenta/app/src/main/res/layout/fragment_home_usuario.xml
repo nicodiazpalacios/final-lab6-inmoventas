@@ -117,6 +117,20 @@
                     app:backgroundTint="@color/colorPrimary"
                     android:textColor="@android:color/white"
                     app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdminMode"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Cambiar a Modo Admin"
+                    app:icon="@android:drawable/ic_secure"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/colorPrimary"
+                    android:textColor="@color/colorPrimary"
+                    app:strokeColor="@color/colorPrimary"
+                    app:cornerRadius="12dp" />
             </LinearLayout>
 
             <!-- Categories -->
