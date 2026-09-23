@@ -44,6 +44,44 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     bottomNav.setVisibility(View.VISIBLE);
                 }
+                
+                // Cambiar al menú de administrador si estamos en un fragmento de admin
+                if (destination.getId() == R.id.nav_admin_perfil || destination.getId() == R.id.nav_admin_home || 
+                    destination.getId() == R.id.nav_propiedades || destination.getId() == R.id.nav_contratos) {
+                    if (bottomNav.getMenu().findItem(R.id.nav_admin_perfil) == null) {
+                        bottomNav.getMenu().clear();
+                        bottomNav.inflateMenu(R.menu.menu_admin);
+                        // Forzar que se marque la pestaña correcta en base al destino actual
+                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
+                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
+                        }
+                    } else {
+                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
+                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
+                        }
+                    }
+                } 
+                // Volver al menú de usuario si estamos en el perfil normal o inicio
+                else if (destination.getId() == R.id.nav_perfil || destination.getId() == R.id.nav_guardados || destination.getId() == R.id.nav_inicio) {
+                    if (bottomNav.getMenu().findItem(R.id.nav_perfil) == null) {
+                        bottomNav.getMenu().clear();
+                        bottomNav.inflateMenu(R.menu.menu_usuario);
+                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
+                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
+                        }
+                    } else {
+                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
+                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
+                        }
+                    }
+                }
+
+                // Forzar que "Inicio" se marque en azul al estar en el detalle
+                if (destination.getId() == R.id.nav_detalle_propiedad) {
+                    if (bottomNav.getMenu().findItem(R.id.nav_inicio) != null) {
+                        bottomNav.getMenu().findItem(R.id.nav_inicio).setChecked(true);
+                    }
+                }
             });
         }
     }

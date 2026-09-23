@@ -37,30 +37,4 @@ public class AdminHomeFragment extends Fragment {
             });
         }
     }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (getActivity() != null) {
-            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
-                    getActivity().findViewById(R.id.bottom_navigation);
-            if (bottomNav != null) {
-                bottomNav.getMenu().clear();
-                bottomNav.inflateMenu(R.menu.menu_admin);
-            }
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (getActivity() != null) {
-            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
-                    getActivity().findViewById(R.id.bottom_navigation);
-            if (bottomNav != null) {
-                bottomNav.getMenu().clear();
-                bottomNav.inflateMenu(R.menu.menu_usuario);
-            }
-        }
-    }
 }
