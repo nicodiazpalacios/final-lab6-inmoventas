@@ -4,7 +4,23 @@
         <!-- Customize your light theme here. -->
         <item name="android:statusBarColor">@color/colorSurfaceContainerLowest</item>
         <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Vinculación de colores para que Material Design (y el DatePicker) los hereden -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorOnSurface">@color/colorOnSurface</item>
     </style>
 
     <style name="Theme.InmobiliariaVenta" parent="Base.Theme.InmobiliariaVenta" />
+
+    <style name="CustomDatePickerTheme" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/colorSurfaceContainerLowest</item>
+        <!-- Forzamos los colores de selección -->
+        <item name="colorTertiary">@color/colorPrimary</item>
+    </style>
 </resources>

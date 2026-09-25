@@ -43,5 +43,12 @@ public class AdminHomeFragment extends Fragment {
                 androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_propiedades);
             });
         }
+
+        View cardVentas = view.findViewById(R.id.card_ventas);
+        if (cardVentas != null) {
+            cardVentas.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_ventas);
+            });
+        }
     }
 }
