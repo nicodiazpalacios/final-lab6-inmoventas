@@ -89,4 +89,10 @@
         android:label="Perfil Administrador"
         tools:layout="@layout/fragment_admin_perfil" />
 
+    <fragment
+        android:id="@+id/nav_admin_agregar_propiedad"
+        android:name="com.example.inmobiliariaventa.ui.admin.AdminAgregarPropiedadFragment"
+        android:label="Publicar Propiedad"
+        tools:layout="@layout/fragment_admin_agregar_propiedad" />
+
 </navigation>

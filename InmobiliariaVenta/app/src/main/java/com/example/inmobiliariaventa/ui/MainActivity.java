@@ -35,6 +35,26 @@ public class MainActivity extends AppCompatActivity {
                     return false; // No marcamos la pestaña como seleccionada visualmente
                 }
                 
+                // Navegación explícita para los botones del menú de administrador
+                if (item.getItemId() == R.id.nav_admin_home || 
+                    item.getItemId() == R.id.nav_admin_propiedades || 
+                    item.getItemId() == R.id.nav_contratos || 
+                    item.getItemId() == R.id.nav_admin_perfil) {
+                    
+                    // Evitar navegar a la misma pantalla si ya estamos en ella
+                    if (navController.getCurrentDestination() != null && 
+                        navController.getCurrentDestination().getId() != item.getItemId()) {
+                        
+                        try {
+                            navController.navigate(item.getItemId());
+                        } catch (IllegalArgumentException e) {
+                            // El fragmento aún no existe en el grafo de navegación
+                            // No hacemos nada, simplemente evitamos el crasheo
+                        }
+                    }
+                    return true;
+                }
+                
                 return NavigationUI.onNavDestinationSelected(item, navController);
             });
 
@@ -47,18 +67,19 @@ public class MainActivity extends AppCompatActivity {
                 
                 // Cambiar al menú de administrador si estamos en un fragmento de admin
                 if (destination.getId() == R.id.nav_admin_perfil || destination.getId() == R.id.nav_admin_home || 
-                    destination.getId() == R.id.nav_propiedades || destination.getId() == R.id.nav_contratos) {
+                    destination.getId() == R.id.nav_admin_propiedades || destination.getId() == R.id.nav_admin_agregar_propiedad || destination.getId() == R.id.nav_contratos) {
                     if (bottomNav.getMenu().findItem(R.id.nav_admin_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_admin);
-                        // Forzar que se marque la pestaña correcta en base al destino actual
-                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
-                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
-                        }
-                    } else {
-                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
-                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
-                        }
+                    }
+                    
+                    // Forzar que se marque la pestaña correcta en base al destino actual
+                    int menuIdToSelect = destination.getId();
+                    if (menuIdToSelect == R.id.nav_admin_agregar_propiedad) {
+                        menuIdToSelect = R.id.nav_admin_propiedades;
+                    }
+                    if (bottomNav.getMenu().findItem(menuIdToSelect) != null) {
+                        bottomNav.getMenu().findItem(menuIdToSelect).setChecked(true);
                     }
                 } 
                 // Volver al menú de usuario si estamos en el perfil normal o inicio

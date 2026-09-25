@@ -7,7 +7,7 @@
         android:title="Inicio" />
 
     <item
-        android:id="@+id/nav_propiedades"
+        android:id="@+id/nav_admin_propiedades"
         android:icon="@drawable/ic_propiedades"
         android:title="Propiedades" />
 

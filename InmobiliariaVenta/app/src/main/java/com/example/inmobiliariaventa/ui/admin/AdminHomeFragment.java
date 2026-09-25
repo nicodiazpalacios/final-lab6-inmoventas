@@ -33,7 +33,7 @@ public class AdminHomeFragment extends Fragment {
         FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
         if (fabAddProperty != null) {
             fabAddProperty.setOnClickListener(v -> {
-                Snackbar.make(v, "Añadir propiedad", Snackbar.LENGTH_SHORT).show();
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
             });
         }
         
