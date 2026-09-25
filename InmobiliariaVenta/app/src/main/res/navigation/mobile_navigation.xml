@@ -102,6 +102,16 @@
         android:id="@+id/nav_admin_ventas"
         android:name="com.example.inmobiliariaventa.ui.admin.AdminVentasFragment"
         android:label="Analíticas de Ventas"
-        tools:layout="@layout/fragment_admin_ventas" />
+        tools:layout="@layout/fragment_admin_ventas">
+        <action
+            android:id="@+id/action_nav_admin_ventas_to_nav_admin_propiedades_vendidas"
+            app:destination="@id/nav_admin_propiedades_vendidas" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_admin_propiedades_vendidas"
+        android:name="com.example.inmobiliariaventa.ui.admin.AdminPropiedadesVendidasFragment"
+        android:label="Historial Reciente"
+        tools:layout="@layout/fragment_admin_propiedades_vendidas" />
 
 </navigation>

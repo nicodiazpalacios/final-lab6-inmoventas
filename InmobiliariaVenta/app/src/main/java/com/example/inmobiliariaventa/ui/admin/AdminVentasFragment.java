@@ -39,6 +39,13 @@ public class AdminVentasFragment extends Fragment {
         if (btnCustomRange != null) {
             btnCustomRange.setOnClickListener(v -> mostrarDateRangePicker(btnCustomRange));
         }
+
+        View tvVerTodas = view.findViewById(R.id.tv_ver_todas_propiedades);
+        if (tvVerTodas != null) {
+            tvVerTodas.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_ventas_to_nav_admin_propiedades_vendidas);
+            });
+        }
     }
 
     private void mostrarDateRangePicker(MaterialButton button) {
