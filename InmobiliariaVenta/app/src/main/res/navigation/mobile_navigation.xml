@@ -71,7 +71,17 @@
         android:id="@+id/nav_admin_home"
         android:name="com.example.inmobiliariaventa.ui.admin.AdminHomeFragment"
         android:label="Admin Dashboard"
-        tools:layout="@layout/admin_home_fragment" />
+        tools:layout="@layout/admin_home_fragment">
+        <action
+            android:id="@+id/action_nav_admin_home_to_nav_admin_propiedades"
+            app:destination="@id/nav_admin_propiedades" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_admin_propiedades"
+        android:name="com.example.inmobiliariaventa.ui.admin.AdminPropiedadesFragment"
+        android:label="Gestión de Propiedades"
+        tools:layout="@layout/fragment_admin_propiedades" />
 
     <fragment
         android:id="@+id/nav_admin_perfil"

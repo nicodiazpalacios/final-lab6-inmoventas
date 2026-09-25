@@ -13,34 +13,26 @@ import com.example.inmobiliariaventa.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
-public class AdminHomeFragment extends Fragment {
+public class AdminPropiedadesFragment extends Fragment {
 
-    public AdminHomeFragment() {
+    public AdminPropiedadesFragment() {
         // Required empty public constructor
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.admin_home_fragment, container, false);
+        return inflater.inflate(R.layout.fragment_admin_propiedades, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
+        
         FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
         if (fabAddProperty != null) {
             fabAddProperty.setOnClickListener(v -> {
-                Snackbar.make(v, "Añadir propiedad", Snackbar.LENGTH_SHORT).show();
-            });
-        }
-        
-        View cardPropiedades = view.findViewById(R.id.card_propiedades);
-        if (cardPropiedades != null) {
-            cardPropiedades.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_propiedades);
+                Snackbar.make(v, "Publicar Nueva Propiedad", Snackbar.LENGTH_SHORT).show();
             });
         }
     }
