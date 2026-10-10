@@ -46,6 +46,14 @@ public class AdminConfiguracionFragment extends Fragment {
             btnExportarExcel.setOnClickListener(v -> mostrarDateRangePicker(btnExportarExcel, "Excel"));
         }
 
+        MaterialButton btnGestionarUsuarios = view.findViewById(R.id.btn_gestionar_usuarios);
+        if (btnGestionarUsuarios != null) {
+            btnGestionarUsuarios.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view)
+                        .navigate(R.id.action_nav_admin_configuracion_to_nav_admin_gestion_usuarios);
+            });
+        }
+
         MaterialButton btnGuardar = view.findViewById(R.id.btn_guardar_cambios);
         if (btnGuardar != null) {
             btnGuardar.setOnClickListener(v -> {
