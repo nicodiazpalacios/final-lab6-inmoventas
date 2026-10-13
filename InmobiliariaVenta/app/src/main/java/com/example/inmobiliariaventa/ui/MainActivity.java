@@ -67,7 +67,10 @@ public class MainActivity extends AppCompatActivity {
                 
                 // Cambiar al menú de administrador si estamos en un fragmento de admin
                 if (destination.getId() == R.id.nav_admin_perfil || destination.getId() == R.id.nav_admin_home || 
-                    destination.getId() == R.id.nav_admin_propiedades || destination.getId() == R.id.nav_admin_agregar_propiedad || destination.getId() == R.id.nav_contratos) {
+                    destination.getId() == R.id.nav_admin_propiedades || destination.getId() == R.id.nav_admin_agregar_propiedad || 
+                    destination.getId() == R.id.nav_contratos || destination.getId() == R.id.nav_admin_configuracion ||
+                    destination.getId() == R.id.nav_admin_gestion_usuarios || destination.getId() == R.id.nav_admin_ventas ||
+                    destination.getId() == R.id.nav_admin_propiedades_vendidas) {
                     if (bottomNav.getMenu().findItem(R.id.nav_admin_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_admin);

@@ -21,4 +21,9 @@
     <color name="colorError">#BA1A1A</color>
     <color name="colorOutline">#757682</color>
     <color name="colorSurfaceContainerLow">#F4F3FA</color>
+    <color name="colorTertiaryFixed">#FFDBCB</color>
+    <color name="colorOnTertiaryFixedVariant">#773205</color>
+    <color name="colorOnPrimaryFixed">#00164E</color>
+    <color name="colorSecondaryFixedDim">#4EDEA3</color>
+    <color name="colorOnPrimaryContainer">#90A8FF</color>
 </resources>
