@@ -53,8 +53,9 @@
                 
             <EditText
                 android:id="@+id/searchEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
                 android:layout_marginStart="8dp"
                 android:background="@null"
                 android:hint="Buscar..."
@@ -64,6 +65,16 @@
                 android:inputType="text"
                 android:imeOptions="actionSearch"
                 android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/btnFiltrosTune"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="2dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_tune"
+                app:tint="@color/colorOnSurfaceVariant" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView

@@ -19,7 +19,12 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
     private List<Propiedad> propiedades;
 
     public PropiedadDestacadaAdapter(List<Propiedad> propiedades) {
-        this.propiedades = propiedades;
+        this.propiedades = propiedades != null ? propiedades : new java.util.ArrayList<>();
+    }
+
+    public void setPropiedades(List<Propiedad> nuevas) {
+        this.propiedades = nuevas != null ? new java.util.ArrayList<>(nuevas) : new java.util.ArrayList<>();
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -46,6 +51,14 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         holder.bedsTextView.setText("🛏 " + prop.ambientes);
         holder.bathsTextView.setText("🚿 " + prop.banos);
         holder.sqftTextView.setText("📐 N/A"); // No hay m2 en la entidad actual
+
+        if (holder.tagTextView != null) {
+            if (prop.tipoPropiedad != null) {
+                holder.tagTextView.setText(prop.tipoPropiedad.name());
+            } else {
+                holder.tagTextView.setText("EN VENTA");
+            }
+        }
         
         // Toggle logic for favorite button
         holder.favoriteButton.setOnClickListener(v -> {
@@ -76,7 +89,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView propertyImageView;
         TextView priceTextView, titleTextView, locationTextView;
-        TextView bedsTextView, bathsTextView, sqftTextView;
+        TextView bedsTextView, bathsTextView, sqftTextView, tagTextView;
         android.widget.ImageView favoriteButton;
 
         public ViewHolder(@NonNull View itemView) {
@@ -88,6 +101,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
             bedsTextView = itemView.findViewById(R.id.bedsTextView);
             bathsTextView = itemView.findViewById(R.id.bathsTextView);
             sqftTextView = itemView.findViewById(R.id.sqftTextView);
+            tagTextView = itemView.findViewById(R.id.tagTextView);
             favoriteButton = itemView.findViewById(R.id.favoriteButton);
         }
     }

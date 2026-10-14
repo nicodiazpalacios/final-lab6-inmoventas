@@ -26,6 +26,13 @@ public class SearchLocationFragment extends Fragment {
             Navigation.findNavController(v).navigateUp();
         });
 
+        View btnFiltrosTune = view.findViewById(R.id.btnFiltrosTune);
+        if (btnFiltrosTune != null) {
+            btnFiltrosTune.setOnClickListener(v -> {
+                Navigation.findNavController(v).navigate(R.id.nav_buscar);
+            });
+        }
+
         RecyclerView suggestionsRecyclerView = view.findViewById(R.id.suggestionsRecyclerView);
         List<String> suggestions = new ArrayList<>();
         // TODO: Cargar sugerencias dinámicamente

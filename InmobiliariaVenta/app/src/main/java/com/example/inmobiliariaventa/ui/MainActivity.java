@@ -53,33 +53,62 @@ public class MainActivity extends AppCompatActivity {
             // Interceptar clicks si el usuario no está registrado
             bottomNav.setOnItemSelectedListener(item -> {
                 boolean isUserRegistered = false; // TODO: Cambiar por estado real de autenticación
+                int itemId = item.getItemId();
                 
-                if (!isUserRegistered && (item.getItemId() == R.id.nav_guardados || item.getItemId() == R.id.nav_perfil)) {
+                if (!isUserRegistered && (itemId == R.id.nav_guardados || itemId == R.id.nav_perfil)) {
                     navController.navigate(R.id.nav_login);
                     return false; // No marcamos la pestaña como seleccionada visualmente
                 }
                 
                 // Navegación explícita para los botones del menú de administrador
-                if (item.getItemId() == R.id.nav_admin_home || 
-                    item.getItemId() == R.id.nav_admin_propiedades || 
-                    item.getItemId() == R.id.nav_contratos || 
-                    item.getItemId() == R.id.nav_admin_perfil) {
+                if (itemId == R.id.nav_admin_home || 
+                    itemId == R.id.nav_admin_propiedades || 
+                    itemId == R.id.nav_contratos || 
+                    itemId == R.id.nav_admin_perfil) {
                     
-                    // Evitar navegar a la misma pantalla si ya estamos en ella
                     if (navController.getCurrentDestination() != null && 
-                        navController.getCurrentDestination().getId() != item.getItemId()) {
-                        
+                        navController.getCurrentDestination().getId() != itemId) {
                         try {
-                            navController.navigate(item.getItemId());
+                            navController.navigate(itemId);
                         } catch (IllegalArgumentException e) {
-                            // El fragmento aún no existe en el grafo de navegación
-                            // No hacemos nada, simplemente evitamos el crasheo
                         }
+                    }
+                    return true;
+                }
+
+                // Navegación explícita para volver a Inicio desde cualquier fragmento
+                if (itemId == R.id.nav_inicio) {
+                    if (navController.getCurrentDestination() != null && 
+                        navController.getCurrentDestination().getId() != R.id.nav_inicio) {
+                        if (!navController.popBackStack(R.id.nav_inicio, false)) {
+                            navController.navigate(R.id.nav_inicio);
+                        }
+                    }
+                    return true;
+                }
+
+                // Navegación explícita a Filtros / Buscar
+                if (itemId == R.id.nav_buscar) {
+                    if (navController.getCurrentDestination() != null && 
+                        navController.getCurrentDestination().getId() != R.id.nav_buscar) {
+                        navController.navigate(R.id.nav_buscar);
                     }
                     return true;
                 }
                 
                 return NavigationUI.onNavDestinationSelected(item, navController);
+            });
+
+            // Si el usuario toca "Inicio" cuando ya estaba seleccionado en la barra inferior
+            bottomNav.setOnItemReselectedListener(item -> {
+                if (item.getItemId() == R.id.nav_inicio) {
+                    if (navController.getCurrentDestination() != null && 
+                        navController.getCurrentDestination().getId() != R.id.nav_inicio) {
+                        if (!navController.popBackStack(R.id.nav_inicio, false)) {
+                            navController.navigate(R.id.nav_inicio);
+                        }
+                    }
+                }
             });
 
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
@@ -128,25 +157,29 @@ public class MainActivity extends AppCompatActivity {
                         bottomNav.getMenu().findItem(menuIdToSelect).setChecked(true);
                     }
                 } 
-                // Volver al menú de usuario si estamos en el perfil normal o inicio
-                else if (destination.getId() == R.id.nav_perfil || destination.getId() == R.id.nav_guardados || destination.getId() == R.id.nav_inicio) {
+                // Volver al menú de usuario si estamos en el perfil normal, inicio, filtros o resultados de búsqueda
+                else if (destination.getId() == R.id.nav_perfil || destination.getId() == R.id.nav_guardados || destination.getId() == R.id.nav_inicio || destination.getId() == R.id.nav_buscar || destination.getId() == R.id.nav_resultados_busqueda) {
                     if (bottomNav.getMenu().findItem(R.id.nav_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_usuario);
-                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
-                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
-                        }
-                    } else {
-                        if (bottomNav.getMenu().findItem(destination.getId()) != null) {
-                            bottomNav.getMenu().findItem(destination.getId()).setChecked(true);
-                        }
+                    }
+                    int menuIdToSelect = destination.getId();
+                    if (menuIdToSelect == R.id.nav_resultados_busqueda) {
+                        menuIdToSelect = R.id.nav_buscar;
+                    }
+                    if (bottomNav.getMenu().findItem(menuIdToSelect) != null) {
+                        bottomNav.getMenu().findItem(menuIdToSelect).setChecked(true);
                     }
                 }
 
-                // Forzar que "Inicio" se marque en azul al estar en el detalle
+                // Forzar selección visual del item de la barra inferior según la pantalla actual
                 if (destination.getId() == R.id.nav_detalle_propiedad) {
                     if (bottomNav.getMenu().findItem(R.id.nav_inicio) != null) {
                         bottomNav.getMenu().findItem(R.id.nav_inicio).setChecked(true);
+                    }
+                } else if (destination.getId() == R.id.nav_buscar || destination.getId() == R.id.nav_resultados_busqueda) {
+                    if (bottomNav.getMenu().findItem(R.id.nav_buscar) != null) {
+                        bottomNav.getMenu().findItem(R.id.nav_buscar).setChecked(true);
                     }
                 }
             });

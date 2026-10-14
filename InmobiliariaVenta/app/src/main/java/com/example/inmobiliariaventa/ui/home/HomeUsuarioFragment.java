@@ -60,9 +60,15 @@ public class HomeUsuarioFragment extends Fragment {
             });
         }
 
+        android.widget.TextView viewAllFeaturedTextView = view.findViewById(R.id.viewAllFeaturedTextView);
+        if (viewAllFeaturedTextView != null) {
+            viewAllFeaturedTextView.setOnClickListener(v -> {
+                Navigation.findNavController(v).navigate(R.id.action_nav_inicio_to_nav_resultados_busqueda);
+            });
+        }
+
         setupCategories();
         setupFeaturedProperties();
-
 
         return view;
     }
