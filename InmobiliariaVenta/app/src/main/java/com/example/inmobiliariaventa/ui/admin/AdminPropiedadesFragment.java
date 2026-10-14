@@ -101,11 +101,6 @@ public class AdminPropiedadesFragment extends Fragment {
 
         initPropertiesData();
 
-        // Botón regresar
-        View btnBack = view.findViewById(R.id.btn_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
-        }
 
         // Floating Action Button - Agregar Propiedad
         FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
@@ -359,32 +354,18 @@ public class AdminPropiedadesFragment extends Fragment {
 
     private void actualizarEstiloBotonFiltros() {
         if (btnFiltros == null || getContext() == null) return;
-        if (!"Todos".equalsIgnoreCase(selectedFilter)) {
-            btnFiltros.setText("FILTROS: " + selectedFilter.toUpperCase());
-            btnFiltros.setStrokeColorResource(R.color.colorPrimary);
-            btnFiltros.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
-            btnFiltros.setIconTintResource(R.color.colorPrimary);
-        } else {
-            btnFiltros.setText("FILTROS");
-            btnFiltros.setStrokeColorResource(R.color.colorOutlineVariant);
-            btnFiltros.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
-            btnFiltros.setIconTintResource(R.color.colorOnSurface);
-        }
+        btnFiltros.setText("FILTROS");
+        btnFiltros.setStrokeColorResource(R.color.colorOutlineVariant);
+        btnFiltros.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
+        btnFiltros.setIconTintResource(R.color.colorOnSurface);
     }
 
     private void actualizarEstiloBotonOrden() {
         if (btnOrden == null || getContext() == null) return;
-        if (!"Recientes".equalsIgnoreCase(selectedSort)) {
-            btnOrden.setText("ORDEN: " + selectedSort.toUpperCase());
-            btnOrden.setStrokeColorResource(R.color.colorPrimary);
-            btnOrden.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
-            btnOrden.setIconTintResource(R.color.colorPrimary);
-        } else {
-            btnOrden.setText("ORDEN");
-            btnOrden.setStrokeColorResource(R.color.colorOutlineVariant);
-            btnOrden.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
-            btnOrden.setIconTintResource(R.color.colorOnSurface);
-        }
+        btnOrden.setText("ORDEN");
+        btnOrden.setStrokeColorResource(R.color.colorOutlineVariant);
+        btnOrden.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
+        btnOrden.setIconTintResource(R.color.colorOnSurface);
     }
 
     private void restablecerFiltros() {

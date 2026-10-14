@@ -122,7 +122,7 @@ public class AdminAgregarContratoFragment extends Fragment {
         actvPaymentMethod.setText(paymentMethods[0], false);
 
         // Status Dropdown
-        String[] statusOptions = {"Activo", "Pendiente", "Rechazado"};
+        String[] statusOptions = {"Activo", "Pendiente", "Rechazado", "Finalizado"};
         ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,

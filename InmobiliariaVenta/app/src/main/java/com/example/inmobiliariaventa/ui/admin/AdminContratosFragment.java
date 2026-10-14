@@ -104,10 +104,12 @@ public class AdminContratosFragment extends Fragment {
                 popup.getMenu().add("Todos");
                 popup.getMenu().add("Activo");
                 popup.getMenu().add("Pendiente");
+                popup.getMenu().add("Rechazado");
                 popup.getMenu().add("Finalizado");
                 popup.setOnMenuItemClickListener(item -> {
                     String status = item.getTitle().toString();
                     filterByStatus(status);
+                    Toast.makeText(requireContext(), "Filtro: " + status, Toast.LENGTH_SHORT).show();
                     return true;
                 });
                 popup.show();
@@ -143,6 +145,11 @@ public class AdminContratosFragment extends Fragment {
             if (cardContrato4 != null) cardContrato4.setVisibility(View.VISIBLE);
         } else if ("Activo".equals(status)) {
             if (cardContrato1 != null) cardContrato1.setVisibility(View.VISIBLE);
+            if (cardContrato2 != null) cardContrato2.setVisibility(View.GONE);
+            if (cardContrato3 != null) cardContrato3.setVisibility(View.GONE);
+            if (cardContrato4 != null) cardContrato4.setVisibility(View.GONE);
+        } else if ("Rechazado".equals(status)) {
+            if (cardContrato1 != null) cardContrato1.setVisibility(View.GONE);
             if (cardContrato2 != null) cardContrato2.setVisibility(View.VISIBLE);
             if (cardContrato3 != null) cardContrato3.setVisibility(View.GONE);
             if (cardContrato4 != null) cardContrato4.setVisibility(View.GONE);
