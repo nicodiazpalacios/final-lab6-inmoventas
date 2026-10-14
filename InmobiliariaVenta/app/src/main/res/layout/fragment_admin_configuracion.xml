@@ -264,10 +264,11 @@
                         app:startIconDrawable="@android:drawable/ic_menu_call">
 
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_telefono_empresa"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="phone"
-                            android:text="+34 912 345 678" />
+                            android:text="+54 9 11 5842-1102" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -279,10 +280,11 @@
                         app:startIconDrawable="@android:drawable/ic_dialog_email">
 
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_email_empresa"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="textEmailAddress"
-                            android:text="contacto@luxestate.com" />
+                            android:text="contacto@inmoventas.com" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -294,10 +296,11 @@
                         app:startIconDrawable="@android:drawable/ic_dialog_map">
 
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_direccion_empresa"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="textPostalAddress"
-                            android:text="Paseo de la Castellana 200, Madrid" />
+                            android:text="Av. del Libertador 2450, Buenos Aires" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <View

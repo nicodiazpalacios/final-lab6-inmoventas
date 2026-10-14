@@ -11,13 +11,15 @@ import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Notificacion;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
+import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
 import com.example.inmobiliariaventa.data.local.dao.UsuarioDao;
 import com.example.inmobiliariaventa.data.local.dao.PropiedadDao;
 import com.example.inmobiliariaventa.data.local.dao.FavoritoDao;
 import com.example.inmobiliariaventa.data.local.dao.NotificacionDao;
 import com.example.inmobiliariaventa.data.local.dao.ContratoDao;
+import com.example.inmobiliariaventa.data.local.dao.ConfiguracionEmpresaDao;
 
-@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class}, version = 2, exportSchema = false)
+@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class}, version = 3, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -26,6 +28,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract FavoritoDao favoritoDao();
     public abstract NotificacionDao notificacionDao();
     public abstract ContratoDao contratoDao();
+    public abstract ConfiguracionEmpresaDao configuracionEmpresaDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;

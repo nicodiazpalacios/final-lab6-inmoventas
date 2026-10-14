@@ -268,6 +268,7 @@ public class AdminMensajesFragment extends Fragment {
         TextView tvMensaje = dialogView.findViewById(R.id.dialog_tv_mensaje);
         MaterialButton btnMarcarLeido = dialogView.findViewById(R.id.dialog_btn_marcar_leido);
         MaterialButton btnLlamar = dialogView.findViewById(R.id.dialog_btn_llamar);
+        MaterialButton btnWhatsapp = dialogView.findViewById(R.id.dialog_btn_whatsapp);
         ImageButton btnCerrarTop = dialogView.findViewById(R.id.dialog_btn_cerrar_top);
 
         // Vincular información del mensaje
@@ -310,6 +311,22 @@ public class AdminMensajesFragment extends Fragment {
                     startActivity(dialIntent);
                 } catch (Exception e) {
                     Toast.makeText(requireContext(), "No se pudo iniciar la llamada", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Acción: Enviar WhatsApp
+        if (btnWhatsapp != null) {
+            btnWhatsapp.setOnClickListener(v -> {
+                try {
+                    String cleanPhone = item.telefono.replaceAll("[^0-9]", "");
+                    String textoMensaje = "Hola " + item.cliente + ", te contacto desde Inmobiliaria por tu consulta sobre " + item.propiedad + ".";
+                    String url = "https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + Uri.encode(textoMensaje);
+                    Intent whatsappIntent = new Intent(Intent.ACTION_VIEW);
+                    whatsappIntent.setData(Uri.parse(url));
+                    startActivity(whatsappIntent);
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "No se pudo abrir WhatsApp", Toast.LENGTH_SHORT).show();
                 }
             });
         }

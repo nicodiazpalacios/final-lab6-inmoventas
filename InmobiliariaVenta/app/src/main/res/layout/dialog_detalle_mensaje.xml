@@ -234,34 +234,34 @@
             android:lineSpacingExtra="4dp" />
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Bottom Buttons: Marcar como leído / Llamar -->
+    <!-- Botón de Estado: Marcar como leído -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/dialog_btn_marcar_leido"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginBottom="10dp"
+        android:text="Marcar como leído"
+        android:textSize="13sp"
+        app:icon="@drawable/ic_check_circle"
+        app:iconGravity="textStart"
+        app:iconSize="16dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:strokeColor="@color/colorPrimary"
+        android:textColor="@color/colorPrimary"
+        app:cornerRadius="10dp" />
+
+    <!-- Botones de Contacto: Llamar y WhatsApp -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/dialog_btn_marcar_leido"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:text="Marcar como leído"
-            android:textSize="13sp"
-            app:icon="@drawable/ic_check_circle"
-            app:iconGravity="textStart"
-            app:iconSize="16dp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:strokeColor="@color/colorPrimary"
-            android:textColor="@color/colorPrimary"
-            app:cornerRadius="10dp" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/dialog_btn_llamar"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginEnd="6dp"
             android:text="Llamar"
             android:textSize="13sp"
             app:icon="@drawable/ic_phone"
@@ -269,6 +269,21 @@
             app:iconSize="16dp"
             app:backgroundTint="@color/colorPrimary"
             android:textColor="@color/colorOnPrimary"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dialog_btn_whatsapp"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="WhatsApp"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_whatsapp"
+            app:iconGravity="textStart"
+            app:iconSize="18dp"
+            app:backgroundTint="#25D366"
+            android:textColor="#FFFFFF"
             app:cornerRadius="10dp" />
     </LinearLayout>
 

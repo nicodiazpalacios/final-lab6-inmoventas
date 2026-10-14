@@ -13,14 +13,21 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.repository.EmpresaRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.textfield.TextInputEditText;
 import androidx.core.util.Pair;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class AdminConfiguracionFragment extends Fragment {
+
+    private EmpresaRepository empresaRepository;
+    private TextInputEditText etTelefonoEmpresa;
+    private TextInputEditText etEmailEmpresa;
+    private TextInputEditText etDireccionEmpresa;
 
     public AdminConfiguracionFragment() {
         // Required empty public constructor
@@ -35,6 +42,20 @@ public class AdminConfiguracionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        empresaRepository = new EmpresaRepository(requireContext());
+        etTelefonoEmpresa = view.findViewById(R.id.et_telefono_empresa);
+        etEmailEmpresa = view.findViewById(R.id.et_email_empresa);
+        etDireccionEmpresa = view.findViewById(R.id.et_direccion_empresa);
+
+        // Cargar configuración guardada desde la base de datos
+        empresaRepository.cargarConfiguracionAsync(config -> {
+            if (config != null && isAdded()) {
+                if (etTelefonoEmpresa != null) etTelefonoEmpresa.setText(config.telefonoWhatsapp);
+                if (etEmailEmpresa != null) etEmailEmpresa.setText(config.email);
+                if (etDireccionEmpresa != null) etDireccionEmpresa.setText(config.direccion);
+            }
+        });
 
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
@@ -66,19 +87,29 @@ public class AdminConfiguracionFragment extends Fragment {
             btnGuardar.setOnClickListener(v -> {
                 btnGuardar.setEnabled(false);
                 btnGuardar.setText("Guardando...");
+
+                String tel = etTelefonoEmpresa != null && etTelefonoEmpresa.getText() != null ?
+                        etTelefonoEmpresa.getText().toString().trim() : "+54 9 11 5842-1102";
+                String email = etEmailEmpresa != null && etEmailEmpresa.getText() != null ?
+                        etEmailEmpresa.getText().toString().trim() : "contacto@inmoventas.com";
+                String dir = etDireccionEmpresa != null && etDireccionEmpresa.getText() != null ?
+                        etDireccionEmpresa.getText().toString().trim() : "Av. del Libertador 2450, Buenos Aires";
+
+                // Guardar en la base de datos de Room
+                empresaRepository.guardarConfiguracion(tel, email, dir);
                 
-                // Simulate saving delay
+                // Simulación visual de confirmación
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     if (getContext() != null) {
                         btnGuardar.setText("Guardado");
-                        Toast.makeText(getContext(), "Cambios guardados correctamente", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Datos de la empresa guardados en la base de datos", Toast.LENGTH_SHORT).show();
                         
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             btnGuardar.setText("Guardar Cambios");
                             btnGuardar.setEnabled(true);
                         }, 2000);
                     }
-                }, 1200);
+                }, 800);
             });
         }
     }
