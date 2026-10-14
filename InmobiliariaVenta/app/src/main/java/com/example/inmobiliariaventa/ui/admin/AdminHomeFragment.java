@@ -37,6 +37,13 @@ public class AdminHomeFragment extends Fragment {
             });
         }
         
+        View cardMensajes = view.findViewById(R.id.card_mensajes);
+        if (cardMensajes != null) {
+            cardMensajes.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_mensajes);
+            });
+        }
+
         View cardPropiedades = view.findViewById(R.id.card_propiedades);
         if (cardPropiedades != null) {
             cardPropiedades.setOnClickListener(v -> {

@@ -94,6 +94,9 @@
         <action
             android:id="@+id/action_nav_admin_home_to_nav_admin_notificaciones"
             app:destination="@id/nav_admin_notificaciones" />
+        <action
+            android:id="@+id/action_nav_admin_home_to_nav_admin_mensajes"
+            app:destination="@id/nav_admin_mensajes" />
     </fragment>
 
     <fragment
@@ -167,5 +170,11 @@
         android:name="com.example.inmobiliariaventa.ui.admin.AdminNotificacionesFragment"
         android:label="Notificaciones"
         tools:layout="@layout/fragment_admin_notificaciones" />
+
+    <fragment
+        android:id="@+id/nav_admin_mensajes"
+        android:name="com.example.inmobiliariaventa.ui.admin.AdminMensajesFragment"
+        android:label="Mensajes de Clientes"
+        tools:layout="@layout/fragment_admin_mensajes" />
 
 </navigation>

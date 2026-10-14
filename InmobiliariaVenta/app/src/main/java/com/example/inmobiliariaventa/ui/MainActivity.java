@@ -140,7 +140,8 @@ public class MainActivity extends AppCompatActivity {
                     destination.getId() == R.id.nav_contratos || destination.getId() == R.id.nav_admin_agregar_contrato ||
                     destination.getId() == R.id.nav_admin_configuracion ||
                     destination.getId() == R.id.nav_admin_gestion_usuarios || destination.getId() == R.id.nav_admin_ventas ||
-                    destination.getId() == R.id.nav_admin_propiedades_vendidas || destination.getId() == R.id.nav_admin_notificaciones) {
+                    destination.getId() == R.id.nav_admin_propiedades_vendidas || destination.getId() == R.id.nav_admin_notificaciones ||
+                    destination.getId() == R.id.nav_admin_mensajes) {
                     if (bottomNav.getMenu().findItem(R.id.nav_admin_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_admin);
