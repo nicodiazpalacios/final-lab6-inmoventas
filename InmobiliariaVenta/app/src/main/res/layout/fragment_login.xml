@@ -15,7 +15,7 @@
         android:layout_margin="16dp"
         android:padding="12dp"
         android:src="@drawable/ic_arrow_back"
-        app:tint="@color/colorOnSurfaceVariant"
+        app:tint="@color/colorPrimary"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:elevation="4dp" />
     

@@ -17,7 +17,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="?attr/homeAsUpIndicator">
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="@color/colorPrimary">
             
             <TextView
                 android:layout_width="wrap_content"

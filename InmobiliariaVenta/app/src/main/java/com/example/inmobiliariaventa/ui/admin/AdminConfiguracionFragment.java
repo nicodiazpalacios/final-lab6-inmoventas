@@ -36,6 +36,13 @@ public class AdminConfiguracionFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        View btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).popBackStack();
+            });
+        }
+
         MaterialButton btnExportarPdf = view.findViewById(R.id.btn_exportar_pdf);
         if (btnExportarPdf != null) {
             btnExportarPdf.setOnClickListener(v -> mostrarDateRangePicker(btnExportarPdf, "PDF"));

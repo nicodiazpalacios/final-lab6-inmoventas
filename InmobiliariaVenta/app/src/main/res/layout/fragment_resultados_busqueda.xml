@@ -34,7 +34,7 @@
                     android:padding="2dp"
                     android:src="@drawable/ic_arrow_back"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/colorOnSurfaceVariant" />
+                    app:tint="@color/colorPrimary" />
                 <EditText
                     android:id="@+id/inputBusquedaResultados"
                     android:layout_width="0dp"

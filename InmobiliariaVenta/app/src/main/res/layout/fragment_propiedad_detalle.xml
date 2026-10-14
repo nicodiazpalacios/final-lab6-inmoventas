@@ -43,7 +43,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_arrow_back"
-                        app:tint="@color/colorOnSurface"/>
+                        app:tint="@color/colorPrimary"/>
                 </androidx.cardview.widget.CardView>
                 
                 <View

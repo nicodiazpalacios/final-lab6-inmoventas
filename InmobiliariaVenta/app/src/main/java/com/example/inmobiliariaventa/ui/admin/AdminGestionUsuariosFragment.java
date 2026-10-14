@@ -94,6 +94,13 @@ public class AdminGestionUsuariosFragment extends Fragment {
         etBuscarUsuario = view.findViewById(R.id.et_buscar_usuario);
         chipGroupRoles = view.findViewById(R.id.chip_group_roles);
 
+        View btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).popBackStack();
+            });
+        }
+
         setupUserActionButtons(view);
         setupSearchAndFilter(view);
         setupPagination(view);

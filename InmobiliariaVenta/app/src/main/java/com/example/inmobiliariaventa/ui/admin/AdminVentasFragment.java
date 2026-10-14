@@ -35,6 +35,13 @@ public class AdminVentasFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        View btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).popBackStack();
+            });
+        }
+
         MaterialButton btnCustomRange = view.findViewById(R.id.btn_custom_range);
         if (btnCustomRange != null) {
             btnCustomRange.setOnClickListener(v -> mostrarDateRangePicker(btnCustomRange));

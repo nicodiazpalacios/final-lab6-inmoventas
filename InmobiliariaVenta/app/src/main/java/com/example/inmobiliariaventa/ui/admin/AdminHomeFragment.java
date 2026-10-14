@@ -61,7 +61,14 @@ public class AdminHomeFragment extends Fragment {
         View btnVerTodoActividad = view.findViewById(R.id.btn_ver_todo_actividad);
         if (btnVerTodoActividad != null) {
             btnVerTodoActividad.setOnClickListener(v -> {
-                Snackbar.make(view, "Mostrando historial completo de actividad y notificaciones", Snackbar.LENGTH_SHORT).show();
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
+            });
+        }
+
+        View notificationsButton = view.findViewById(R.id.notificationsButton);
+        if (notificationsButton != null) {
+            notificationsButton.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
             });
         }
     }

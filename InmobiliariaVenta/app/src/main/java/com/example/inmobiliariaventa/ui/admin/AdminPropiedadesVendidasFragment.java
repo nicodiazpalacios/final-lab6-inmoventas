@@ -22,4 +22,16 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_admin_propiedades_vendidas, container, false);
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @androidx.annotation.Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        View btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).popBackStack();
+            });
+        }
+    }
 }
