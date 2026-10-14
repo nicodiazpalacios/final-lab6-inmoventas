@@ -24,13 +24,31 @@
             android:paddingBottom="16dp">
 
             <!-- Header -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Gestión de Propiedades"
-                android:textColor="@color/colorPrimary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="@color/colorPrimary"
+                    android:layout_marginEnd="12dp"
+                    android:contentDescription="Regresar" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gestión de Propiedades"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -71,6 +89,7 @@
                         app:hintEnabled="false">
 
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_buscar_propiedades"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Buscar por título o ubicación..."
@@ -86,30 +105,46 @@
                         android:layout_marginTop="12dp">
                         
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_filtros_propiedades"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginEnd="4dp"
                             android:text="FILTROS"
+                            app:icon="@drawable/ic_tune"
+                            app:iconGravity="textStart"
+                            app:iconTint="@color/colorOnSurface"
                             app:strokeColor="@color/colorOutlineVariant"
                             android:textColor="@color/colorOnSurface" />
 
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_orden_propiedades"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="4dp"
                             android:text="ORDEN"
+                            app:icon="@drawable/ic_sort"
+                            app:iconGravity="textStart"
+                            app:iconTint="@color/colorOnSurface"
                             app:strokeColor="@color/colorOutlineVariant"
                             android:textColor="@color/colorOnSurface" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Container for Property Cards -->
+            <LinearLayout
+                android:id="@+id/container_propiedades_cards"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
             <!-- Card 1: Publicado -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -134,6 +169,7 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
@@ -141,6 +177,7 @@
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
@@ -226,6 +263,7 @@
             
             <!-- Card 2: Publicado -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -250,6 +288,7 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
@@ -257,6 +296,7 @@
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
@@ -342,6 +382,7 @@
             
             <!-- Card 3: Villa Los Laureles -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -366,6 +407,7 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_3"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
@@ -373,6 +415,7 @@
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_3"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
@@ -459,6 +502,7 @@
 
             <!-- Card 4: Penthouse Torre Altagracia -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -483,18 +527,20 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_4"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
-                            app:cardBackgroundColor="#F39461"
+                            app:cardBackgroundColor="#BA1A1A"
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_4"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
                                 android:paddingVertical="4dp"
-                                android:text="En Revisión"
+                                android:text="Pausado"
                                 android:textColor="#FFFFFF"
                                 android:textSize="12sp"
                                 android:textStyle="bold" />
@@ -576,6 +622,7 @@
 
             <!-- Card 5: Casa Moderna Santa Elena -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_5"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -600,6 +647,7 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_5"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
@@ -607,6 +655,7 @@
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_5"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
@@ -693,6 +742,7 @@
 
             <!-- Card 6: Terreno Campestre San José -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_propiedad_6"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -717,6 +767,7 @@
                             android:background="@color/colorSurfaceVariant" />
                         
                         <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_badge_propiedad_6"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="12dp"
@@ -724,11 +775,12 @@
                             app:cardCornerRadius="8dp"
                             app:strokeWidth="0dp">
                             <TextView
+                                android:id="@+id/tv_badge_propiedad_6"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:paddingHorizontal="10dp"
                                 android:paddingVertical="4dp"
-                                android:text="Borrador"
+                                android:text="Finalizado"
                                 android:textColor="#FFFFFF"
                                 android:textSize="12sp"
                                 android:textStyle="bold" />
@@ -807,6 +859,55 @@
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- Estado Vacío cuando ningún resultado coincide con los filtros -->
+            <LinearLayout
+                android:id="@+id/layout_empty_propiedades"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_propiedades"
+                    app:tint="@color/colorOutline"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No se encontraron propiedades"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Intenta ajustar o restablecer los filtros para ver las publicaciones disponibles."
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_empty_reset_filtros"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Restablecer Filtros"
+                    android:textColor="@color/colorPrimary"
+                    app:strokeColor="@color/colorPrimary"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
 
 
             <!-- Pagination Bar: < [1] [2] [3] [4] > -->
