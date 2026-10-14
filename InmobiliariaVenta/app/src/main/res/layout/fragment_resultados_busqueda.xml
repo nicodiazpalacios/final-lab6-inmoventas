@@ -5,12 +5,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorSurface"
-    android:fitsSystemWindows="true">
+    android:background="@color/colorSurface">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
         
         <LinearLayout
             android:layout_width="match_parent"

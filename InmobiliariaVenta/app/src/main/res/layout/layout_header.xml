@@ -6,8 +6,7 @@
     android:layout_height="wrap_content"
     android:background="@color/colorSurfaceContainerLowest"
     app:elevation="0dp"
-    app:liftOnScroll="false"
-    android:fitsSystemWindows="true">
+    app:liftOnScroll="false">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"

@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
 import com.google.android.material.button.MaterialButton;
@@ -80,7 +81,7 @@ public class AdminContratosFragment extends Fragment {
         fabNuevoContrato = view.findViewById(R.id.fab_nuevo_contrato);
         if (fabNuevoContrato != null) {
             fabNuevoContrato.setOnClickListener(v -> 
-                Toast.makeText(requireContext(), "Crear nuevo contrato", Toast.LENGTH_SHORT).show()
+                Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato)
             );
         }
 

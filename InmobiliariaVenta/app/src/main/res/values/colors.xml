@@ -26,4 +26,8 @@
     <color name="colorOnPrimaryFixed">#00164E</color>
     <color name="colorSecondaryFixedDim">#4EDEA3</color>
     <color name="colorOnPrimaryContainer">#90A8FF</color>
+    <color name="colorSecondary">#006C49</color>
+    <color name="colorSecondaryFixed">#6FFBBE</color>
+    <color name="colorOnSecondaryFixed">#002113</color>
+    <color name="colorPrimaryFixedDim">#B6C4FF</color>
 </resources>
