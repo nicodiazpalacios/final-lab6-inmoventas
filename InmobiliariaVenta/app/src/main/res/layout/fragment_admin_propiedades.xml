@@ -12,14 +12,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp">
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingStart="24dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="16dp">
 
             <!-- Header -->
             <TextView
@@ -338,59 +340,621 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
             
-            <!-- Pagination Mock Fixed -->
+            <!-- Card 3: Villa Los Laureles -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@color/colorSurfaceVariant" />
+                        
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="12dp"
+                            app:cardBackgroundColor="#006C49"
+                            app:cardCornerRadius="8dp"
+                            app:strokeWidth="0dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Publicado"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/switch_3"
+                                android:layout_centerVertical="true"
+                                android:text="Villa Los Laureles"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switch_3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:checked="true" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Santa Elena, Antiguo Cuscatlán"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$890,000"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_modificar_3"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:text="Modificar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="@color/colorPrimary" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_borrar_3"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="Borrar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 4: Penthouse Torre Altagracia -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@color/colorSurfaceVariant" />
+                        
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="12dp"
+                            app:cardBackgroundColor="#F39461"
+                            app:cardCornerRadius="8dp"
+                            app:strokeWidth="0dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="En Revisión"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/switch_4"
+                                android:layout_centerVertical="true"
+                                android:text="Penthouse Torre Altagracia"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switch_4"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:checked="false" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="San Benito, San Salvador"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$1,750,000"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_modificar_4"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:text="Modificar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="@color/colorPrimary" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_borrar_4"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="Borrar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 5: Casa Moderna Santa Elena -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@color/colorSurfaceVariant" />
+                        
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="12dp"
+                            app:cardBackgroundColor="#006C49"
+                            app:cardCornerRadius="8dp"
+                            app:strokeWidth="0dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Publicado"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/switch_5"
+                                android:layout_centerVertical="true"
+                                android:text="Casa Moderna Santa Elena"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switch_5"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:checked="true" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Residencial Arcos, La Libertad"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$620,000"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_modificar_5"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:text="Modificar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="@color/colorPrimary" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_borrar_5"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="Borrar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 6: Terreno Campestre San José -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@color/colorSurfaceVariant" />
+                        
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="12dp"
+                            app:cardBackgroundColor="#49454F"
+                            app:cardCornerRadius="8dp"
+                            app:strokeWidth="0dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Borrador"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/switch_6"
+                                android:layout_centerVertical="true"
+                                android:text="Terreno Campestre San José"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switch_6"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:checked="false" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Planes de Renderos, San Salvador"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$310,000"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_modificar_6"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                android:text="Modificar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="@color/colorPrimary" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_borrar_6"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="Borrar"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- Pagination Bar: < [1] [2] [3] [4] > -->
             <LinearLayout
+                android:id="@+id/layout_pagination"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
                 android:gravity="center">
-                
+
+                <!-- Previous Page Button (<) -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_page_prev"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                    app:cardCornerRadius="8dp"
+                    app:strokeColor="@color/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <TextView
+                        android:id="@+id/tv_page_prev"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="&lt;"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Page Slot 1 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_page_1"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:cardBackgroundColor="@color/colorPrimary"
                     app:cardCornerRadius="8dp"
                     app:strokeWidth="0dp">
+
                     <TextView
+                        android:id="@+id/tv_page_1"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:text="1"
                         android:textColor="@color/colorOnPrimary"
-                        android:gravity="center"
-                        android:textStyle="bold" />
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
                 </com.google.android.material.card.MaterialCardView>
-                
+
+                <!-- Page Slot 2 -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_page_2"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
                     app:cardCornerRadius="8dp"
                     app:strokeColor="@color/colorOutlineVariant"
                     app:strokeWidth="1dp">
+
                     <TextView
+                        android:id="@+id/tv_page_2"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:text="2"
                         android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="14sp"
                         android:gravity="center" />
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Page Slot 3 -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_page_3"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
                     app:cardCornerRadius="8dp"
                     app:strokeColor="@color/colorOutlineVariant"
                     app:strokeWidth="1dp">
+
                     <TextView
+                        android:id="@+id/tv_page_3"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:text="3"
                         android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Page Slot 4 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_page_4"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                    app:cardCornerRadius="8dp"
+                    app:strokeColor="@color/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <TextView
+                        android:id="@+id/tv_page_4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="4"
+                        android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Next Page Button (>) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_page_next"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                    app:cardCornerRadius="8dp"
+                    app:strokeColor="@color/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <TextView
+                        android:id="@+id/tv_page_next"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="&gt;"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
                         android:gravity="center" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

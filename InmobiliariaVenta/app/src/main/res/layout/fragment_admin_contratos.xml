@@ -12,22 +12,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp">
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingStart="24dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="16dp">
 
-            <!-- Title & Subtitle Header -->
+            <!-- Header -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Gestionar Contratos"
+                android:text="Gestión de Contratos"
                 android:textColor="@color/colorPrimary"
-                android:textSize="32sp"
+                android:textSize="28sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -39,28 +41,76 @@
                 android:textColor="@color/colorOnSurfaceVariant"
                 android:textSize="16sp" />
 
-            <!-- Search Bar -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_buscar_contrato"
+            <!-- Search and Filter Bar Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:startIconDrawable="@drawable/ic_search"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeColor="@color/colorPrimary"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/colorOutlineVariant"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="24dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_buscar_contrato"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Buscar por cliente o propiedad..."
-                    android:inputType="text" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_buscar_contrato"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:startIconDrawable="@android:drawable/ic_menu_search"
+                        app:boxBackgroundMode="outline"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxStrokeColor="@color/colorOutlineVariant"
+                        app:hintEnabled="false">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_buscar_contrato"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Buscar por cliente o propiedad..."
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_filter_status"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="4dp"
+                            android:text="FILTROS"
+                            app:strokeColor="@color/colorOutlineVariant"
+                            android:textColor="@color/colorOnSurface" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_sort_contracts"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:text="ORDEN"
+                            app:strokeColor="@color/colorOutlineVariant"
+                            android:textColor="@color/colorOnSurface" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Contracts List Container -->
             <LinearLayout
@@ -69,7 +119,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Contract Card 1: Juan Pérez -->
+                <!-- Card 1: Juan Pérez (Activo) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_contrato_1"
                     android:layout_width="match_parent"
@@ -85,107 +135,188 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="16dp">
 
-                        <!-- Card Top Bar: Icon & Status -->
+                        <!-- Top Row: Icon + Client + Status Badge -->
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp">
+                            android:layout_marginBottom="12dp">
 
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/badge_wrapper_1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    app:cardBackgroundColor="@color/colorPrimaryFixed"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeWidth="0dp">
+
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_contratos"
+                                        app:tint="@color/colorPrimary" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_cliente_1"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Juan Pérez"
+                                        android:textColor="@color/colorPrimary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <ImageView
+                                            android:layout_width="14dp"
+                                            android:layout_height="14dp"
+                                            android:src="@drawable/ic_location_on"
+                                            app:tint="@color/colorOnSurfaceVariant" />
+
+                                        <TextView
+                                            android:id="@+id/tv_propiedad_1"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:text="Skyline Luxury Residences"
+                                            android:textColor="@color/colorOnSurfaceVariant"
+                                            android:textSize="13sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Badge: Activo -->
                             <com.google.android.material.card.MaterialCardView
-                                android:id="@+id/icon_wrapper_1"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                app:cardBackgroundColor="@color/colorPrimaryFixed"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="0dp"
-                                app:strokeWidth="0dp">
-
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_contratos"
-                                    app:tint="@color/colorOnPrimaryFixed" />
-                            </com.google.android.material.card.MaterialCardView>
-
-                            <TextView
+                                android:id="@+id/badge_wrapper_1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:background="@drawable/tag_background"
-                                android:backgroundTint="@color/colorSecondaryContainer"
-                                android:paddingHorizontal="12dp"
-                                android:paddingVertical="4dp"
-                                android:text="Activo"
-                                android:textColor="@color/colorOnSecondaryContainer"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                app:cardBackgroundColor="#006C49"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="0dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Activo"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </com.google.android.material.card.MaterialCardView>
                         </RelativeLayout>
 
-                        <!-- Client Name -->
-                        <TextView
-                            android:id="@+id/tv_cliente_1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Juan Pérez"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="10dp"
+                            android:background="@color/colorOutlineVariant" />
 
-                        <!-- Property Location -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:layout_marginBottom="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/ic_location_on"
-                                app:tint="@color/colorOnSurfaceVariant" />
-
-                            <TextView
-                                android:id="@+id/tv_propiedad_1"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="Skyline Luxury Residences"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Monto Total Box -->
+                        <!-- Details Grid -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:background="@drawable/bg_rounded_corner"
-                            android:backgroundTint="@color/colorSurfaceContainerLow"
-                            android:orientation="vertical"
-                            android:padding="12dp">
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="MONTO TOTAL"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="MONTO TOTAL"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="$ 150,000"
+                                    android:textColor="@color/colorPrimary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="$ 150,000"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="VENCIMIENTO"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="15 Ene 2026"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="PLAN"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="24 Cuotas"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
                         <!-- Action Buttons -->
@@ -197,36 +328,29 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_modificar_1"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
                                 android:text="Modificar"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorOnPrimary"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
+                                app:cornerRadius="12dp"
                                 app:backgroundTint="@color/colorPrimary"
-                                app:cornerRadius="8dp" />
+                                android:textColor="@color/colorOnPrimary" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_baja_1"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginStart="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Dar de Baja"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorError"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                app:cornerRadius="8dp"
-                                app:strokeColor="@color/colorError" />
+                                android:layout_marginStart="8dp"
+                                android:text="Dar de baja"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Contract Card 2: Elena Rodríguez -->
+                <!-- Card 2: Elena Rodríguez (Activo) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_contrato_2"
                     android:layout_width="match_parent"
@@ -242,107 +366,188 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="16dp">
 
-                        <!-- Card Top Bar: Icon & Status -->
+                        <!-- Top Row: Icon + Client + Status Badge -->
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp">
+                            android:layout_marginBottom="12dp">
 
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/badge_wrapper_2"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    app:cardBackgroundColor="@color/colorPrimaryFixed"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeWidth="0dp">
+
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_contratos"
+                                        app:tint="@color/colorPrimary" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_cliente_2"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Elena Rodríguez"
+                                        android:textColor="@color/colorPrimary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <ImageView
+                                            android:layout_width="14dp"
+                                            android:layout_height="14dp"
+                                            android:src="@drawable/ic_location_on"
+                                            app:tint="@color/colorOnSurfaceVariant" />
+
+                                        <TextView
+                                            android:id="@+id/tv_propiedad_2"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:text="Villa Bellavista"
+                                            android:textColor="@color/colorOnSurfaceVariant"
+                                            android:textSize="13sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Badge: Activo -->
                             <com.google.android.material.card.MaterialCardView
-                                android:id="@+id/icon_wrapper_2"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                app:cardBackgroundColor="@color/colorPrimaryFixed"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="0dp"
-                                app:strokeWidth="0dp">
-
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_contratos"
-                                    app:tint="@color/colorOnPrimaryFixed" />
-                            </com.google.android.material.card.MaterialCardView>
-
-                            <TextView
+                                android:id="@+id/badge_wrapper_2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:background="@drawable/tag_background"
-                                android:backgroundTint="@color/colorTertiaryFixed"
-                                android:paddingHorizontal="12dp"
-                                android:paddingVertical="4dp"
-                                android:text="Pendiente"
-                                android:textColor="@color/colorOnTertiaryFixedVariant"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                app:cardBackgroundColor="#006C49"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="0dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Activo"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </com.google.android.material.card.MaterialCardView>
                         </RelativeLayout>
 
-                        <!-- Client Name -->
-                        <TextView
-                            android:id="@+id/tv_cliente_2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Elena Rodríguez"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="10dp"
+                            android:background="@color/colorOutlineVariant" />
 
-                        <!-- Property Location -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:layout_marginBottom="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/ic_location_on"
-                                app:tint="@color/colorOnSurfaceVariant" />
-
-                            <TextView
-                                android:id="@+id/tv_propiedad_2"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="Villa del Mar Estates"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Monto Total Box -->
+                        <!-- Details Grid -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:background="@drawable/bg_rounded_corner"
-                            android:backgroundTint="@color/colorSurfaceContainerLow"
-                            android:orientation="vertical"
-                            android:padding="12dp">
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="MONTO TOTAL"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="MONTO TOTAL"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="$ 320,000"
+                                    android:textColor="@color/colorPrimary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="$ 285,500"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="VENCIMIENTO"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="01 Mar 2027"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="PLAN"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="36 Cuotas"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
                         <!-- Action Buttons -->
@@ -354,36 +559,29 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_modificar_2"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
                                 android:text="Modificar"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorOnPrimary"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
+                                app:cornerRadius="12dp"
                                 app:backgroundTint="@color/colorPrimary"
-                                app:cornerRadius="8dp" />
+                                android:textColor="@color/colorOnPrimary" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_baja_2"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginStart="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Dar de Baja"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorError"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                app:cornerRadius="8dp"
-                                app:strokeColor="@color/colorError" />
+                                android:layout_marginStart="8dp"
+                                android:text="Dar de baja"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Contract Card 3: Roberto Gómez -->
+                <!-- Card 3: Roberto Gómez (Pendiente) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_contrato_3"
                     android:layout_width="match_parent"
@@ -399,107 +597,188 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="16dp">
 
-                        <!-- Card Top Bar: Icon & Status -->
+                        <!-- Top Row: Icon + Client + Status Badge -->
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp">
+                            android:layout_marginBottom="12dp">
 
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/badge_wrapper_3"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    app:cardBackgroundColor="@color/colorPrimaryFixed"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeWidth="0dp">
+
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_contratos"
+                                        app:tint="@color/colorPrimary" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_cliente_3"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Roberto Gómez"
+                                        android:textColor="@color/colorPrimary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <ImageView
+                                            android:layout_width="14dp"
+                                            android:layout_height="14dp"
+                                            android:src="@drawable/ic_location_on"
+                                            app:tint="@color/colorOnSurfaceVariant" />
+
+                                        <TextView
+                                            android:id="@+id/tv_propiedad_3"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:text="Green Valley House"
+                                            android:textColor="@color/colorOnSurfaceVariant"
+                                            android:textSize="13sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Badge: Pendiente -->
                             <com.google.android.material.card.MaterialCardView
-                                android:id="@+id/icon_wrapper_3"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                app:cardBackgroundColor="@color/colorPrimaryFixed"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="0dp"
-                                app:strokeWidth="0dp">
-
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_contratos"
-                                    app:tint="@color/colorOnPrimaryFixed" />
-                            </com.google.android.material.card.MaterialCardView>
-
-                            <TextView
+                                android:id="@+id/badge_wrapper_3"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:background="@drawable/tag_background"
-                                android:backgroundTint="@color/colorSecondaryContainer"
-                                android:paddingHorizontal="12dp"
-                                android:paddingVertical="4dp"
-                                android:text="Activo"
-                                android:textColor="@color/colorOnSecondaryContainer"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                app:cardBackgroundColor="#BA8400"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="0dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Pendiente"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </com.google.android.material.card.MaterialCardView>
                         </RelativeLayout>
 
-                        <!-- Client Name -->
-                        <TextView
-                            android:id="@+id/tv_cliente_3"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Roberto Gómez"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="10dp"
+                            android:background="@color/colorOutlineVariant" />
 
-                        <!-- Property Location -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:layout_marginBottom="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/ic_location_on"
-                                app:tint="@color/colorOnSurfaceVariant" />
-
-                            <TextView
-                                android:id="@+id/tv_propiedad_3"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="Penthouse Central Park"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Monto Total Box -->
+                        <!-- Details Grid -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:background="@drawable/bg_rounded_corner"
-                            android:backgroundTint="@color/colorSurfaceContainerLow"
-                            android:orientation="vertical"
-                            android:padding="12dp">
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="MONTO TOTAL"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="MONTO TOTAL"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="$ 85,000"
+                                    android:textColor="@color/colorPrimary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="$ 420,000"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="VENCIMIENTO"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="10 Feb 2025"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="PLAN"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="12 Cuotas"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
                         <!-- Action Buttons -->
@@ -511,41 +790,34 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_modificar_3"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
                                 android:text="Modificar"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorOnPrimary"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
+                                app:cornerRadius="12dp"
                                 app:backgroundTint="@color/colorPrimary"
-                                app:cornerRadius="8dp" />
+                                android:textColor="@color/colorOnPrimary" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_baja_3"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginStart="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Dar de Baja"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorError"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                app:cornerRadius="8dp"
-                                app:strokeColor="@color/colorError" />
+                                android:layout_marginStart="8dp"
+                                android:text="Dar de baja"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Contract Card 4: Ana Martínez -->
+                <!-- Card 4: Ana Martínez (Finalizado) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_contrato_4"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="16dp"
                     app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="2dp"
@@ -556,107 +828,188 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="16dp">
 
-                        <!-- Card Top Bar: Icon & Status -->
+                        <!-- Top Row: Icon + Client + Status Badge -->
                         <RelativeLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp">
+                            android:layout_marginBottom="12dp">
 
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_toStartOf="@+id/badge_wrapper_4"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    app:cardBackgroundColor="@color/colorPrimaryFixed"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp"
+                                    app:strokeWidth="0dp">
+
+                                    <ImageView
+                                        android:layout_width="22dp"
+                                        android:layout_height="22dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_contratos"
+                                        app:tint="@color/colorPrimary" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_cliente_4"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Ana Martínez"
+                                        android:textColor="@color/colorPrimary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <ImageView
+                                            android:layout_width="14dp"
+                                            android:layout_height="14dp"
+                                            android:src="@drawable/ic_location_on"
+                                            app:tint="@color/colorOnSurfaceVariant" />
+
+                                        <TextView
+                                            android:id="@+id/tv_propiedad_4"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="4dp"
+                                            android:text="Urban Loft Palermo"
+                                            android:textColor="@color/colorOnSurfaceVariant"
+                                            android:textSize="13sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Badge: Finalizado -->
                             <com.google.android.material.card.MaterialCardView
-                                android:id="@+id/icon_wrapper_4"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                app:cardBackgroundColor="@color/colorPrimaryFixed"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="0dp"
-                                app:strokeWidth="0dp">
-
-                                <ImageView
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_contratos"
-                                    app:tint="@color/colorOnPrimaryFixed" />
-                            </com.google.android.material.card.MaterialCardView>
-
-                            <TextView
+                                android:id="@+id/badge_wrapper_4"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:background="@drawable/tag_background"
-                                android:backgroundTint="@color/colorSecondaryContainer"
-                                android:paddingHorizontal="12dp"
-                                android:paddingVertical="4dp"
-                                android:text="Activo"
-                                android:textColor="@color/colorOnSecondaryContainer"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                app:cardBackgroundColor="#73777F"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:strokeWidth="0dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Finalizado"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </com.google.android.material.card.MaterialCardView>
                         </RelativeLayout>
 
-                        <!-- Client Name -->
-                        <TextView
-                            android:id="@+id/tv_cliente_4"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ana Martínez"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="10dp"
+                            android:background="@color/colorOutlineVariant" />
 
-                        <!-- Property Location -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:layout_marginBottom="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/ic_location_on"
-                                app:tint="@color/colorOnSurfaceVariant" />
-
-                            <TextView
-                                android:id="@+id/tv_propiedad_4"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="The Diamond Tower"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Monto Total Box -->
+                        <!-- Details Grid -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:background="@drawable/bg_rounded_corner"
-                            android:backgroundTint="@color/colorSurfaceContainerLow"
-                            android:orientation="vertical"
-                            android:padding="12dp">
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="MONTO TOTAL"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="MONTO TOTAL"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="$ 98,000"
+                                    android:textColor="@color/colorPrimary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="$ 98,000"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="VENCIMIENTO"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="05 Ene 2024"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="PLAN"
+                                    android:textColor="@color/colorOnSurfaceVariant"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="12 Cuotas"
+                                    android:textColor="@color/colorOnSurface"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
                         </LinearLayout>
 
                         <!-- Action Buttons -->
@@ -668,178 +1021,178 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_modificar_4"
                                 android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
                                 android:text="Modificar"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorOnPrimary"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
+                                app:cornerRadius="12dp"
                                 app:backgroundTint="@color/colorPrimary"
-                                app:cornerRadius="8dp" />
+                                android:textColor="@color/colorOnPrimary" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_baja_4"
-                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                android:layout_width="0dp"
-                                android:layout_height="48dp"
-                                android:layout_marginStart="6dp"
-                                android:layout_weight="1"
-                                android:text="Dar de Baja"
-                                android:textAllCaps="false"
-                                android:textColor="@color/colorError"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                app:cornerRadius="8dp"
-                                app:strokeColor="@color/colorError" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Stats/Insight Card (Bento Style Variation) -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_resumen_contratos"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/colorPrimaryContainer"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="24dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Resumen de Contratos"
-                            android:textColor="@color/colorOnPrimary"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="20dp"
-                            android:text="Tienes 12 contratos activos este mes, representando un incremento del 15% respecto al trimestre anterior."
-                            android:textColor="#DCE1FF"
-                            android:textSize="14sp"
-                            android:lineSpacingExtra="2dp" />
-
-                        <!-- Stats & Chart Container -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:baselineAligned="false">
-
-                            <!-- Values Column -->
-                            <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <!-- Stat 1: Total Valor -->
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="TOTAL VALOR"
-                                    android:textColor="#90A8FF"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:layout_marginBottom="16dp"
-                                    android:text="$2.4M"
-                                    android:textColor="@color/colorOnPrimary"
-                                    android:textSize="24sp"
-                                    android:textStyle="bold" />
-
-                                <!-- Stat 2: Comisiones -->
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="COMISIONES"
-                                    android:textColor="#90A8FF"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="$142K"
-                                    android:textColor="@color/colorOnPrimary"
-                                    android:textSize="24sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <!-- Minimalist Visual Graph Placeholder -->
-                            <com.google.android.material.card.MaterialCardView
-                                android:layout_width="120dp"
-                                android:layout_height="110dp"
-                                app:cardBackgroundColor="#26FFFFFF"
-                                app:cardCornerRadius="12dp"
-                                app:cardElevation="0dp"
-                                app:strokeColor="#33FFFFFF"
-                                app:strokeWidth="1dp">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:gravity="bottom"
-                                    android:orientation="horizontal"
-                                    android:padding="12dp">
-
-                                    <!-- Bar 1: 40% -->
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="35dp"
-                                        android:layout_marginEnd="4dp"
-                                        android:layout_weight="1"
-                                        android:background="@drawable/bg_rounded_corner"
-                                        android:backgroundTint="@color/colorSecondaryFixedDim" />
-
-                                    <!-- Bar 2: 65% -->
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="55dp"
-                                        android:layout_marginEnd="4dp"
-                                        android:layout_weight="1"
-                                        android:background="@drawable/bg_rounded_corner"
-                                        android:backgroundTint="@color/colorSecondaryFixedDim" />
-
-                                    <!-- Bar 3: 50% -->
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="42dp"
-                                        android:layout_marginEnd="4dp"
-                                        android:layout_weight="1"
-                                        android:background="@drawable/bg_rounded_corner"
-                                        android:backgroundTint="@color/colorSecondaryFixedDim" />
-
-                                    <!-- Bar 4: 90% -->
-                                    <View
-                                        android:layout_width="0dp"
-                                        android:layout_height="75dp"
-                                        android:layout_weight="1"
-                                        android:background="@drawable/bg_rounded_corner"
-                                        android:backgroundTint="@color/colorSecondaryContainer" />
-                                </LinearLayout>
-                            </com.google.android.material.card.MaterialCardView>
+                                android:layout_marginStart="8dp"
+                                android:text="Dar de baja"
+                                app:cornerRadius="12dp"
+                                app:backgroundTint="#FFDAD6"
+                                android:textColor="#BA1A1A" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+
+                <!-- Pagination Bar: < [1] [2] [3] [4] > -->
+                <LinearLayout
+                    android:id="@+id/layout_pagination"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center">
+
+                    <!-- Previous Page Button (<) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_page_prev"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_prev"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="&lt;"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Page Slot 1 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_page_1"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorPrimary"
+                        app:cardCornerRadius="8dp"
+                        app:strokeWidth="0dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_1"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="1"
+                            android:textColor="@color/colorOnPrimary"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Page Slot 2 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_page_2"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="2"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Page Slot 3 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_page_3"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_3"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="3"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Page Slot 4 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_page_4"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_4"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="4"
+                            android:textColor="@color/colorOnSurfaceVariant"
+                            android:textSize="14sp"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Next Page Button (>) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_page_next"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:id="@+id/tv_page_next"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="&gt;"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
 
             </LinearLayout>
         </LinearLayout>
@@ -853,7 +1206,7 @@
         android:layout_margin="16dp"
         android:layout_gravity="bottom|end"
         android:contentDescription="Nuevo Contrato"
-        android:src="@android:drawable/ic_input_add"
+        android:src="@drawable/ic_add"
         app:backgroundTint="@color/colorPrimary"
         app:tint="@color/colorOnPrimary" />
 
