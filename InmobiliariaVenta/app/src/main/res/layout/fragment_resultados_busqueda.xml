@@ -45,13 +45,28 @@
                     android:hint="Buscar barrios o direcciones"
                     android:textSize="14sp"
                     android:textColor="@color/colorOnSurface"
-                    android:textColorHint="@color/colorOnSurfaceVariant" />
+                    android:textColorHint="@color/colorOnSurfaceVariant"
+                    android:gravity="center_vertical"
+                    android:inputType="text"
+                    android:singleLine="true"
+                    android:maxLines="1"
+                    android:imeOptions="actionSearch" />
+                <ImageView
+                    android:id="@+id/btnClearSearch"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:padding="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="@color/colorOnSurfaceVariant" />
                 <ImageView
                     android:id="@+id/btnFiltrosTune"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:padding="2dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_tune"
                     app:tint="@color/colorOnSurfaceVariant" />

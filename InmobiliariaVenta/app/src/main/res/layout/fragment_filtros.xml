@@ -91,6 +91,7 @@
                     app:tint="@color/colorOnSurfaceVariant" />
                     
                 <TextView
+                    android:id="@+id/tvFiltrosSearchHint"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -99,6 +100,15 @@
                     android:textSize="14sp"
                     android:textColor="@color/colorOnSurfaceVariant" />
             </LinearLayout>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupUbicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="4dp" />
 
             <!-- Separador -->
             <View
@@ -122,8 +132,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:singleSelection="true"
-                app:selectionRequired="true"
-                app:checkedButton="@+id/btnCasa">
+                app:selectionRequired="false">
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCasa"
                     android:layout_width="0dp"
@@ -407,7 +416,7 @@
             android:id="@+id/btnAplicarFiltros"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Se encontraron 12 propiedades"
+            android:text="Ver propiedades"
             app:cornerRadius="12dp"
             android:textColor="@android:color/white"
             app:backgroundTint="@color/colorPrimary"/>

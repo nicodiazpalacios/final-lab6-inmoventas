@@ -63,29 +63,72 @@
                 android:textSize="16sp"
                 android:textColor="@color/colorOnSurface"
                 android:textColorHint="@color/colorOnSurfaceVariant"
+                android:gravity="center_vertical"
                 android:inputType="text"
+                android:singleLine="true"
                 android:imeOptions="actionSearch"
                 android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/btnClearSearch"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="4dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="@color/colorOnSurfaceVariant" />
 
             <ImageView
                 android:id="@+id/btnFiltrosTune"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:padding="2dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_tune"
                 app:tint="@color/colorOnSurfaceVariant" />
         </LinearLayout>
 
+        <HorizontalScrollView
+            android:id="@+id/scrollSelectedChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/selectedChipsGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:chipSpacingHorizontal="8dp" />
+        </HorizontalScrollView>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/suggestionsRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="16dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
             android:clipToPadding="false"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/item_location_suggestion" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirmarUbicaciones"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="12dp"
+            android:text="Listo"
+            android:textColor="@android:color/white"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/colorPrimary"
+            android:visibility="gone" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

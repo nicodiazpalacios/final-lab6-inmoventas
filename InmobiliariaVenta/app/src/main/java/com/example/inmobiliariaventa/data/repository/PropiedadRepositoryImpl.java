@@ -44,20 +44,20 @@ public class PropiedadRepositoryImpl implements PropiedadRepository {
         SupabaseClient.obtenerPropiedades(new SupabaseClient.SupabaseCallback<List<Propiedad>>() {
             @Override
             public void onSuccess(List<Propiedad> lista) {
-                if (lista != null && !lista.isEmpty()) {
-                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    if (lista != null) {
                         for (Propiedad p : lista) {
                             p.estadoSincronizacion = "SINCRONIZADO";
                         }
-                        propiedadDao.insertarTodas(lista);
-                        Log.d(TAG, "Sincronizadas " + lista.size() + " propiedades desde Supabase a Room.");
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
-                    });
-                } else if (onComplete != null) {
-                    onComplete.run();
-                }
+                        propiedadDao.sincronizarConServidor(lista);
+                    } else {
+                        propiedadDao.sincronizarConServidor(new java.util.ArrayList<>());
+                    }
+                    Log.d(TAG, "Sincronizadas " + (lista != null ? lista.size() : 0) + " propiedades desde Supabase a Room.");
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                });
             }
 
             @Override

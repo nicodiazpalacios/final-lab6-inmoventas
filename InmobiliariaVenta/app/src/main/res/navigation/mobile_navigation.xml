@@ -30,13 +30,43 @@
         android:id="@+id/nav_search_location"
         android:name="com.example.inmobiliariaventa.ui.home.SearchLocationFragment"
         android:label="Ubicación"
-        tools:layout="@layout/fragment_search_location" />
+        tools:layout="@layout/fragment_search_location">
+        <action
+            android:id="@+id/action_nav_search_location_to_nav_resultados_busqueda"
+            app:destination="@id/nav_resultados_busqueda"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_search_location_to_nav_buscar"
+            app:destination="@id/nav_buscar"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_buscar"
         android:name="com.example.inmobiliariaventa.ui.home.FiltrosFragment"
         android:label="Filtros"
-        tools:layout="@layout/fragment_filtros" />
+        tools:layout="@layout/fragment_filtros">
+        <action
+            android:id="@+id/action_nav_buscar_to_nav_search_location"
+            app:destination="@id/nav_search_location"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_buscar_to_nav_resultados_busqueda"
+            app:destination="@id/nav_resultados_busqueda"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_perfil"
@@ -60,7 +90,15 @@
         android:id="@+id/nav_resultados_busqueda"
         android:name="com.example.inmobiliariaventa.ui.list.ResultadosBusquedaFragment"
         android:label="Resultados de Búsqueda"
-        tools:layout="@layout/fragment_resultados_busqueda" />
+        tools:layout="@layout/fragment_resultados_busqueda">
+        <action
+            android:id="@+id/action_nav_resultados_busqueda_to_nav_buscar"
+            app:destination="@id/nav_buscar"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_login"

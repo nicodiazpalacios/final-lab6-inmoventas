@@ -5,6 +5,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Update;
 import androidx.room.Delete;
+import androidx.room.Transaction;
 import androidx.room.Query;
 import androidx.lifecycle.LiveData;
 import java.util.List;
@@ -27,6 +28,17 @@ public interface PropiedadDao {
 
     @Query("DELETE FROM propiedades WHERE id = :id")
     void eliminarPorId(String id);
+
+    @Query("DELETE FROM propiedades WHERE estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR'")
+    void eliminarSincronizadas();
+
+    @Transaction
+    default void sincronizarConServidor(List<Propiedad> listaServidor) {
+        eliminarSincronizadas();
+        if (listaServidor != null && !listaServidor.isEmpty()) {
+            insertarTodas(listaServidor);
+        }
+    }
 
     @Query("SELECT * FROM propiedades ORDER BY created_at DESC, id DESC")
     LiveData<List<Propiedad>> obtenerTodas();

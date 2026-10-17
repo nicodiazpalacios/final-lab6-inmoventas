@@ -1,11 +1,16 @@
 package com.example.inmobiliariaventa.ui.list;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -53,6 +58,19 @@ public class ResultadosBusquedaFragment extends Fragment {
     private String currentSearchQuery = "";
     private boolean hasSeededDefaults = false;
 
+    // Filtros avanzados recibidos desde FiltrosFragment
+    private String filterUbicacion = "";
+    private List<String> filterUbicacionesList = new ArrayList<>();
+    private double filterPrecioDesde = -1;
+    private double filterPrecioHasta = -1;
+    private int filterAmbientes = -1;
+    private int filterBanos = -1;
+    private boolean filterTieneCochera = false;
+    private boolean filterTienePatio = false;
+    private boolean filterTieneBalcon = false;
+    private boolean filterTieneAscensor = false;
+    private String filterDisposicion = "Cualquiera";
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -84,10 +102,38 @@ public class ResultadosBusquedaFragment extends Fragment {
             btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
         }
 
-        // Ir a Filtros
+        // Ir a Filtros (recordando la ubicación y los filtros actuales)
         if (btnFiltrosTune != null) {
             btnFiltrosTune.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.nav_buscar);
+                Bundle bundle = new Bundle();
+
+                ArrayList<String> locsToPass = new ArrayList<>();
+                if (filterUbicacionesList != null && !filterUbicacionesList.isEmpty()) {
+                    locsToPass.addAll(filterUbicacionesList);
+                } else if (currentSearchQuery != null && !currentSearchQuery.trim().isEmpty()) {
+                    locsToPass.add(currentSearchQuery.trim());
+                } else if (filterUbicacion != null && !filterUbicacion.trim().isEmpty()) {
+                    locsToPass.add(filterUbicacion.trim());
+                }
+
+                bundle.putStringArrayList("selected_locations", locsToPass);
+                bundle.putStringArrayList("filtro_ubicaciones", locsToPass);
+                if (!locsToPass.isEmpty()) {
+                    bundle.putString("filtro_ubicacion", android.text.TextUtils.join(", ", locsToPass));
+                }
+
+                bundle.putString("tipo", selectedTipo);
+                bundle.putDouble("precio_desde", filterPrecioDesde);
+                bundle.putDouble("precio_hasta", filterPrecioHasta);
+                bundle.putInt("ambientes", filterAmbientes);
+                bundle.putInt("banos", filterBanos);
+                bundle.putBoolean("tiene_cochera", filterTieneCochera);
+                bundle.putBoolean("tiene_patio", filterTienePatio);
+                bundle.putBoolean("tiene_balcon", filterTieneBalcon);
+                bundle.putBoolean("tiene_ascensor", filterTieneAscensor);
+                bundle.putString("disposicion", filterDisposicion);
+
+                Navigation.findNavController(v).navigate(R.id.action_nav_resultados_busqueda_to_nav_buscar, bundle);
             });
         }
 
@@ -133,8 +179,53 @@ public class ResultadosBusquedaFragment extends Fragment {
             });
         }
 
+        // Botón limpiar texto del buscador
+        ImageView btnClearSearch = view.findViewById(R.id.btnClearSearch);
+        if (btnClearSearch != null) {
+            btnClearSearch.setOnClickListener(v -> {
+                if (inputBusquedaResultados != null) {
+                    inputBusquedaResultados.setText("");
+                    inputBusquedaResultados.requestFocus();
+                }
+            });
+        }
+
         // Búsqueda en tiempo real por texto
         if (inputBusquedaResultados != null) {
+            // Evitar saltos de línea (filtrar \n y \r)
+            inputBusquedaResultados.setFilters(new InputFilter[] {
+                (source, start, end, dest, dstart, dend) -> {
+                    for (int i = start; i < end; i++) {
+                        if (source.charAt(i) == '\n' || source.charAt(i) == '\r') {
+                            return "";
+                        }
+                    }
+                    return null;
+                }
+            });
+
+            inputBusquedaResultados.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                        actionId == EditorInfo.IME_ACTION_DONE ||
+                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    hideKeyboard(v);
+                    applyFiltersAndSort();
+                    return true;
+                }
+                return false;
+            });
+
+            inputBusquedaResultados.setOnKeyListener((v, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        hideKeyboard(v);
+                        applyFiltersAndSort();
+                    }
+                    return true;
+                }
+                return false;
+            });
+
             inputBusquedaResultados.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -142,6 +233,15 @@ public class ResultadosBusquedaFragment extends Fragment {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     currentSearchQuery = s != null ? s.toString().trim() : "";
+                    if (btnClearSearch != null) {
+                        btnClearSearch.setVisibility(currentSearchQuery.isEmpty() ? View.GONE : View.VISIBLE);
+                    }
+                    if (filterUbicacionesList != null && !filterUbicacionesList.isEmpty()) {
+                        String joined = android.text.TextUtils.join(", ", filterUbicacionesList);
+                        if (!joined.equalsIgnoreCase(currentSearchQuery)) {
+                            filterUbicacionesList.clear();
+                        }
+                    }
                     applyFiltersAndSort();
                 }
 
@@ -155,6 +255,65 @@ public class ResultadosBusquedaFragment extends Fragment {
             loadMoreButton.setOnClickListener(v -> {
                 Toast.makeText(getContext(), "Todas las propiedades ya están cargadas", Toast.LENGTH_SHORT).show();
             });
+        }
+
+        // Leer argumentos iniciales de búsqueda si existen
+        if (getArguments() != null) {
+            String initialQuery = getArguments().getString("query", "");
+            String initialTipo = getArguments().getString("tipo", "");
+
+            ArrayList<String> ubicacionesArg = getArguments().getStringArrayList("filtro_ubicaciones");
+            if (ubicacionesArg == null || ubicacionesArg.isEmpty()) {
+                ubicacionesArg = getArguments().getStringArrayList("selected_locations");
+            }
+            if (ubicacionesArg != null && !ubicacionesArg.isEmpty()) {
+                filterUbicacionesList = new ArrayList<>(ubicacionesArg);
+            }
+
+            filterUbicacion = getArguments().getString("filtro_ubicacion", "");
+            if (filterUbicacion == null) filterUbicacion = "";
+
+            if (filterUbicacionesList.isEmpty() && !filterUbicacion.trim().isEmpty()) {
+                filterUbicacionesList.add(filterUbicacion.trim());
+            }
+
+            filterPrecioDesde = getArguments().getDouble("precio_desde", -1);
+            filterPrecioHasta = getArguments().getDouble("precio_hasta", -1);
+            filterAmbientes = getArguments().getInt("ambientes", -1);
+            filterBanos = getArguments().getInt("banos", -1);
+            filterTieneCochera = getArguments().getBoolean("tiene_cochera", false);
+            filterTienePatio = getArguments().getBoolean("tiene_patio", false);
+            filterTieneBalcon = getArguments().getBoolean("tiene_balcon", false);
+            filterTieneAscensor = getArguments().getBoolean("tiene_ascensor", false);
+            filterDisposicion = getArguments().getString("disposicion", "Cualquiera");
+
+            if (!filterUbicacionesList.isEmpty()) {
+                currentSearchQuery = android.text.TextUtils.join(", ", filterUbicacionesList);
+                if (inputBusquedaResultados != null) {
+                    inputBusquedaResultados.setText(currentSearchQuery);
+                    inputBusquedaResultados.setSelection(currentSearchQuery.length());
+                }
+            } else if (initialQuery != null && !initialQuery.isEmpty()) {
+                currentSearchQuery = initialQuery;
+                filterUbicacionesList.add(initialQuery.trim());
+                if (inputBusquedaResultados != null) {
+                    inputBusquedaResultados.setText(initialQuery);
+                    inputBusquedaResultados.setSelection(initialQuery.length());
+                }
+            } else if (!filterUbicacion.isEmpty()) {
+                currentSearchQuery = filterUbicacion;
+                if (inputBusquedaResultados != null) {
+                    inputBusquedaResultados.setText(filterUbicacion);
+                    inputBusquedaResultados.setSelection(filterUbicacion.length());
+                }
+            }
+
+            if (initialTipo != null && !initialTipo.isEmpty() && !"Todas".equalsIgnoreCase(initialTipo)) {
+                selectedTipo = initialTipo;
+                if (txtTipoPropiedad != null) {
+                    txtTipoPropiedad.setText(initialTipo);
+                }
+            }
         }
 
         // ViewModel y carga de datos reales desde Room / Supabase
@@ -191,12 +350,70 @@ public class ResultadosBusquedaFragment extends Fragment {
                 }
             }
 
-            // Filtro por texto de búsqueda
-            if (!currentSearchQuery.isEmpty()) {
+            // Filtro por precio
+            if (filterPrecioDesde > 0 && prop.precio < filterPrecioDesde) continue;
+            if (filterPrecioHasta > 0 && prop.precio > filterPrecioHasta) continue;
+
+            // Filtro por ambientes
+            if (filterAmbientes > 0) {
+                if (filterAmbientes == 5) {
+                    if (prop.ambientes < 5) continue;
+                } else {
+                    if (prop.ambientes != filterAmbientes) continue;
+                }
+            }
+
+            // Filtro por baños
+            if (filterBanos > 0) {
+                if (filterBanos == 4) {
+                    if (prop.banos < 4) continue;
+                } else {
+                    if (prop.banos != filterBanos) continue;
+                }
+            }
+
+            // Características de Casa
+            if ("Casa".equalsIgnoreCase(selectedTipo) || "Todas".equalsIgnoreCase(selectedTipo)) {
+                if (filterTieneCochera && !prop.tieneCochera) continue;
+                if (filterTienePatio && !prop.tienePatio) continue;
+            }
+
+            // Características de Depto
+            if ("Departamento".equalsIgnoreCase(selectedTipo) || "Todas".equalsIgnoreCase(selectedTipo)) {
+                if (filterTieneBalcon && !prop.tieneBalcon) continue;
+                if (filterTieneAscensor && !prop.tieneAscensor) continue;
+                if (filterDisposicion != null && !"Cualquiera".equalsIgnoreCase(filterDisposicion) && prop.disposicion != null) {
+                    if (!prop.disposicion.name().equalsIgnoreCase(filterDisposicion)) continue;
+                }
+            }
+
+            // Filtro por múltiples ubicaciones seleccionadas
+            if (filterUbicacionesList != null && !filterUbicacionesList.isEmpty()) {
+                boolean matchesAnyLocation = false;
+                for (String loc : filterUbicacionesList) {
+                    String u = loc.toLowerCase(Locale.ROOT).trim();
+                    String ciudad = prop.ciudad != null ? prop.ciudad.toLowerCase(Locale.ROOT) : "";
+                    String prov = prop.estadoProvincia != null ? prop.estadoProvincia.toLowerCase(Locale.ROOT) : "";
+                    String dom = prop.domicilio != null ? prop.domicilio.toLowerCase(Locale.ROOT) : "";
+                    if (ciudad.contains(u) || prov.contains(u) || dom.contains(u)) {
+                        matchesAnyLocation = true;
+                        break;
+                    }
+                }
+                if (!matchesAnyLocation) {
+                    continue;
+                }
+            } else if (!currentSearchQuery.isEmpty()) {
+                // Filtro por texto de búsqueda si no vino lista de ubicaciones o se limpió
                 String query = currentSearchQuery.toLowerCase(Locale.ROOT);
                 boolean matchesDomicilio = prop.domicilio != null && prop.domicilio.toLowerCase(Locale.ROOT).contains(query);
                 boolean matchesDescripcion = prop.descripcion != null && prop.descripcion.toLowerCase(Locale.ROOT).contains(query);
-                if (!matchesDomicilio && !matchesDescripcion) {
+                boolean matchesTitulo = prop.titulo != null && prop.titulo.toLowerCase(Locale.ROOT).contains(query);
+                boolean matchesCiudad = prop.ciudad != null && prop.ciudad.toLowerCase(Locale.ROOT).contains(query);
+                boolean matchesProvincia = prop.estadoProvincia != null && prop.estadoProvincia.toLowerCase(Locale.ROOT).contains(query);
+                boolean matchesTipo = prop.tipoPropiedad != null && prop.tipoPropiedad.name().toLowerCase(Locale.ROOT).contains(query);
+
+                if (!matchesDomicilio && !matchesDescripcion && !matchesTitulo && !matchesCiudad && !matchesProvincia && !matchesTipo) {
                     continue;
                 }
             }
@@ -227,6 +444,15 @@ public class ResultadosBusquedaFragment extends Fragment {
             } else {
                 emptyStateContainer.setVisibility(View.GONE);
                 searchResultsRecyclerView.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    private void hideKeyboard(View view) {
+        if (view != null && isAdded() && getContext() != null) {
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
             }
         }
     }

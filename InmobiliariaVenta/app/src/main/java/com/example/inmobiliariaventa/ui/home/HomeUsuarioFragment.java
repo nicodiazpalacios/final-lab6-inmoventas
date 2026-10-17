@@ -87,7 +87,14 @@ public class HomeUsuarioFragment extends Fragment {
         categorias.add(new CategoriaAdapter.Categoria("Casa", R.drawable.ic_home));
         categorias.add(new CategoriaAdapter.Categoria("Depto", R.drawable.ic_propiedades));
 
-        CategoriaAdapter adapter = new CategoriaAdapter(categorias);
+        CategoriaAdapter adapter = new CategoriaAdapter(categorias, cat -> {
+            Bundle bundle = new Bundle();
+            String tipo = "Casa".equalsIgnoreCase(cat.getNombre()) ? "Casa" : "Departamento";
+            bundle.putString("tipo", tipo);
+            if (getView() != null) {
+                Navigation.findNavController(getView()).navigate(R.id.action_nav_inicio_to_nav_resultados_busqueda, bundle);
+            }
+        });
         categoriesRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         categoriesRecyclerView.setAdapter(adapter);
     }
