@@ -36,6 +36,13 @@ public class AdminHomeFragment extends Fragment {
                 androidx.navigation.Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
             });
         }
+
+        View btnSwitchUserMode = view.findViewById(R.id.btnSwitchUserMode);
+        if (btnSwitchUserMode != null) {
+            btnSwitchUserMode.setOnClickListener(v -> {
+                androidx.navigation.Navigation.findNavController(view).navigate(R.id.nav_inicio);
+            });
+        }
         
         View cardMensajes = view.findViewById(R.id.card_mensajes);
         if (cardMensajes != null) {

@@ -102,6 +102,7 @@
                         app:boxStrokeColor="@color/colorOutlineVariant"
                         android:layout_marginBottom="16dp">
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_titulo_propiedad"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -118,6 +119,7 @@
                         app:boxStrokeColor="@color/colorOutlineVariant"
                         android:layout_marginBottom="16dp">
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_descripcion_propiedad"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="top|start"
@@ -183,6 +185,7 @@
                         app:boxStrokeColor="@color/colorOutlineVariant"
                         android:layout_marginBottom="16dp">
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_precio_propiedad"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="numberDecimal" />
@@ -200,6 +203,7 @@
                         app:boxStrokeColor="@color/colorOutlineVariant"
                         android:layout_marginBottom="16dp">
                         <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_direccion_propiedad"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -223,6 +227,7 @@
                             app:boxStrokeColor="@color/colorOutlineVariant"
                             android:layout_marginEnd="8dp">
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_ciudad_propiedad"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -291,6 +296,7 @@
                             app:boxStrokeColor="@color/colorOutlineVariant"
                             android:layout_marginEnd="4dp">
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_ambientes_propiedad"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:inputType="number" />
@@ -309,6 +315,7 @@
                             app:boxStrokeColor="@color/colorOutlineVariant"
                             android:layout_marginHorizontal="4dp">
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_banos_propiedad"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:inputType="numberDecimal" />
@@ -327,6 +334,7 @@
                             app:boxStrokeColor="@color/colorOutlineVariant"
                             android:layout_marginStart="4dp">
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_superficie_propiedad"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:inputType="numberDecimal" />
@@ -386,6 +394,7 @@
                             android:gravity="center" />
                             
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_seleccionar_fotos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
@@ -403,6 +412,7 @@
 
                     <!-- Action Area -->
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_publicar_propiedad"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Publicar Propiedad"

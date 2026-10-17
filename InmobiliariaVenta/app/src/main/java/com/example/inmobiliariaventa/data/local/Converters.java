@@ -13,7 +13,12 @@ public class Converters {
 
     @TypeConverter
     public TipoPropiedad toTipoPropiedad(String nombre) {
-        return nombre == null ? null : TipoPropiedad.valueOf(nombre);
+        if (nombre == null) return null;
+        try {
+            return TipoPropiedad.valueOf(nombre.toUpperCase().trim());
+        } catch (Exception e) {
+            return TipoPropiedad.CASA;
+        }
     }
 
     @TypeConverter

@@ -38,6 +38,14 @@ public class PropiedadViewModel extends AndroidViewModel {
         repository.delete(propiedad);
     }
 
+    public LiveData<Propiedad> getPropiedadPorId(String id) {
+        return repository.getPropiedadPorId(id);
+    }
+
+    public void sincronizarConNube(Runnable onComplete) {
+        repository.sincronizarConNube(onComplete);
+    }
+
     public java.util.concurrent.CompletableFuture<List<Propiedad>> getPendientesDeSubir() {
         return java.util.concurrent.CompletableFuture.supplyAsync(() -> 
             repository.obtenerPendientesDeSubir(), 

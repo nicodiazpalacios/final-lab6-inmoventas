@@ -52,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
             
             // Interceptar clicks si el usuario no está registrado
             bottomNav.setOnItemSelectedListener(item -> {
-                boolean isUserRegistered = false; // TODO: Cambiar por estado real de autenticación
+                android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                boolean isUserRegistered = prefs.getBoolean("is_user_logged_in", false);
                 int itemId = item.getItemId();
                 
                 if (!isUserRegistered && (itemId == R.id.nav_guardados || itemId == R.id.nav_perfil)) {

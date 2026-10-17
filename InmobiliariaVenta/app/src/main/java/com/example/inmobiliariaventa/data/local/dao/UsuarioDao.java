@@ -2,15 +2,21 @@ package com.example.inmobiliariaventa.data.local.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Update;
 import androidx.room.Delete;
 import androidx.room.Query;
+import androidx.lifecycle.LiveData;
+import java.util.List;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 
 @Dao
 public interface UsuarioDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertar(Usuario usuario);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertarTodas(List<Usuario> usuarios);
 
     @Update
     void actualizar(Usuario usuario);
@@ -19,8 +25,14 @@ public interface UsuarioDao {
     void eliminar(Usuario usuario);
     
     @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
-    androidx.lifecycle.LiveData<Usuario> obtenerPorId(String id);
+    LiveData<Usuario> obtenerPorId(String id);
+
+    @Query("SELECT * FROM usuarios WHERE email = :email LIMIT 1")
+    Usuario obtenerPorEmail(String email);
+
+    @Query("SELECT * FROM usuarios ORDER BY nombre ASC")
+    LiveData<List<Usuario>> obtenerTodos();
 
     @Query("SELECT * FROM usuarios WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
-    java.util.List<Usuario> obtenerPendientesDeSubir();
+    List<Usuario> obtenerPendientesDeSubir();
 }

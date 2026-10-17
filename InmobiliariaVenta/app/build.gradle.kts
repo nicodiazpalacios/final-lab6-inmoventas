@@ -49,4 +49,7 @@ dependencies {
     
     // Gson para TypeConverters
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // OkHttp para llamadas a Supabase
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

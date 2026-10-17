@@ -157,13 +157,13 @@ public class ResultadosBusquedaFragment extends Fragment {
             });
         }
 
-        // ViewModel y carga de datos
+        // ViewModel y carga de datos reales desde Room / Supabase
         propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
         propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
             if (propiedades == null || propiedades.isEmpty()) {
                 if (!hasSeededDefaults) {
                     hasSeededDefaults = true;
-                    seedDefaultProperties();
+                    propiedadViewModel.sincronizarConNube(null);
                 }
             } else {
                 masterList = new ArrayList<>(propiedades);
@@ -172,94 +172,6 @@ public class ResultadosBusquedaFragment extends Fragment {
         });
 
         return view;
-    }
-
-    private void seedDefaultProperties() {
-        List<Propiedad> defaults = createSampleProperties();
-        masterList = new ArrayList<>(defaults);
-        applyFiltersAndSort();
-
-        // Guardar en la base de datos Room para persistencia
-        for (Propiedad p : defaults) {
-            propiedadViewModel.insert(p);
-        }
-    }
-
-    private List<Propiedad> createSampleProperties() {
-        List<Propiedad> lista = new ArrayList<>();
-
-        Propiedad p1 = new Propiedad();
-        p1.id = UUID.randomUUID().toString();
-        p1.precio = 4250000.0;
-        p1.domicilio = "1042 Oceanview Promenade";
-        p1.descripcion = "Santa Monica, CA 90403";
-        p1.ambientes = 5;
-        p1.banos = 6;
-        p1.tipoPropiedad = TipoPropiedad.CASA;
-        p1.tieneCochera = true;
-        p1.tienePatio = true;
-        lista.add(p1);
-
-        Propiedad p2 = new Propiedad();
-        p2.id = UUID.randomUUID().toString();
-        p2.precio = 2895000.0;
-        p2.domicilio = "770 Riverwalk Drive";
-        p2.descripcion = "Austin, TX 78704";
-        p2.ambientes = 4;
-        p2.banos = 3;
-        p2.tipoPropiedad = TipoPropiedad.CASA;
-        p2.tieneCochera = true;
-        lista.add(p2);
-
-        Propiedad p3 = new Propiedad();
-        p3.id = UUID.randomUUID().toString();
-        p3.precio = 1150000.0;
-        p3.domicilio = "Av. del Libertador 4800";
-        p3.descripcion = "Palermo, Buenos Aires";
-        p3.ambientes = 3;
-        p3.banos = 2;
-        p3.tipoPropiedad = TipoPropiedad.DEPARTAMENTO;
-        p3.tieneBalcon = true;
-        p3.tieneCochera = true;
-        lista.add(p3);
-
-        Propiedad p4 = new Propiedad();
-        p4.id = UUID.randomUUID().toString();
-        p4.precio = 3400000.0;
-        p4.domicilio = "Juana Manso 1250 - Penthouse";
-        p4.descripcion = "Puerto Madero, Buenos Aires";
-        p4.ambientes = 4;
-        p4.banos = 4;
-        p4.tipoPropiedad = TipoPropiedad.DEPARTAMENTO;
-        p4.tieneBalcon = true;
-        p4.tieneAscensor = true;
-        p4.tieneCochera = true;
-        lista.add(p4);
-
-        Propiedad p5 = new Propiedad();
-        p5.id = UUID.randomUUID().toString();
-        p5.precio = 5600000.0;
-        p5.domicilio = "21400 Pacific Coast Hwy";
-        p5.descripcion = "Malibu, CA 90265";
-        p5.ambientes = 6;
-        p5.banos = 5;
-        p5.tipoPropiedad = TipoPropiedad.CASA;
-        p5.tienePatio = true;
-        p5.tieneCochera = true;
-        lista.add(p5);
-
-        Propiedad p6 = new Propiedad();
-        p6.id = UUID.randomUUID().toString();
-        p6.precio = 780000.0;
-        p6.domicilio = "Callao y Quintana";
-        p6.descripcion = "Recoleta, Buenos Aires";
-        p6.ambientes = 2;
-        p6.banos = 1;
-        p6.tipoPropiedad = TipoPropiedad.DEPARTAMENTO;
-        p6.tieneAscensor = true;
-        lista.add(p6);
-
-        return lista;
     }
 
     private void applyFiltersAndSort() {

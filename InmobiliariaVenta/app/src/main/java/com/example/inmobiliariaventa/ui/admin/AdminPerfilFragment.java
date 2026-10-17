@@ -46,10 +46,13 @@ public class AdminPerfilFragment extends Fragment {
 
         // Logout
         View btnLogout = view.findViewById(R.id.btn_logout);
-        btnLogout.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Cerrando sesión...", Toast.LENGTH_SHORT).show();
-            // Assuming nav_login is the destination for login
-            Navigation.findNavController(view).navigate(R.id.nav_login);
-        });
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+                prefs.edit().clear().apply();
+                Toast.makeText(getContext(), "Sesión cerrada", Toast.LENGTH_SHORT).show();
+                Navigation.findNavController(view).navigate(R.id.nav_inicio);
+            });
+        }
     }
 }

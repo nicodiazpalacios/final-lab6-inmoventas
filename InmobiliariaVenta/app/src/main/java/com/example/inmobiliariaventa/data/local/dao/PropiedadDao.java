@@ -2,6 +2,7 @@ package com.example.inmobiliariaventa.data.local.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Update;
 import androidx.room.Delete;
 import androidx.room.Query;
@@ -12,8 +13,11 @@ import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
 
 @Dao
 public interface PropiedadDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertar(Propiedad propiedad);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertarTodas(List<Propiedad> propiedades);
 
     @Update
     void actualizar(Propiedad propiedad);
@@ -21,11 +25,26 @@ public interface PropiedadDao {
     @Delete
     void eliminar(Propiedad propiedad);
 
-    @Query("SELECT * FROM propiedades")
+    @Query("DELETE FROM propiedades WHERE id = :id")
+    void eliminarPorId(String id);
+
+    @Query("SELECT * FROM propiedades ORDER BY created_at DESC, id DESC")
     LiveData<List<Propiedad>> obtenerTodas();
+
+    @Query("SELECT * FROM propiedades ORDER BY id DESC")
+    List<Propiedad> obtenerTodasSync();
+
+    @Query("SELECT * FROM propiedades WHERE id = :id LIMIT 1")
+    LiveData<Propiedad> obtenerPorId(String id);
+
+    @Query("SELECT * FROM propiedades WHERE id = :id LIMIT 1")
+    Propiedad obtenerPorIdSync(String id);
 
     @Query("SELECT * FROM propiedades WHERE tipoPropiedad = :tipo")
     LiveData<List<Propiedad>> obtenerPorTipo(TipoPropiedad tipo);
+
+    @Query("SELECT * FROM propiedades WHERE estado = :estado")
+    LiveData<List<Propiedad>> obtenerPorEstado(String estado);
 
     @Query("SELECT * FROM propiedades WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Propiedad> obtenerPendientesDeSubir();

@@ -55,9 +55,18 @@ public class HomeUsuarioFragment extends Fragment {
 
         MaterialButton btnAdminMode = view.findViewById(R.id.btnAdminMode);
         if (btnAdminMode != null) {
-            btnAdminMode.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.nav_admin_home);
-            });
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+            boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+            String userRol = prefs.getString("user_rol", "");
+
+            if (isLoggedIn && "ADMIN".equalsIgnoreCase(userRol)) {
+                btnAdminMode.setVisibility(View.VISIBLE);
+                btnAdminMode.setOnClickListener(v -> {
+                    Navigation.findNavController(v).navigate(R.id.nav_admin_home);
+                });
+            } else {
+                btnAdminMode.setVisibility(View.GONE);
+            }
         }
 
         android.widget.TextView viewAllFeaturedTextView = view.findViewById(R.id.viewAllFeaturedTextView);
@@ -84,31 +93,17 @@ public class HomeUsuarioFragment extends Fragment {
     }
 
     private void setupFeaturedProperties() {
-        List<Propiedad> destacadas = new ArrayList<>();
-        
-        Propiedad p1 = new Propiedad();
-        p1.id = UUID.randomUUID().toString();
-        p1.precio = 4250000.0;
-        p1.domicilio = "1042 Oceanview Promenade";
-        p1.descripcion = "Santa Monica, CA 90403";
-        p1.ambientes = 5;
-        p1.banos = 6;
-        
-        Propiedad p2 = new Propiedad();
-        p2.id = UUID.randomUUID().toString();
-        p2.precio = 2895000.0;
-        p2.domicilio = "770 Riverwalk Drive";
-        p2.descripcion = "Austin, TX 78704";
-        p2.ambientes = 4;
-        p2.banos = 3;
-        
-        destacadas.add(p1);
-        destacadas.add(p2);
-
-        PropiedadDestacadaAdapter adapter = new PropiedadDestacadaAdapter(destacadas);
-        // CHANGE TO VERTICAL for mobile design
+        PropiedadDestacadaAdapter adapter = new PropiedadDestacadaAdapter(new ArrayList<>());
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         featuredRecyclerView.setAdapter(adapter);
+
+        com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel viewModel =
+                new androidx.lifecycle.ViewModelProvider(this).get(com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel.class);
+        viewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
+            if (propiedades != null) {
+                adapter.setPropiedades(propiedades);
+            }
+        });
     }
 
 
