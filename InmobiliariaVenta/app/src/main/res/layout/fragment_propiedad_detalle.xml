@@ -77,15 +77,14 @@
 
             <!-- Image Gallery -->
             <FrameLayout
+                android:id="@+id/frame_detalle_galeria"
                 android:layout_width="match_parent"
                 android:layout_height="300dp">
                 
-                <ImageView
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/vp_detalle_banner"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:background="@color/colorSurfaceContainerHigh"
-                    android:src="@android:drawable/ic_menu_gallery"/>
+                    android:layout_height="match_parent" />
                     
                 <androidx.cardview.widget.CardView
                     android:layout_width="wrap_content"
@@ -94,21 +93,26 @@
                     app:cardBackgroundColor="@color/colorOnSecondaryContainer"
                     app:cardCornerRadius="16dp">
                     <TextView
+                        android:id="@+id/tv_detalle_tipo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="4dp"
-                        android:text="OBRA NUEVA"
+                        android:text="EN VENTA"
                         android:textColor="@color/colorOnPrimary"
                         android:textSize="12sp"
                         android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
                 
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/card_detalle_fotos_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|end"
                     android:layout_margin="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
                     app:cardCornerRadius="8dp">
                     <LinearLayout
@@ -124,10 +128,11 @@
                             android:src="@android:drawable/ic_menu_camera"
                             app:tint="@color/colorPrimary" />
                         <TextView
+                            android:id="@+id/tv_detalle_fotos_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:text="1 / 32"
+                            android:text="1 / 1"
                             android:textColor="@color/colorPrimary"
                             android:textSize="14sp"
                             android:textStyle="bold"/>
@@ -195,10 +200,11 @@
                         android:src="@android:drawable/ic_dialog_map"
                         app:tint="@color/colorOnSurfaceVariant" />
                     <TextView
+                        android:id="@+id/tv_detalle_ubicacion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:text="Beverly Hills, CA 90210"
+                        android:text="Ubicación"
                         android:textColor="@color/colorOnSurfaceVariant"
                         android:textSize="16sp"/>
                 </LinearLayout>
@@ -240,10 +246,11 @@
                                 android:textSize="24sp"
                                 android:textColor="@color/colorPrimary"/>
                             <TextView
+                                android:id="@+id/tv_detalle_habitaciones"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="4"
+                                android:text="-"
                                 android:textColor="@color/colorOnSurface"
                                 android:textSize="20sp"
                                 android:textStyle="bold"/>
@@ -280,10 +287,11 @@
                                 android:textSize="24sp"
                                 android:textColor="@color/colorPrimary"/>
                             <TextView
+                                android:id="@+id/tv_detalle_banos"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="5.5"
+                                android:text="-"
                                 android:textColor="@color/colorOnSurface"
                                 android:textSize="20sp"
                                 android:textStyle="bold"/>
@@ -319,10 +327,11 @@
                                 android:textSize="24sp"
                                 android:textColor="@color/colorPrimary"/>
                             <TextView
+                                android:id="@+id/tv_detalle_m2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="5,200"
+                                android:text="-"
                                 android:textColor="@color/colorOnSurface"
                                 android:textSize="20sp"
                                 android:textStyle="bold"/>
@@ -355,9 +364,10 @@
                     android:layout_marginBottom="16dp"/>
                     
                 <TextView
+                    android:id="@+id/tv_detalle_descripcion"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Experimente el apogeo del lujo contemporáneo en esta obra maestra arquitectónica de nueva construcción. Diseñada por arquitectos galardonados, esta residencia fusiona a la perfección los espacios interiores y exteriores a través de amplias paredes de cristal retráctiles.\n\nEl nivel principal cuenta con una cocina de chef equipada con electrodomésticos de alta gama, una enorme isla central y gabinetes personalizados. Se abre a una espectacular estancia principal con una imponente chimenea de piso a techo y acceso inmediato a la piscina de borde infinito y la terraza de entretenimiento."
+                    android:text="Descripción de la propiedad"
                     android:textColor="@color/colorOnSurfaceVariant"
                     android:textSize="16sp"
                     android:lineSpacingExtra="4dp"/>
@@ -417,14 +427,16 @@
                     android:gravity="center_vertical">
                     
                     <TextView
+                        android:id="@+id/tv_detalle_direccion_mapa"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Beverly Hills, CA 90210"
+                        android:text="Dirección"
                         android:textColor="@color/colorOnSurfaceVariant"
                         android:textSize="14sp"/>
                         
                     <TextView
+                        android:id="@+id/btn_como_llegar"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Cómo llegar ↗"

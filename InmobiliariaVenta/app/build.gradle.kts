@@ -52,4 +52,7 @@ dependencies {
     
     // OkHttp para llamadas a Supabase
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Glide para carga fluida y optimizada de imágenes
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }

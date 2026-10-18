@@ -35,7 +35,7 @@ public class EmpresaRepository {
     }
 
     public String getEmailInmediato() {
-        return prefs.getString(KEY_EMAIL, "contacto@inmoventas.com");
+        return prefs.getString(KEY_EMAIL, "contacto@homefinder.com");
     }
 
     public String getDireccionInmediata() {

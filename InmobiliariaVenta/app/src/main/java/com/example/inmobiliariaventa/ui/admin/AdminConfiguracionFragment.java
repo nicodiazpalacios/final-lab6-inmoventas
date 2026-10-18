@@ -91,7 +91,7 @@ public class AdminConfiguracionFragment extends Fragment {
                 String tel = etTelefonoEmpresa != null && etTelefonoEmpresa.getText() != null ?
                         etTelefonoEmpresa.getText().toString().trim() : "+54 9 11 5842-1102";
                 String email = etEmailEmpresa != null && etEmailEmpresa.getText() != null ?
-                        etEmailEmpresa.getText().toString().trim() : "contacto@inmoventas.com";
+                        etEmailEmpresa.getText().toString().trim() : "contacto@homefinder.com";
                 String dir = etDireccionEmpresa != null && etDireccionEmpresa.getText() != null ?
                         etDireccionEmpresa.getText().toString().trim() : "Av. del Libertador 2450, Buenos Aires";
 

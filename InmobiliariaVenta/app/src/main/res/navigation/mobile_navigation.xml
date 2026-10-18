@@ -84,7 +84,13 @@
         android:id="@+id/nav_detalle_propiedad"
         android:name="com.example.inmobiliariaventa.ui.propiedades.PropiedadDetalleFragment"
         android:label="Detalles de Propiedad"
-        tools:layout="@layout/fragment_propiedad_detalle" />
+        tools:layout="@layout/fragment_propiedad_detalle">
+        <argument
+            android:name="propiedad_id"
+            app:argType="string"
+            android:defaultValue="@null"
+            app:nullable="true" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_resultados_busqueda"

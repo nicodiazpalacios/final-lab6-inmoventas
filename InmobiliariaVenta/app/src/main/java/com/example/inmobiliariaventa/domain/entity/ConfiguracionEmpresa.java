@@ -12,13 +12,13 @@ public class ConfiguracionEmpresa {
     public String id = "empresa_principal";
 
     @ColumnInfo(name = "nombreEmpresa")
-    public String nombreEmpresa = "Inmobiliaria Venta";
+    public String nombreEmpresa = "Home Finder";
 
     @ColumnInfo(name = "telefonoWhatsapp")
     public String telefonoWhatsapp = "+54 9 11 5842-1102";
 
     @ColumnInfo(name = "email")
-    public String email = "contacto@inmoventas.com";
+    public String email = "contacto@homefinder.com";
 
     @ColumnInfo(name = "direccion")
     public String direccion = "Av. del Libertador 2450, Buenos Aires";
