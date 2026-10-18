@@ -8,16 +8,31 @@ import java.util.List;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 
+import androidx.lifecycle.LiveData;
+import androidx.room.OnConflictStrategy;
+
 @Dao
 public interface FavoritoDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertar(Favorito favorito);
 
     @Delete
     void eliminar(Favorito favorito);
 
+    @Query("DELETE FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId")
+    void eliminarPorIds(String usuarioId, String propiedadId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId LIMIT 1)")
+    boolean esFavorito(String usuarioId, String propiedadId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId LIMIT 1)")
+    LiveData<Boolean> esFavoritoLiveData(String usuarioId, String propiedadId);
+
     @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
     List<Propiedad> obtenerFavoritosDeUsuario(String usuarioId);
+
+    @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
+    LiveData<List<Propiedad>> obtenerFavoritosDeUsuarioLiveData(String usuarioId);
 
     @Query("SELECT * FROM favoritos WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Favorito> obtenerPendientesDeSubir();

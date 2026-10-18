@@ -164,17 +164,22 @@
                         android:textStyle="bold"/>
                         
                     <androidx.cardview.widget.CardView
+                        android:id="@+id/btn_detalle_favorito"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="@color/colorSurfaceContainerHighest"
                         app:cardCornerRadius="24dp"
                         app:cardElevation="0dp">
                         <ImageView
+                            android:id="@+id/iv_detalle_favorito"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_favorite_border"
-                            app:tint="@color/colorPrimary"/>
+                            app:tint="@color/colorOnSurfaceVariant"/>
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
                 
@@ -197,8 +202,8 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@android:drawable/ic_dialog_map"
-                        app:tint="@color/colorOnSurfaceVariant" />
+                        android:src="@drawable/ic_location_on"
+                        app:tint="@color/colorPrimary" />
                     <TextView
                         android:id="@+id/tv_detalle_ubicacion"
                         android:layout_width="wrap_content"
@@ -345,6 +350,194 @@
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
+
+                <!-- Características especiales para Departamento (Balcón y Ascensor) -->
+                <LinearLayout
+                    android:id="@+id/layout_specs_depto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:visibility="gone">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_spec_balcon"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🌅"
+                                android:textSize="24sp"
+                                android:textColor="@color/colorPrimary"/>
+                            <TextView
+                                android:id="@+id/tv_detalle_balcon"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Sí"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="20sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="BALCÓN"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_spec_ascensor"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🛗"
+                                android:textSize="24sp"
+                                android:textColor="@color/colorPrimary"/>
+                            <TextView
+                                android:id="@+id/tv_detalle_ascensor"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Sí"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="20sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="ASCENSOR"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <!-- Características especiales para Casa (Cochera y Patio) -->
+                <LinearLayout
+                    android:id="@+id/layout_specs_casa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:visibility="gone">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_spec_cochera"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🚗"
+                                android:textSize="24sp"
+                                android:textColor="@color/colorPrimary"/>
+                            <TextView
+                                android:id="@+id/tv_detalle_cochera"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Sí"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="20sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="COCHERA"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_spec_patio"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🌳"
+                                android:textSize="24sp"
+                                android:textColor="@color/colorPrimary"/>
+                            <TextView
+                                android:id="@+id/tv_detalle_patio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Sí"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="20sp"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="PATIO"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
                 
                 <View
                     android:layout_width="match_parent"
@@ -370,54 +563,204 @@
                     android:text="Descripción de la propiedad"
                     android:textColor="@color/colorOnSurfaceVariant"
                     android:textSize="16sp"
+                    android:maxLines="3"
+                    android:ellipsize="end"
                     android:lineSpacingExtra="4dp"/>
                     
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/btn_toggle_descripcion"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="8dp"
+                    android:paddingVertical="6dp"
+                    android:paddingEnd="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:text="Leer descripción completa ⌄"
                     android:textColor="@color/colorPrimary"
                     android:textSize="14sp"
                     android:textStyle="bold"/>
+
+                <!-- Disposición de la propiedad (especial departamentos) -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_detalle_disposicion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/colorOutlineVariant"
+                    app:strokeWidth="1dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="14dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            app:cardBackgroundColor="@color/colorSurfaceContainerHigh"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="0dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:text="🧭"
+                                android:textSize="20sp"/>
+                        </androidx.cardview.widget.CardView>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="DISPOSICIÓN"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05"/>
+
+                            <TextView
+                                android:id="@+id/tv_detalle_disposicion"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Frente"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="16sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_badge_disposicion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/tag_type_background"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="Vista exterior"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="12sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
                     
                 <!-- Location -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginTop="28dp"
                     android:text="Ubicación"
                     android:textColor="@color/colorOnSurface"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp"/>
                     
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_mapa_ubicacion"
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:background="@color/colorSurfaceVariant">
-                    <ImageView
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:src="@android:drawable/ic_dialog_map"
-                        app:tint="#A0A0A0"/>
-                    
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center"
-                        app:cardBackgroundColor="@color/colorPrimary"
-                        app:cardCornerRadius="24dp"
-                        app:cardElevation="4dp">
+                        android:layout_height="match_parent">
+
+                        <!-- Fondo vectorial de mapa urbano moderno y limpio -->
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@android:drawable/ic_dialog_map"
-                            app:tint="@color/colorOnPrimary"/>
-                    </androidx.cardview.widget.CardView>
-                </FrameLayout>
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/bg_map_preview_graphic" />
+
+                        <!-- Contenedor concéntrico del Pin y su círculo de radio perfectamente alineados al centro -->
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center">
+
+                            <!-- Círculo gris suave (radio de aproximación de la ubicación) -->
+                            <View
+                                android:layout_width="88dp"
+                                android:layout_height="88dp"
+                                android:layout_gravity="center"
+                                android:background="@drawable/bg_map_pin_circle" />
+
+                            <!-- Pin circular elevado en el centro exacto -->
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:layout_gravity="center"
+                                app:cardBackgroundColor="@color/colorPrimary"
+                                app:cardCornerRadius="25dp"
+                                app:cardElevation="6dp">
+
+                                <ImageView
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_location_on"
+                                    app:tint="@color/colorOnPrimary" />
+                            </androidx.cardview.widget.CardView>
+                        </FrameLayout>
+
+                        <!-- Chip indicador de Google Maps -->
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="12dp"
+                            app:cardBackgroundColor="#E6FFFFFF"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="3dp">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="5dp">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_location_on"
+                                    app:tint="@color/colorPrimary" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="Abrir mapa"
+                                    android:textColor="@color/colorPrimary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
                 
                 <LinearLayout
                     android:layout_width="match_parent"

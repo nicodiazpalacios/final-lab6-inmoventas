@@ -151,6 +151,7 @@ public class LoginFragment extends Fragment {
                 .putString("user_id", usuario.id)
                 .putString("user_email", usuario.email)
                 .putString("user_nombre", usuario.nombre != null ? usuario.nombre : "Usuario")
+                .putString("user_telefono", usuario.telefono != null ? usuario.telefono : "")
                 .putString("user_rol", usuario.rol != null ? usuario.rol : "CLIENTE")
                 .apply();
     }

@@ -1,31 +1,48 @@
 package com.example.inmobiliariaventa.ui.home;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
-import com.example.inmobiliariaventa.R;
-import com.example.inmobiliariaventa.domain.entity.Propiedad;
-import com.example.inmobiliariaventa.utils.ImageLoader;
-import java.util.List;
-import java.text.NumberFormat;
-import java.util.Locale;
+import androidx.appcompat.app.AlertDialog;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.domain.entity.Favorito;
+import com.example.inmobiliariaventa.domain.entity.Propiedad;
+import com.example.inmobiliariaventa.domain.entity.Usuario;
+import com.example.inmobiliariaventa.utils.ImageLoader;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDestacadaAdapter.ViewHolder> {
 
     private List<Propiedad> propiedades;
 
     public PropiedadDestacadaAdapter(List<Propiedad> propiedades) {
-        this.propiedades = propiedades != null ? propiedades : new java.util.ArrayList<>();
+        this.propiedades = propiedades != null ? propiedades : new ArrayList<>();
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
-        this.propiedades = nuevas != null ? new java.util.ArrayList<>(nuevas) : new java.util.ArrayList<>();
+        this.propiedades = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -40,6 +57,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Propiedad prop = propiedades.get(position);
+        Context context = holder.itemView.getContext();
         
         // Formatear precio sin decimales
         NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
@@ -82,28 +100,172 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                 holder.propertyImageView.setImageResource(android.R.drawable.ic_menu_gallery);
             }
         }
-        
-        // Toggle logic for favorite button
-        holder.favoriteButton.setOnClickListener(v -> {
-            boolean isFavorite = (v.getTag() != null) && (boolean) v.getTag();
-            if (isFavorite) {
-                holder.favoriteButton.setImageResource(R.drawable.ic_favorite_border);
-                v.setTag(false);
-            } else {
-                holder.favoriteButton.setImageResource(R.drawable.ic_favorite);
-                v.setTag(true);
+
+        // Estado inicial por defecto (desmarcado neutral)
+        actualizarEstadoVisualFavorito(holder, false);
+
+        // Si el usuario está registrado, verificar estado real en Room
+        SharedPreferences prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+        String userId = prefs.getString("user_id", "");
+
+        if (isLoggedIn && !userId.isEmpty() && prop.id != null) {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                boolean esFav = AppDatabase.getInstance(context).favoritoDao().esFavorito(userId, prop.id);
+                holder.itemView.post(() -> {
+                    actualizarEstadoVisualFavorito(holder, esFav);
+                });
+            });
+        }
+
+        // Manejar interacción con el botón de favorito
+        View.OnClickListener favClickListener = v -> {
+            SharedPreferences p = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+            boolean logged = p.getBoolean("is_user_logged_in", false);
+            String uId = p.getString("user_id", "");
+
+            if (!logged || uId.isEmpty()) {
+                mostrarDialogoRequerirLogin(context, v);
+                return;
             }
-        });
-        // Default state
-        holder.favoriteButton.setImageResource(R.drawable.ic_favorite_border);
-        holder.favoriteButton.setTag(false);
-        
-        // Navigate to details screen on click con propiedad_id
+
+            boolean esActualFav = Boolean.TRUE.equals(holder.favoriteButton.getTag());
+            final boolean nuevoEstado = !esActualFav;
+            actualizarEstadoVisualFavorito(holder, nuevoEstado);
+
+            // Micro-animación de pulso táctil
+            holder.favoriteButton.animate().scaleX(1.3f).scaleY(1.3f).setDuration(120)
+                    .withEndAction(() -> holder.favoriteButton.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start())
+                    .start();
+
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(context);
+
+                Usuario u = db.usuarioDao().obtenerUsuarioDirectoPorId(uId);
+                if (u == null) {
+                    Usuario nuevoU = new Usuario();
+                    nuevoU.id = uId;
+                    nuevoU.nombre = p.getString("user_nombre", "Usuario");
+                    nuevoU.email = p.getString("user_email", "");
+                    nuevoU.telefono = p.getString("user_telefono", "");
+                    nuevoU.rol = p.getString("user_rol", "CLIENTE");
+                    db.usuarioDao().insertar(nuevoU);
+                }
+
+                if (nuevoEstado) {
+                    Favorito fav = new Favorito();
+                    fav.usuarioId = uId;
+                    fav.propiedadId = prop.id;
+                    fav.fechaGuardado = System.currentTimeMillis();
+                    fav.estadoSincronizacion = "SINCRONIZADO";
+                    db.favoritoDao().insertar(fav);
+                } else {
+                    db.favoritoDao().eliminarPorIds(uId, prop.id);
+                }
+
+                holder.itemView.post(() -> {
+                    Toast.makeText(context,
+                            nuevoEstado ? "¡Propiedad guardada en Favoritos!" : "Propiedad eliminada de Favoritos",
+                            Toast.LENGTH_SHORT).show();
+                });
+            });
+        };
+
+        holder.favoriteButton.setOnClickListener(favClickListener);
+        if (holder.favoriteButtonCard != null) {
+            holder.favoriteButtonCard.setOnClickListener(favClickListener);
+        }
+
+        // Navegar al detalle de la propiedad al hacer click en la tarjeta
         holder.itemView.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("propiedad_id", prop.id);
             Navigation.findNavController(v).navigate(R.id.nav_detalle_propiedad, bundle);
         });
+    }
+
+    private void actualizarEstadoVisualFavorito(ViewHolder holder, boolean fav) {
+        if (holder == null || holder.favoriteButton == null) return;
+        Context ctx = holder.itemView.getContext();
+        holder.favoriteButton.setTag(fav);
+        if (fav) {
+            holder.favoriteButton.setImageResource(R.drawable.ic_favorite);
+            holder.favoriteButton.setColorFilter(ContextCompat.getColor(ctx, R.color.colorPrimary));
+            if (holder.favoriteButtonCard != null) {
+                holder.favoriteButtonCard.setCardBackgroundColor(
+                        ContextCompat.getColor(ctx, R.color.colorPrimaryFixed)
+                );
+            }
+        } else {
+            holder.favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+            holder.favoriteButton.setColorFilter(ContextCompat.getColor(ctx, R.color.colorOnSurfaceVariant));
+            if (holder.favoriteButtonCard != null) {
+                holder.favoriteButtonCard.setCardBackgroundColor(
+                        ContextCompat.getColor(ctx, R.color.colorSurfaceContainerLowest)
+                );
+            }
+        }
+    }
+
+    private void mostrarDialogoRequerirLogin(Context context, View anchorView) {
+        if (context == null) return;
+
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View dialogView = inflater.inflate(R.layout.dialog_requerir_login, null);
+
+        ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_login_icon);
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_login_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_login_mensaje);
+        MaterialButton btnLogin = dialogView.findViewById(R.id.btn_dialog_login);
+        MaterialButton btnRegistro = dialogView.findViewById(R.id.btn_dialog_registro);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_dialog_cancelar);
+
+        if (ivIcon != null) {
+            ivIcon.setImageResource(R.drawable.ic_favorite);
+        }
+        if (tvTitulo != null) {
+            tvTitulo.setText("Guardá tus favoritos");
+        }
+        if (tvMensaje != null) {
+            tvMensaje.setText("Para guardar esta propiedad en tu lista de favoritos y acceder a ella cuando quieras, necesitás ingresar con tu cuenta de cliente en Home Finder.");
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(context)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (btnLogin != null) {
+            btnLogin.setOnClickListener(v -> {
+                dialog.dismiss();
+                try {
+                    Navigation.findNavController(anchorView).navigate(R.id.nav_login);
+                } catch (Exception e) {
+                    Toast.makeText(context, "Por favor ingresa desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnRegistro != null) {
+            btnRegistro.setOnClickListener(v -> {
+                dialog.dismiss();
+                try {
+                    Navigation.findNavController(anchorView).navigate(R.id.nav_registro);
+                } catch (Exception e) {
+                    Toast.makeText(context, "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnCancelar != null) {
+            btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     @Override
@@ -115,7 +277,8 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         ImageView propertyImageView;
         TextView priceTextView, titleTextView, locationTextView;
         TextView bedsTextView, bathsTextView, sqftTextView, tagTextView;
-        android.widget.ImageView favoriteButton;
+        ImageView favoriteButton;
+        CardView favoriteButtonCard;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -128,6 +291,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
             sqftTextView = itemView.findViewById(R.id.sqftTextView);
             tagTextView = itemView.findViewById(R.id.tagTextView);
             favoriteButton = itemView.findViewById(R.id.favoriteButton);
+            favoriteButtonCard = itemView.findViewById(R.id.favoriteButtonCard);
         }
     }
 }

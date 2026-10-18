@@ -99,18 +99,28 @@ public class HomeUsuarioFragment extends Fragment {
         categoriesRecyclerView.setAdapter(adapter);
     }
 
+    private PropiedadDestacadaAdapter featuredAdapter;
+
     private void setupFeaturedProperties() {
-        PropiedadDestacadaAdapter adapter = new PropiedadDestacadaAdapter(new ArrayList<>());
+        featuredAdapter = new PropiedadDestacadaAdapter(new ArrayList<>());
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        featuredRecyclerView.setAdapter(adapter);
+        featuredRecyclerView.setAdapter(featuredAdapter);
 
         com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel viewModel =
                 new androidx.lifecycle.ViewModelProvider(this).get(com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel.class);
         viewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
             if (propiedades != null) {
-                adapter.setPropiedades(propiedades);
+                featuredAdapter.setPropiedades(propiedades);
             }
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (featuredAdapter != null) {
+            featuredAdapter.notifyDataSetChanged();
+        }
     }
 
 

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="20dp"
+    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Ícono decorativo de usuario -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardBackgroundColor="@color/colorPrimaryFixed"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:id="@+id/iv_dialog_login_icon"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_person"
+                app:tint="@color/colorPrimary" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Título -->
+        <TextView
+            android:id="@+id/tv_dialog_login_titulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Iniciá sesión para contactar"
+            android:textColor="@color/colorOnSurface"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Mensaje -->
+        <TextView
+            android:id="@+id/tv_dialog_login_mensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Para enviar una consulta directa a la inmobiliaria y coordinar visitas, necesitás ingresar con tu cuenta de cliente en Home Finder."
+            android:textColor="@color/colorOnSurfaceVariant"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Botones: Iniciar Sesión (izquierda), Registrarme (centro), Cancelar (derecha) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:weightSum="3">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_login"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginEnd="4dp"
+                android:text="Iniciar Sesión"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/colorOnPrimary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_registro"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginHorizontal="4dp"
+                android:text="Registrarme"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp"
+                app:strokeColor="@color/colorPrimary"
+                app:strokeWidth="1.5dp"
+                app:backgroundTint="@color/colorSurfaceContainerLowest"
+                android:textColor="@color/colorPrimary"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_cancelar"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginStart="4dp"
+                android:text="Cancelar"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="@color/colorSurfaceContainerHigh"
+                android:textColor="@color/colorOnSurfaceVariant"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

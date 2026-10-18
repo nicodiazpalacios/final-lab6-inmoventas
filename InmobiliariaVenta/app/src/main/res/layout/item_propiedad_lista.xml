@@ -41,7 +41,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/circle_background_light"
                 android:src="@drawable/ic_favorite_border"
-                app:tint="@color/colorOnSurface" />
+                app:tint="@color/colorOnSurfaceVariant" />
         </FrameLayout>
 
         <!-- Details Container -->

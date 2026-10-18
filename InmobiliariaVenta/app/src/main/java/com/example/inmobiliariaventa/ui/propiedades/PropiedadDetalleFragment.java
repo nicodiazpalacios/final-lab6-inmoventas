@@ -1,17 +1,25 @@
 package com.example.inmobiliariaventa.ui.propiedades;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -19,13 +27,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.repository.EmpresaRepository;
+import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
+import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
+import com.example.inmobiliariaventa.domain.entity.Disposicion;
+import com.example.inmobiliariaventa.domain.entity.Usuario;
+import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -46,8 +65,29 @@ public class PropiedadDetalleFragment extends Fragment {
     private TextView tvDetalleBanos;
     private TextView tvDetalleM2;
     private TextView tvDetalleDescripcion;
+    private TextView btnToggleDescripcion;
+    private boolean isDescripcionExpandida = false;
     private TextView tvDetalleDireccionMapa;
     private View btnComoLlegar;
+    private View cardMapaUbicacion;
+
+    // Características especiales (Depto vs Casa)
+    private View layoutSpecsDepto;
+    private View layoutSpecsCasa;
+    private TextView tvDetalleBalcon;
+    private TextView tvDetalleAscensor;
+    private TextView tvDetalleCochera;
+    private TextView tvDetallePatio;
+
+    // Disposición
+    private View cardDetalleDisposicion;
+    private TextView tvDetalleDisposicion;
+    private TextView tvBadgeDisposicion;
+
+    // Favoritos
+    private View btnDetalleFavorito;
+    private ImageView ivDetalleFavorito;
+    private boolean isPropiedadFavorita = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -74,8 +114,50 @@ public class PropiedadDetalleFragment extends Fragment {
         tvDetalleBanos = view.findViewById(R.id.tv_detalle_banos);
         tvDetalleM2 = view.findViewById(R.id.tv_detalle_m2);
         tvDetalleDescripcion = view.findViewById(R.id.tv_detalle_descripcion);
+        btnToggleDescripcion = view.findViewById(R.id.btn_toggle_descripcion);
         tvDetalleDireccionMapa = view.findViewById(R.id.tv_detalle_direccion_mapa);
         btnComoLlegar = view.findViewById(R.id.btn_como_llegar);
+        cardMapaUbicacion = view.findViewById(R.id.card_mapa_ubicacion);
+
+        layoutSpecsDepto = view.findViewById(R.id.layout_specs_depto);
+        layoutSpecsCasa = view.findViewById(R.id.layout_specs_casa);
+        tvDetalleBalcon = view.findViewById(R.id.tv_detalle_balcon);
+        tvDetalleAscensor = view.findViewById(R.id.tv_detalle_ascensor);
+        tvDetalleCochera = view.findViewById(R.id.tv_detalle_cochera);
+        tvDetallePatio = view.findViewById(R.id.tv_detalle_patio);
+
+        cardDetalleDisposicion = view.findViewById(R.id.card_detalle_disposicion);
+        tvDetalleDisposicion = view.findViewById(R.id.tv_detalle_disposicion);
+        tvBadgeDisposicion = view.findViewById(R.id.tv_badge_disposicion);
+
+        btnDetalleFavorito = view.findViewById(R.id.btn_detalle_favorito);
+        ivDetalleFavorito = view.findViewById(R.id.iv_detalle_favorito);
+        if (btnDetalleFavorito != null) {
+            btnDetalleFavorito.setOnClickListener(v -> toggleFavorito());
+        }
+
+        // Toggle Expandir / Contraer descripción
+        if (btnToggleDescripcion != null) {
+            btnToggleDescripcion.setOnClickListener(v -> {
+                isDescripcionExpandida = !isDescripcionExpandida;
+                if (tvDetalleDescripcion != null) {
+                    if (isDescripcionExpandida) {
+                        tvDetalleDescripcion.setMaxLines(Integer.MAX_VALUE);
+                        tvDetalleDescripcion.setEllipsize(null);
+                        btnToggleDescripcion.setText("Leer menos ⌃");
+                    } else {
+                        tvDetalleDescripcion.setMaxLines(3);
+                        tvDetalleDescripcion.setEllipsize(TextUtils.TruncateAt.END);
+                        btnToggleDescripcion.setText("Leer descripción completa ⌄");
+                    }
+                }
+            });
+        }
+
+        // Click en la tarjeta del mapa para abrir Google Maps
+        if (cardMapaUbicacion != null) {
+            cardMapaUbicacion.setOnClickListener(v -> abrirMapaDireccion());
+        }
 
         // Flecha de regreso
         View btnBack = view.findViewById(R.id.btn_back);
@@ -101,7 +183,7 @@ public class PropiedadDetalleFragment extends Fragment {
             btnLlamar.setOnClickListener(v -> llamarEmpresa());
         }
 
-        // Botón Contactar agente / inmobiliaria
+        // Botón Contactar agente / inmobiliaria (Guarda en la base de datos de mensajes)
         MaterialButton btnContactar = view.findViewById(R.id.btn_contactar_agente);
         if (btnContactar != null) {
             btnContactar.setOnClickListener(v -> contactarInmobiliaria());
@@ -186,17 +268,113 @@ public class PropiedadDetalleFragment extends Fragment {
             }
         }
 
-        // Descripción
+        // Descripción con control de expansión/contracción
         if (tvDetalleDescripcion != null) {
-            if (prop.descripcion != null && !prop.descripcion.trim().isEmpty()) {
-                tvDetalleDescripcion.setText(prop.descripcion);
+            String desc = (prop.descripcion != null && !prop.descripcion.trim().isEmpty())
+                    ? prop.descripcion
+                    : "Excelente oportunidad inmobiliaria con todas las comodidades y excelente ubicación.";
+            tvDetalleDescripcion.setText(desc);
+
+            isDescripcionExpandida = false;
+            tvDetalleDescripcion.setMaxLines(3);
+            tvDetalleDescripcion.setEllipsize(TextUtils.TruncateAt.END);
+
+            if (btnToggleDescripcion != null) {
+                if (desc.length() > 90 || desc.contains("\n")) {
+                    btnToggleDescripcion.setVisibility(View.VISIBLE);
+                    btnToggleDescripcion.setText("Leer descripción completa ⌄");
+                } else {
+                    btnToggleDescripcion.setVisibility(View.GONE);
+                }
+            }
+        }
+
+        // Características especiales según la categoría (Departamento vs Casa)
+        boolean esDepto = prop.tipoPropiedad == TipoPropiedad.DEPARTAMENTO;
+        boolean esCasa = prop.tipoPropiedad == TipoPropiedad.CASA;
+
+        if (esDepto) {
+            if (layoutSpecsDepto != null) layoutSpecsDepto.setVisibility(View.VISIBLE);
+            if (layoutSpecsCasa != null) layoutSpecsCasa.setVisibility(View.GONE);
+            if (tvDetalleBalcon != null) tvDetalleBalcon.setText(prop.tieneBalcon ? "Sí" : "No");
+            if (tvDetalleAscensor != null) tvDetalleAscensor.setText(prop.tieneAscensor ? "Sí" : "No");
+        } else if (esCasa) {
+            if (layoutSpecsCasa != null) layoutSpecsCasa.setVisibility(View.VISIBLE);
+            if (layoutSpecsDepto != null) layoutSpecsDepto.setVisibility(View.GONE);
+            if (tvDetalleCochera != null) tvDetalleCochera.setText(prop.tieneCochera ? "Sí" : "No");
+            if (tvDetallePatio != null) tvDetallePatio.setText(prop.tienePatio ? "Sí" : "No");
+        } else {
+            // Si no está tipificado explícitamente, deducir por los atributos presentes
+            if (prop.tieneBalcon || prop.tieneAscensor) {
+                if (layoutSpecsDepto != null) layoutSpecsDepto.setVisibility(View.VISIBLE);
+                if (layoutSpecsCasa != null) layoutSpecsCasa.setVisibility(View.GONE);
+                if (tvDetalleBalcon != null) tvDetalleBalcon.setText(prop.tieneBalcon ? "Sí" : "No");
+                if (tvDetalleAscensor != null) tvDetalleAscensor.setText(prop.tieneAscensor ? "Sí" : "No");
             } else {
-                tvDetalleDescripcion.setText("Excelente oportunidad inmobiliaria con todas las comodidades y excelente ubicación.");
+                if (layoutSpecsCasa != null) layoutSpecsCasa.setVisibility(View.VISIBLE);
+                if (layoutSpecsDepto != null) layoutSpecsDepto.setVisibility(View.GONE);
+                if (tvDetalleCochera != null) tvDetalleCochera.setText(prop.tieneCochera ? "Sí" : "No");
+                if (tvDetallePatio != null) tvDetallePatio.setText(prop.tienePatio ? "Sí" : "No");
+            }
+        }
+
+        // Disposición debajo de la descripción (especialmente para Departamentos)
+        if (cardDetalleDisposicion != null) {
+            if (esDepto || (prop.disposicion != null && !esCasa)) {
+                cardDetalleDisposicion.setVisibility(View.VISIBLE);
+                String dispTexto = prop.disposicion != null ? formatearDisposicion(prop.disposicion) : "No especificada";
+                if (tvDetalleDisposicion != null) {
+                    tvDetalleDisposicion.setText(dispTexto);
+                }
+                if (tvBadgeDisposicion != null) {
+                    if (prop.disposicion != null) {
+                        switch (prop.disposicion) {
+                            case FRENTE:
+                                tvBadgeDisposicion.setText("Vista exterior");
+                                break;
+                            case CONTRAFRENTE:
+                                tvBadgeDisposicion.setText("Vista al pulmón");
+                                break;
+                            case LATERAL:
+                                tvBadgeDisposicion.setText("Vista lateral");
+                                break;
+                            case INTERNO:
+                                tvBadgeDisposicion.setText("Vista interna");
+                                break;
+                            default:
+                                tvBadgeDisposicion.setText("Edificio");
+                                break;
+                        }
+                    } else {
+                        tvBadgeDisposicion.setText("Edificio");
+                    }
+                }
+            } else {
+                cardDetalleDisposicion.setVisibility(View.GONE);
             }
         }
 
         // Galería y carrusel interactivo de fotos
         setupBannerGaleria(prop);
+
+        // Verificar si la propiedad ya está en favoritos
+        verificarEstadoFavorito(prop);
+    }
+
+    private String formatearDisposicion(Disposicion disposicion) {
+        if (disposicion == null) return "No especificada";
+        switch (disposicion) {
+            case FRENTE:
+                return "Frente";
+            case CONTRAFRENTE:
+                return "Contrafrente";
+            case LATERAL:
+                return "Lateral";
+            case INTERNO:
+                return "Interno";
+            default:
+                return disposicion.name();
+        }
     }
 
     private void setupBannerGaleria(Propiedad prop) {
@@ -337,21 +515,336 @@ public class PropiedadDetalleFragment extends Fragment {
     }
 
     private void contactarInmobiliaria() {
-        try {
-            String emailEmpresa = empresaRepository.getEmailInmediato();
-            if (emailEmpresa == null || emailEmpresa.trim().isEmpty()) {
-                emailEmpresa = "contacto@homefinder.com";
+        if (getContext() == null) return;
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+        String userId = prefs.getString("user_id", "");
+
+        // Solo clientes registrados pueden enviar mensajes
+        if (!isLoggedIn || userId.isEmpty()) {
+            mostrarDialogoRequerirLogin(
+                    "Iniciá sesión para contactar",
+                    "Para enviar una consulta directa a la inmobiliaria y coordinar visitas, necesitás ingresar con tu cuenta de cliente en Home Finder.",
+                    R.drawable.ic_chat
+            );
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View dialogView = inflater.inflate(R.layout.dialog_contactar_propiedad, null);
+
+        TextView tvPropiedadTitulo = dialogView.findViewById(R.id.dialog_tv_propiedad_titulo);
+        TextView tvPropiedadUbicacion = dialogView.findViewById(R.id.dialog_tv_propiedad_ubicacion);
+        TextInputEditText etNombre = dialogView.findViewById(R.id.dialog_et_nombre);
+        TextInputEditText etTelefono = dialogView.findViewById(R.id.dialog_et_telefono);
+        TextInputEditText etEmail = dialogView.findViewById(R.id.dialog_et_email);
+        TextInputEditText etMensaje = dialogView.findViewById(R.id.dialog_et_mensaje);
+        ImageButton btnCerrar = dialogView.findViewById(R.id.btn_cerrar_dialog_contacto);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_btn_cancelar);
+        MaterialButton btnEnviar = dialogView.findViewById(R.id.dialog_btn_enviar);
+
+        Chip chipVisita = dialogView.findViewById(R.id.chip_visita);
+        Chip chipFinanciacion = dialogView.findViewById(R.id.chip_financiacion);
+        Chip chipPermuta = dialogView.findViewById(R.id.chip_permuta);
+        Chip chipCredito = dialogView.findViewById(R.id.chip_credito);
+
+        String titulo = currentPropiedad != null && currentPropiedad.titulo != null ? currentPropiedad.titulo : "Propiedad";
+        String ubicacion = "";
+        if (currentPropiedad != null) {
+            ubicacion = currentPropiedad.domicilio != null ? currentPropiedad.domicilio : "";
+            if (currentPropiedad.ciudad != null && !currentPropiedad.ciudad.isEmpty()) {
+                ubicacion += (ubicacion.isEmpty() ? "" : ", ") + currentPropiedad.ciudad;
             }
-            String titulo = currentPropiedad != null && currentPropiedad.titulo != null ? currentPropiedad.titulo : "Propiedad";
+        }
+        if (ubicacion.isEmpty()) ubicacion = "Ubicación disponible";
 
-            Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
-            emailIntent.setData(Uri.parse("mailto:" + emailEmpresa));
-            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Consulta por: " + titulo);
-            emailIntent.putExtra(Intent.EXTRA_TEXT, "Hola, quisiera consultar por la propiedad '" + titulo + "' publicada en Home Finder.");
+        tvPropiedadTitulo.setText(titulo);
+        tvPropiedadUbicacion.setText(ubicacion);
 
-            startActivity(Intent.createChooser(emailIntent, "Contactar a la inmobiliaria"));
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "Solicitud de contacto enviada. Un asesor se comunicará a la brevedad.", Toast.LENGTH_LONG).show();
+        // Pre-cargar datos del cliente registrado (nombre, teléfono, correo)
+        String savedNombre = prefs.getString("user_nombre", "");
+        String savedTelefono = prefs.getString("user_telefono", "");
+        String savedEmail = prefs.getString("user_email", "");
+
+        if (!savedNombre.isEmpty()) etNombre.setText(savedNombre);
+        if (!savedTelefono.isEmpty()) etTelefono.setText(savedTelefono);
+        if (!savedEmail.isEmpty()) etEmail.setText(savedEmail);
+
+        // Si el teléfono no estaba en prefs, buscarlo en la base de datos local
+        if (savedTelefono.isEmpty() && (!userId.isEmpty() || !savedEmail.isEmpty())) {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                Usuario u = !userId.isEmpty()
+                        ? AppDatabase.getInstance(requireContext()).usuarioDao().obtenerUsuarioDirectoPorId(userId)
+                        : AppDatabase.getInstance(requireContext()).usuarioDao().obtenerPorEmail(savedEmail);
+                if (u != null && u.telefono != null && !u.telefono.isEmpty()) {
+                    String telRecuperado = u.telefono;
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            if (etTelefono != null && (etTelefono.getText() == null || etTelefono.getText().toString().trim().isEmpty())) {
+                                etTelefono.setText(telRecuperado);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        etMensaje.setText("Hola, me interesa la propiedad '" + titulo + "' y quisiera coordinar una visita o recibir más información.");
+
+        // Chips interactivos
+        if (chipVisita != null) {
+            chipVisita.setOnClickListener(v -> etMensaje.setText("Hola, quisiera coordinar una visita presencial para conocer el inmueble."));
+        }
+        if (chipFinanciacion != null) {
+            chipFinanciacion.setOnClickListener(v -> etMensaje.setText("Hola, quisiera consultar las opciones de financiación y formas de pago disponibles para esta propiedad."));
+        }
+        if (chipPermuta != null) {
+            chipPermuta.setOnClickListener(v -> etMensaje.setText("Hola, me gustaría saber si aceptan permuta o propiedad de menor valor como parte de pago."));
+        }
+        if (chipCredito != null) {
+            chipCredito.setOnClickListener(v -> etMensaje.setText("Hola, ¿la propiedad es apta para crédito hipotecario bancario?"));
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (btnCerrar != null) btnCerrar.setOnClickListener(v -> dialog.dismiss());
+        if (btnCancelar != null) btnCancelar.setOnClickListener(v -> dialog.dismiss());
+
+        if (btnEnviar != null) {
+            final String finalUbicacion = ubicacion;
+            btnEnviar.setOnClickListener(v -> {
+                String nombre = etNombre.getText() != null ? etNombre.getText().toString().trim() : "";
+                String telefono = etTelefono.getText() != null ? etTelefono.getText().toString().trim() : "";
+                String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+                String mensaje = etMensaje.getText() != null ? etMensaje.getText().toString().trim() : "";
+
+                if (nombre.isEmpty()) {
+                    etNombre.setError("Por favor ingresa tu nombre");
+                    etNombre.requestFocus();
+                    return;
+                }
+                if (telefono.isEmpty()) {
+                    etTelefono.setError("Por favor ingresa un teléfono de contacto");
+                    etTelefono.requestFocus();
+                    return;
+                }
+                if (mensaje.isEmpty()) {
+                    etMensaje.setError("Por favor escribe tu consulta");
+                    etMensaje.requestFocus();
+                    return;
+                }
+
+                // Opción 2: Los datos editados se aplican únicamente a este mensaje puntual,
+                // manteniendo intacto el perfil y la cuenta original del cliente.
+
+                // Formatear fecha y hora actual
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+                Calendar now = Calendar.getInstance();
+                String fecha = dateFormat.format(now.getTime());
+                String hora = timeFormat.format(now.getTime());
+                long timestamp = now.getTimeInMillis();
+
+                MensajeContacto nuevoMensaje = new MensajeContacto(
+                        nombre,
+                        telefono,
+                        email,
+                        currentPropiedad != null ? currentPropiedad.id : "",
+                        titulo,
+                        finalUbicacion,
+                        mensaje,
+                        fecha,
+                        hora,
+                        timestamp,
+                        false
+                );
+
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    db.mensajeContactoDao().insert(nuevoMensaje);
+                });
+
+                dialog.dismiss();
+                Toast.makeText(requireContext(), "¡Mensaje enviado con éxito! Un asesor de la inmobiliaria revisará tu consulta.", Toast.LENGTH_LONG).show();
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void mostrarDialogoRequerirLogin(String titulo, String mensaje, int iconRes) {
+        if (getContext() == null) return;
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View dialogView = inflater.inflate(R.layout.dialog_requerir_login, null);
+
+        ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_login_icon);
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_login_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_login_mensaje);
+        MaterialButton btnLogin = dialogView.findViewById(R.id.btn_dialog_login);
+        MaterialButton btnRegistro = dialogView.findViewById(R.id.btn_dialog_registro);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_dialog_cancelar);
+
+        if (ivIcon != null && iconRes != 0) {
+            ivIcon.setImageResource(iconRes);
+        }
+        if (tvTitulo != null && titulo != null) {
+            tvTitulo.setText(titulo);
+        }
+        if (tvMensaje != null && mensaje != null) {
+            tvMensaje.setText(mensaje);
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (btnLogin != null) {
+            btnLogin.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (getView() != null) {
+                    try {
+                        Navigation.findNavController(getView()).navigate(R.id.nav_login);
+                    } catch (Exception e) {
+                        Toast.makeText(requireContext(), "Por favor ingresa desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        if (btnRegistro != null) {
+            btnRegistro.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (getView() != null) {
+                    try {
+                        Navigation.findNavController(getView()).navigate(R.id.nav_registro);
+                    } catch (Exception e) {
+                        Toast.makeText(requireContext(), "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        if (btnCancelar != null) {
+            btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
+
+    private void toggleFavorito() {
+        if (getContext() == null || currentPropiedad == null) return;
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+        String userId = prefs.getString("user_id", "");
+
+        if (!isLoggedIn || userId.isEmpty()) {
+            mostrarDialogoRequerirLogin(
+                    "Guardá tus favoritos",
+                    "Para guardar esta propiedad en tu lista de favoritos y acceder a ella cuando quieras, necesitás ingresar con tu cuenta de cliente en Home Finder.",
+                    R.drawable.ic_favorite
+            );
+            return;
+        }
+
+        final boolean nuevoEstado = !isPropiedadFavorita;
+        isPropiedadFavorita = nuevoEstado;
+        actualizarIconoFavorito(nuevoEstado);
+        if (ivDetalleFavorito != null) {
+            ivDetalleFavorito.animate().scaleX(1.3f).scaleY(1.3f).setDuration(120)
+                    .withEndAction(() -> ivDetalleFavorito.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start())
+                    .start();
+        }
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(requireContext());
+            // Asegurar que el usuario existe en Room para evitar fallos de Foreign Key
+            Usuario u = db.usuarioDao().obtenerUsuarioDirectoPorId(userId);
+            if (u == null) {
+                Usuario nuevoU = new Usuario();
+                nuevoU.id = userId;
+                nuevoU.nombre = prefs.getString("user_nombre", "Usuario");
+                nuevoU.email = prefs.getString("user_email", "");
+                nuevoU.telefono = prefs.getString("user_telefono", "");
+                nuevoU.rol = prefs.getString("user_rol", "CLIENTE");
+                db.usuarioDao().insertar(nuevoU);
+            }
+
+            if (nuevoEstado) {
+                Favorito fav = new Favorito();
+                fav.usuarioId = userId;
+                fav.propiedadId = currentPropiedad.id;
+                fav.fechaGuardado = System.currentTimeMillis();
+                fav.estadoSincronizacion = "SINCRONIZADO";
+                db.favoritoDao().insertar(fav);
+            } else {
+                db.favoritoDao().eliminarPorIds(userId, currentPropiedad.id);
+            }
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(),
+                            nuevoEstado ? "¡Propiedad guardada en Favoritos!" : "Propiedad eliminada de Favoritos",
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void verificarEstadoFavorito(Propiedad prop) {
+        if (prop == null || getContext() == null) return;
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+        String userId = prefs.getString("user_id", "");
+
+        if (!isLoggedIn || userId.isEmpty()) {
+            actualizarIconoFavorito(false);
+            return;
+        }
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            boolean fav = AppDatabase.getInstance(requireContext()).favoritoDao().esFavorito(userId, prop.id);
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    isPropiedadFavorita = fav;
+                    actualizarIconoFavorito(fav);
+                });
+            }
+        });
+    }
+
+    private void actualizarIconoFavorito(boolean fav) {
+        if (ivDetalleFavorito == null || getContext() == null) return;
+        if (fav) {
+            ivDetalleFavorito.setImageResource(R.drawable.ic_favorite);
+            ivDetalleFavorito.setColorFilter(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
+            if (btnDetalleFavorito instanceof androidx.cardview.widget.CardView) {
+                ((androidx.cardview.widget.CardView) btnDetalleFavorito).setCardBackgroundColor(
+                        ContextCompat.getColor(requireContext(), R.color.colorPrimaryFixed)
+                );
+            }
+        } else {
+            ivDetalleFavorito.setImageResource(R.drawable.ic_favorite_border);
+            ivDetalleFavorito.setColorFilter(ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant));
+            if (btnDetalleFavorito instanceof androidx.cardview.widget.CardView) {
+                ((androidx.cardview.widget.CardView) btnDetalleFavorito).setCardBackgroundColor(
+                        ContextCompat.getColor(requireContext(), R.color.colorSurfaceContainerHighest)
+                );
+            }
         }
     }
 

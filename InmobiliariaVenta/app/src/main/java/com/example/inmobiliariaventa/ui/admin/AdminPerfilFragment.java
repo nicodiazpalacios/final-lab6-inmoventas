@@ -44,6 +44,13 @@ public class AdminPerfilFragment extends Fragment {
             Toast.makeText(getContext(), "Notificaciones", Toast.LENGTH_SHORT).show();
         });
 
+        View btnMensajes = view.findViewById(R.id.btn_mensajes_clientes);
+        if (btnMensajes != null) {
+            btnMensajes.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.nav_admin_mensajes);
+            });
+        }
+
         // Logout
         View btnLogout = view.findViewById(R.id.btn_logout);
         if (btnLogout != null) {

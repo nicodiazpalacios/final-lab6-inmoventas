@@ -27,6 +27,9 @@ public interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
     LiveData<Usuario> obtenerPorId(String id);
 
+    @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
+    Usuario obtenerUsuarioDirectoPorId(String id);
+
     @Query("SELECT * FROM usuarios WHERE email = :email LIMIT 1")
     Usuario obtenerPorEmail(String email);
 

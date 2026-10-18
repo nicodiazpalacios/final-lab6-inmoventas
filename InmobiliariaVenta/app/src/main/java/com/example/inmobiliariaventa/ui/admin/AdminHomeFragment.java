@@ -45,10 +45,26 @@ public class AdminHomeFragment extends Fragment {
         }
         
         View cardMensajes = view.findViewById(R.id.card_mensajes);
+        android.widget.TextView tvMensajesSub = view.findViewById(R.id.tv_admin_mensajes_subtitulo);
         if (cardMensajes != null) {
             cardMensajes.setOnClickListener(v -> {
                 androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_mensajes);
             });
+
+            if (tvMensajesSub != null && getContext() != null) {
+                com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
+                        .mensajeContactoDao()
+                        .getMensajesNoLeidosCount()
+                        .observe(getViewLifecycleOwner(), unreadCount -> {
+                            if (unreadCount != null && unreadCount > 0) {
+                                tvMensajesSub.setText(unreadCount + " nuevos mensajes");
+                                tvMensajesSub.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorPrimary));
+                            } else {
+                                tvMensajesSub.setText("Bandeja al día");
+                                tvMensajesSub.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant));
+                            }
+                        });
+            }
         }
 
         View cardPropiedades = view.findViewById(R.id.card_propiedades);

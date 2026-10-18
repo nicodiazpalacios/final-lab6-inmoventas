@@ -1,0 +1,74 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="200dp"
+    android:viewportWidth="400"
+    android:viewportHeight="200">
+
+    <!-- Fondo de base del mapa (terreno urbano moderno) -->
+    <path
+        android:fillColor="#EBF0F3"
+        android:pathData="M0,0h400v200h-400z" />
+
+    <!-- Zona verde / Parque urbano -->
+    <path
+        android:fillColor="#D8E8DC"
+        android:pathData="M260,20 C290,15 350,30 380,10 L400,10 L400,90 C360,95 320,80 270,85 C250,60 250,35 260,20 Z" />
+
+    <path
+        android:fillColor="#D8E8DC"
+        android:pathData="M10,120 C40,115 70,130 90,150 C70,180 50,195 10,200 L0,200 L0,140 Z" />
+
+    <!-- Río / Agua sutil en esquina -->
+    <path
+        android:fillColor="#D0E3F5"
+        android:pathData="M340,200 C350,170 370,150 400,140 L400,200 Z" />
+
+    <!-- Manzanas / Bloques urbanos -->
+    <path
+        android:fillColor="#DFE6EC"
+        android:pathData="M25,25 h60 v40 h-60 z
+                          M105,25 h75 v40 h-75 z
+                          M25,85 h60 v45 h-60 z
+                          M105,85 h75 v45 h-75 z
+                          M200,85 h45 v45 h-45 z
+                          M265,105 h55 v40 h-55 z
+                          M340,105 h45 v40 h-45 z
+                          M105,150 h75 v35 h-75 z
+                          M200,150 h45 v35 h-45 z
+                          M265,160 h55 v30 h-55 z" />
+
+    <!-- Calles secundarias (trazas finas) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:pathData="M0,45 L400,45
+                          M0,105 L400,105
+                          M0,165 L400,165
+                          M55,0 L55,200
+                          M142,0 L142,200
+                          M232,0 L232,200
+                          M335,0 L335,200" />
+
+    <!-- Avenidas principales (más anchas y marcadas con borde sutil) -->
+    <path
+        android:strokeColor="#D3DDE5"
+        android:strokeWidth="12"
+        android:pathData="M0,72 L400,72
+                          M190,0 L190,200" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="9"
+        android:pathData="M0,72 L400,72
+                          M190,0 L190,200" />
+
+    <!-- Diagonal / Boulevard principal que cruza el centro -->
+    <path
+        android:strokeColor="#D3DDE5"
+        android:strokeWidth="11"
+        android:pathData="M15,190 L385,15" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:pathData="M15,190 L385,15" />
+
+</vector>
