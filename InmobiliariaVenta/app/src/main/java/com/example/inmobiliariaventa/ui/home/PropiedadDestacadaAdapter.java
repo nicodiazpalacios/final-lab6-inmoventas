@@ -36,14 +36,61 @@ import java.util.Locale;
 public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDestacadaAdapter.ViewHolder> {
 
     private List<Propiedad> propiedades;
+    private final java.util.Set<String> favoritosUsuarioIds = new java.util.HashSet<>();
+    private boolean favoritosInicializados = false;
 
     public PropiedadDestacadaAdapter(List<Propiedad> propiedades) {
         this.propiedades = propiedades != null ? propiedades : new ArrayList<>();
+        setHasStableIds(true);
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
         this.propiedades = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
         notifyDataSetChanged();
+    }
+
+    public void agregarPropiedades(List<Propiedad> mas) {
+        if (mas == null || mas.isEmpty()) return;
+        int startPos = this.propiedades.size();
+        this.propiedades.addAll(mas);
+        notifyItemRangeInserted(startPos, mas.size());
+    }
+
+    public void recargarFavoritos(Context context) {
+        if (context == null) return;
+        SharedPreferences prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+        String userId = prefs.getString("user_id", "");
+        if (isLoggedIn && !userId.isEmpty()) {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                List<String> ids = AppDatabase.getInstance(context).favoritoDao().obtenerIdsFavoritosDeUsuario(userId);
+                synchronized (favoritosUsuarioIds) {
+                    favoritosUsuarioIds.clear();
+                    if (ids != null) {
+                        favoritosUsuarioIds.addAll(ids);
+                    }
+                    favoritosInicializados = true;
+                }
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
+            });
+        } else {
+            synchronized (favoritosUsuarioIds) {
+                favoritosUsuarioIds.clear();
+                favoritosInicializados = true;
+            }
+            notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public long getItemId(int position) {
+        if (propiedades != null && position >= 0 && position < propiedades.size()) {
+            Propiedad p = propiedades.get(position);
+            if (p != null && p.id != null) {
+                return p.id.hashCode();
+            }
+        }
+        return position;
     }
 
     @NonNull
@@ -101,22 +148,29 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
             }
         }
 
-        // Estado inicial por defecto (desmarcado neutral)
-        actualizarEstadoVisualFavorito(holder, false);
-
-        // Si el usuario está registrado, verificar estado real en Room
-        SharedPreferences prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
-        boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
-        String userId = prefs.getString("user_id", "");
-
-        if (isLoggedIn && !userId.isEmpty() && prop.id != null) {
-            AppDatabase.databaseWriteExecutor.execute(() -> {
-                boolean esFav = AppDatabase.getInstance(context).favoritoDao().esFavorito(userId, prop.id);
-                holder.itemView.post(() -> {
-                    actualizarEstadoVisualFavorito(holder, esFav);
+        // Cargar conjunto de favoritos en memoria una única vez de forma asíncrona
+        if (!favoritosInicializados) {
+            SharedPreferences prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+            boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+            String userId = prefs.getString("user_id", "");
+            if (isLoggedIn && !userId.isEmpty()) {
+                favoritosInicializados = true;
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    List<String> ids = AppDatabase.getInstance(context).favoritoDao().obtenerIdsFavoritosDeUsuario(userId);
+                    synchronized (favoritosUsuarioIds) {
+                        favoritosUsuarioIds.clear();
+                        if (ids != null) favoritosUsuarioIds.addAll(ids);
+                    }
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
                 });
-            });
+            } else {
+                favoritosInicializados = true;
+            }
         }
+
+        // Consulta en memoria O(1) sin consultar la base de datos en cada scroll para 0 lag
+        boolean esFav = prop.id != null && favoritosUsuarioIds.contains(prop.id);
+        actualizarEstadoVisualFavorito(holder, esFav);
 
         // Manejar interacción con el botón de favorito
         View.OnClickListener favClickListener = v -> {
@@ -129,8 +183,15 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                 return;
             }
 
-            boolean esActualFav = Boolean.TRUE.equals(holder.favoriteButton.getTag());
+            boolean esActualFav = prop.id != null && favoritosUsuarioIds.contains(prop.id);
             final boolean nuevoEstado = !esActualFav;
+            synchronized (favoritosUsuarioIds) {
+                if (nuevoEstado) {
+                    favoritosUsuarioIds.add(prop.id);
+                } else {
+                    favoritosUsuarioIds.remove(prop.id);
+                }
+            }
             actualizarEstadoVisualFavorito(holder, nuevoEstado);
 
             // Micro-animación de pulso táctil

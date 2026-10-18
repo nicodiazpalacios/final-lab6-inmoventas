@@ -10,6 +10,7 @@
     <include layout="@layout/layout_header" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/homeNestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -148,31 +149,16 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_categoria" />
 
-            <!-- Featured Properties -->
-            <RelativeLayout
+            <!-- Properties Section Header -->
+            <TextView
+                android:id="@+id/tvTituloPropiedadesHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Propiedades Destacadas"
-                    android:textColor="@color/colorOnSurface"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/viewAllFeaturedTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:text="Ver todas >"
-                    android:textColor="@color/colorPrimary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </RelativeLayout>
+                android:layout_marginTop="40dp"
+                android:text="Propiedades"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/featuredRecyclerView"

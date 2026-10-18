@@ -29,6 +29,7 @@ public class ImageLoader {
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .error(android.R.drawable.ic_menu_gallery)
+                    .override(720, 480)
                     .centerCrop()
                     .into(imageView);
         } catch (Exception ignored) {

@@ -26,14 +26,20 @@ public class HomeUsuarioFragment extends Fragment {
 
     private RecyclerView categoriesRecyclerView;
     private RecyclerView featuredRecyclerView;
-
     private LinearLayout searchContainer;
+
+    private androidx.core.widget.NestedScrollView homeNestedScrollView;
+    private PropiedadDestacadaAdapter featuredAdapter;
+    private List<Propiedad> listaCompletaHome = new ArrayList<>();
+    private int limiteActualHome = 20;
+    private static final int BATCH_SIZE = 20;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home_usuario, container, false);
 
+        homeNestedScrollView = view.findViewById(R.id.homeNestedScrollView);
         categoriesRecyclerView = view.findViewById(R.id.categoriesRecyclerView);
         featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
 
@@ -69,13 +75,6 @@ public class HomeUsuarioFragment extends Fragment {
             }
         }
 
-        android.widget.TextView viewAllFeaturedTextView = view.findViewById(R.id.viewAllFeaturedTextView);
-        if (viewAllFeaturedTextView != null) {
-            viewAllFeaturedTextView.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.action_nav_inicio_to_nav_resultados_busqueda);
-            });
-        }
-
         setupCategories();
         setupFeaturedProperties();
 
@@ -99,27 +98,46 @@ public class HomeUsuarioFragment extends Fragment {
         categoriesRecyclerView.setAdapter(adapter);
     }
 
-    private PropiedadDestacadaAdapter featuredAdapter;
-
     private void setupFeaturedProperties() {
         featuredAdapter = new PropiedadDestacadaAdapter(new ArrayList<>());
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        featuredRecyclerView.setHasFixedSize(true);
+        featuredRecyclerView.setItemViewCacheSize(20);
         featuredRecyclerView.setAdapter(featuredAdapter);
+
+        // Desplazamiento automático fluido sin botones: al acercarse al final del scroll, se cargan más elementos
+        if (homeNestedScrollView != null) {
+            homeNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
+                    cargarMasPropiedadesHome();
+                }
+            });
+        }
 
         com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel viewModel =
                 new androidx.lifecycle.ViewModelProvider(this).get(com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel.class);
         viewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
             if (propiedades != null) {
-                featuredAdapter.setPropiedades(propiedades);
+                listaCompletaHome = propiedades;
+                limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
+                featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
             }
         });
+    }
+
+    private void cargarMasPropiedadesHome() {
+        if (listaCompletaHome == null || limiteActualHome >= listaCompletaHome.size()) return;
+        int nuevoLimite = Math.min(limiteActualHome + BATCH_SIZE, listaCompletaHome.size());
+        List<Propiedad> lote = new ArrayList<>(listaCompletaHome.subList(limiteActualHome, nuevoLimite));
+        limiteActualHome = nuevoLimite;
+        featuredAdapter.agregarPropiedades(lote);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (featuredAdapter != null) {
-            featuredAdapter.notifyDataSetChanged();
+        if (featuredAdapter != null && getContext() != null) {
+            featuredAdapter.recargarFavoritos(getContext());
         }
     }
 

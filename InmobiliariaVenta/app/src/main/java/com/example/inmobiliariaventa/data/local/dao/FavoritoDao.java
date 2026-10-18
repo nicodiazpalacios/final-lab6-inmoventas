@@ -34,6 +34,12 @@ public interface FavoritoDao {
     @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
     LiveData<List<Propiedad>> obtenerFavoritosDeUsuarioLiveData(String usuarioId);
 
+    @Query("SELECT propiedadId FROM favoritos WHERE usuarioId = :usuarioId")
+    List<String> obtenerIdsFavoritosDeUsuario(String usuarioId);
+
+    @Query("SELECT propiedadId FROM favoritos WHERE usuarioId = :usuarioId")
+    LiveData<List<String>> obtenerIdsFavoritosDeUsuarioLiveData(String usuarioId);
+
     @Query("SELECT * FROM favoritos WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Favorito> obtenerPendientesDeSubir();
 }

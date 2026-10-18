@@ -22,6 +22,7 @@ import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.checkbox.MaterialCheckBox;
 
 public class LoginFragment extends Fragment {
 
@@ -35,6 +36,24 @@ public class LoginFragment extends Fragment {
         EditText etPassword = view.findViewById(R.id.etPassword);
         ImageView btnTogglePassword = view.findViewById(R.id.btnTogglePassword);
         MaterialButton btnLogin = view.findViewById(R.id.btnLogin);
+        MaterialCheckBox cbRecordarme = view.findViewById(R.id.cbRecordarme);
+
+        // Pre-cargar credenciales si el usuario marcó "Recordarme" previamente
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+        boolean rememberMe = loginPrefs.getBoolean("remember_me", false);
+        if (rememberMe) {
+            String savedEmail = loginPrefs.getString("saved_email", "");
+            String savedPassword = loginPrefs.getString("saved_password", "");
+            if (!savedEmail.isEmpty()) {
+                etEmail.setText(savedEmail);
+            }
+            if (!savedPassword.isEmpty()) {
+                etPassword.setText(savedPassword);
+            }
+            if (cbRecordarme != null) {
+                cbRecordarme.setChecked(true);
+            }
+        }
 
         // Toggle password visibility
         btnTogglePassword.setOnClickListener(v -> {
@@ -76,6 +95,8 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
+            boolean isRememberChecked = cbRecordarme != null && cbRecordarme.isChecked();
+
             btnLogin.setEnabled(false);
             btnLogin.setText("Verificando cuenta...");
 
@@ -85,6 +106,9 @@ public class LoginFragment extends Fragment {
                     if (!isAdded()) return;
 
                     if (usuario != null) {
+                        // Procesar opción Recordarme
+                        procesarRecordarme(email, password, isRememberChecked);
+
                         // Guardar sesión en SharedPreferences
                         guardarSesion(usuario);
 
@@ -105,14 +129,14 @@ public class LoginFragment extends Fragment {
                         }
                     } else {
                         // Buscar en base local si no hay conexión o no existe en Supabase
-                        verificarLocal(email, v, btnLogin);
+                        verificarLocal(email, password, isRememberChecked, v, btnLogin);
                     }
                 }
 
                 @Override
                 public void onError(Exception error) {
                     if (!isAdded()) return;
-                    verificarLocal(email, v, btnLogin);
+                    verificarLocal(email, password, isRememberChecked, v, btnLogin);
                 }
             });
         });
@@ -120,7 +144,7 @@ public class LoginFragment extends Fragment {
         return view;
     }
 
-    private void verificarLocal(String email, View view, MaterialButton btnLogin) {
+    private void verificarLocal(String email, String password, boolean isRememberChecked, View view, MaterialButton btnLogin) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             Usuario local = AppDatabase.getInstance(requireContext()).usuarioDao().obtenerPorEmail(email);
             view.post(() -> {
@@ -129,6 +153,7 @@ public class LoginFragment extends Fragment {
                 btnLogin.setEnabled(true);
 
                 if (local != null) {
+                    procesarRecordarme(email, password, isRememberChecked);
                     guardarSesion(local);
                     if ("ADMIN".equalsIgnoreCase(local.rol)) {
                         Toast.makeText(getContext(), "Bienvenido Administrador (offline)", Toast.LENGTH_SHORT).show();
@@ -142,6 +167,24 @@ public class LoginFragment extends Fragment {
                 }
             });
         });
+    }
+
+    private void procesarRecordarme(String email, String password, boolean isRememberChecked) {
+        if (getContext() == null) return;
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+        if (isRememberChecked) {
+            loginPrefs.edit()
+                    .putBoolean("remember_me", true)
+                    .putString("saved_email", email)
+                    .putString("saved_password", password)
+                    .apply();
+        } else {
+            loginPrefs.edit()
+                    .putBoolean("remember_me", false)
+                    .remove("saved_email")
+                    .remove("saved_password")
+                    .apply();
+        }
     }
 
     private void guardarSesion(Usuario usuario) {

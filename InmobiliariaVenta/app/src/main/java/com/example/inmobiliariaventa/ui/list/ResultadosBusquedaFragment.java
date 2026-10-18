@@ -53,6 +53,10 @@ public class ResultadosBusquedaFragment extends Fragment {
     private LinearLayout emptyStateContainer;
 
     private List<Propiedad> masterList = new ArrayList<>();
+    private List<Propiedad> listaFiltradaResultados = new ArrayList<>();
+    private int limiteActualResultados = 20;
+    private static final int BATCH_SIZE_SEARCH = 20;
+    private androidx.core.widget.NestedScrollView searchResultsNestedScrollView;
     private String selectedTipo = "Todas";
     private String selectedSort = "Recomendados";
     private String currentSearchQuery = "";
@@ -90,12 +94,23 @@ public class ResultadosBusquedaFragment extends Fragment {
         txtResultadosCount = view.findViewById(R.id.txtResultadosCount);
         searchResultsRecyclerView = view.findViewById(R.id.searchResultsRecyclerView);
         emptyStateContainer = view.findViewById(R.id.emptyStateContainer);
-        MaterialButton loadMoreButton = view.findViewById(R.id.loadMoreButton);
+        searchResultsNestedScrollView = view.findViewById(R.id.searchResultsNestedScrollView);
 
-        // RecyclerView Setup
+        // RecyclerView Setup con optimizaciones de rendimiento
         adapter = new PropiedadDestacadaAdapter(new ArrayList<>());
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        searchResultsRecyclerView.setHasFixedSize(true);
+        searchResultsRecyclerView.setItemViewCacheSize(20);
         searchResultsRecyclerView.setAdapter(adapter);
+
+        // Carga continua automática al hacer scroll (sin necesidad de botón)
+        if (searchResultsNestedScrollView != null) {
+            searchResultsNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
+                    cargarMasResultadosBusqueda();
+                }
+            });
+        }
 
         // Volver atrás
         if (btnBack != null) {
@@ -247,13 +262,6 @@ public class ResultadosBusquedaFragment extends Fragment {
 
                 @Override
                 public void afterTextChanged(Editable s) {}
-            });
-        }
-
-        // Botón Cargar Más
-        if (loadMoreButton != null) {
-            loadMoreButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "Todas las propiedades ya están cargadas", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -428,8 +436,10 @@ public class ResultadosBusquedaFragment extends Fragment {
             Collections.sort(filtered, (a, b) -> Double.compare(b.precio, a.precio));
         }
 
-        // Actualizar UI
-        adapter.setPropiedades(filtered);
+        // Actualizar UI con paginación fluida por lotes
+        listaFiltradaResultados = filtered;
+        limiteActualResultados = Math.min(BATCH_SIZE_SEARCH, listaFiltradaResultados.size());
+        adapter.setPropiedades(new ArrayList<>(listaFiltradaResultados.subList(0, limiteActualResultados)));
 
         int count = filtered.size();
         if (txtResultadosCount != null) {
@@ -457,11 +467,19 @@ public class ResultadosBusquedaFragment extends Fragment {
         }
     }
 
+    private void cargarMasResultadosBusqueda() {
+        if (listaFiltradaResultados == null || limiteActualResultados >= listaFiltradaResultados.size()) return;
+        int nuevoLimite = Math.min(limiteActualResultados + BATCH_SIZE_SEARCH, listaFiltradaResultados.size());
+        List<Propiedad> lote = new ArrayList<>(listaFiltradaResultados.subList(limiteActualResultados, nuevoLimite));
+        limiteActualResultados = nuevoLimite;
+        adapter.agregarPropiedades(lote);
+    }
+
     @Override
     public void onResume() {
         super.onResume();
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
+        if (adapter != null && getContext() != null) {
+            adapter.recargarFavoritos(getContext());
         }
     }
 }
