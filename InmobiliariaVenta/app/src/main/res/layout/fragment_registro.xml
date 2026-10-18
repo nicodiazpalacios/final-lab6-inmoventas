@@ -201,7 +201,7 @@
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="12dp"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="24dp">
+                        android:layout_marginBottom="32dp">
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
@@ -219,27 +219,6 @@
                             android:textColor="@color/colorOnSurface"
                             android:textColorHint="@color/colorOutlineVariant"
                             android:textSize="16sp"/>
-                    </LinearLayout>
-                    
-                    <!-- Terms Checkbox -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="24dp">
-                        <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/cbTerms"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:buttonTint="@color/colorPrimary"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Acepto los Términos de Servicio y la Política de Privacidad."
-                            android:textColor="@color/colorOnSurfaceVariant"
-                            android:textSize="12sp"
-                            android:layout_marginStart="4dp"/>
                     </LinearLayout>
                     
                     <!-- Submit Button -->

@@ -1,18 +1,29 @@
 package com.example.inmobiliariaventa.ui.home;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.widget.LinearLayout;
+
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
@@ -58,6 +69,26 @@ public class HomeUsuarioFragment extends Fragment {
                 Navigation.findNavController(v).navigate(R.id.nav_buscar);
             }
         });
+
+        // Configurar botón de notificaciones en la cabecera
+        View notificationsButton = view.findViewById(R.id.notificationsButton);
+        if (notificationsButton != null) {
+            notificationsButton.setOnClickListener(v -> {
+                if (getContext() == null) return;
+                SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+                boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+                if (isLoggedIn) {
+                    String userRol = prefs.getString("user_rol", "");
+                    if ("ADMIN".equalsIgnoreCase(userRol)) {
+                        Navigation.findNavController(v).navigate(R.id.nav_admin_notificaciones);
+                    } else {
+                        Toast.makeText(getContext(), "No tienes nuevas notificaciones por el momento", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    mostrarDialogoRequerirLogin(getContext(), v);
+                }
+            });
+        }
 
         MaterialButton btnAdminMode = view.findViewById(R.id.btnAdminMode);
         if (btnAdminMode != null) {
@@ -141,5 +172,64 @@ public class HomeUsuarioFragment extends Fragment {
         }
     }
 
+    private void mostrarDialogoRequerirLogin(Context context, View anchorView) {
+        if (context == null) return;
 
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View dialogView = inflater.inflate(R.layout.dialog_requerir_login, null);
+
+        ImageView ivIcon = dialogView.findViewById(R.id.iv_dialog_login_icon);
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_login_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_login_mensaje);
+        MaterialButton btnLogin = dialogView.findViewById(R.id.btn_dialog_login);
+        MaterialButton btnRegistro = dialogView.findViewById(R.id.btn_dialog_registro);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_dialog_cancelar);
+
+        if (ivIcon != null) {
+            ivIcon.setImageResource(R.drawable.ic_notifications);
+        }
+        if (tvTitulo != null) {
+            tvTitulo.setText("Centro de notificaciones");
+        }
+        if (tvMensaje != null) {
+            tvMensaje.setText("Para enterarte de nuevas propiedades, cambios de precio en tus guardados y respuestas a tus consultas, iniciá sesión o creá tu cuenta.");
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(context)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (btnLogin != null) {
+            btnLogin.setOnClickListener(v -> {
+                dialog.dismiss();
+                try {
+                    Navigation.findNavController(anchorView).navigate(R.id.nav_login);
+                } catch (Exception e) {
+                    Toast.makeText(context, "Por favor ingresá desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnRegistro != null) {
+            btnRegistro.setOnClickListener(v -> {
+                dialog.dismiss();
+                try {
+                    Navigation.findNavController(anchorView).navigate(R.id.nav_registro);
+                } catch (Exception e) {
+                    Toast.makeText(context, "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnCancelar != null) {
+            btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
 }
