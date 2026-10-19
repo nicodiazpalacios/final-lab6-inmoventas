@@ -34,9 +34,14 @@ import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.EmpresaRepository;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -142,6 +147,9 @@ public class PerfilUsuarioFragment extends Fragment {
                         }
                         if (tvEmail != null && u.email != null && !u.email.isEmpty()) {
                             tvEmail.setText(u.email);
+                        }
+                        if (u.fotoPerfil != null && !u.fotoPerfil.isEmpty()) {
+                            mostrarFotoPerfil(u.fotoPerfil);
                         }
                     });
                 }
@@ -302,7 +310,63 @@ public class PerfilUsuarioFragment extends Fragment {
                 outputStream.close();
                 inputStream.close();
 
+                // Convertir y comprimir a Base64 para almacenar en base de datos (Room y Supabase)
+                String base64Image = null;
+                try {
+                    Bitmap bitmap = BitmapFactory.decodeFile(destFile.getAbsolutePath());
+                    if (bitmap != null) {
+                        int maxDim = 320;
+                        int w = bitmap.getWidth();
+                        int h = bitmap.getHeight();
+                        if (w > maxDim || h > maxDim) {
+                            float ratio = (float) w / (float) h;
+                            if (ratio > 1) {
+                                w = maxDim;
+                                h = (int) (maxDim / ratio);
+                            } else {
+                                h = maxDim;
+                                w = (int) (maxDim * ratio);
+                            }
+                            bitmap = Bitmap.createScaledBitmap(bitmap, w, h, true);
+                        }
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 82, baos);
+                        byte[] imageBytes = baos.toByteArray();
+                        base64Image = "data:image/jpeg;base64," + Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+                    }
+                } catch (Exception e) {
+                    Log.e("PerfilUsuario", "Error al codificar imagen a base64", e);
+                }
+
+                final String finalFotoData = base64Image != null ? base64Image : destFile.getAbsolutePath();
+
+                // 1. Guardar en SharedPreferences para acceso inmediato
                 prefs.edit().putString("user_foto_perfil", destFile.getAbsolutePath()).apply();
+
+                // 2. Guardar en Room (base de datos local)
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    try {
+                        AppDatabase.getInstance(requireContext())
+                                .usuarioDao().actualizarFotoPerfil(userId, finalFotoData);
+                    } catch (Exception e) {
+                        Log.e("PerfilUsuario", "Error al guardar foto en Room", e);
+                    }
+                });
+
+                // 3. Sincronizar en Supabase (base de datos remota)
+                if (base64Image != null && !userId.isEmpty() && !"local_user".equals(userId)) {
+                    SupabaseClient.actualizarFotoPerfil(userId, base64Image, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            Log.d("PerfilUsuario", "Foto de perfil actualizada en Supabase.");
+                        }
+
+                        @Override
+                        public void onError(Exception error) {
+                            Log.w("PerfilUsuario", "Aviso al guardar en Supabase: " + error.getMessage());
+                        }
+                    });
+                }
 
                 mostrarFotoPerfil(destFile.getAbsolutePath());
                 Toast.makeText(requireContext(), "Foto de perfil actualizada correctamente", Toast.LENGTH_SHORT).show();
@@ -312,10 +376,22 @@ public class PerfilUsuarioFragment extends Fragment {
         }
     }
 
-    private void mostrarFotoPerfil(String path) {
+    private void mostrarFotoPerfil(String pathOrData) {
         if (ivFotoPerfil == null || getContext() == null) return;
-        if (path != null && !path.isEmpty()) {
-            File file = new File(path);
+        if (pathOrData != null && !pathOrData.isEmpty()) {
+            if (pathOrData.startsWith("data:image/") || pathOrData.startsWith("/9j/")) {
+                try {
+                    String base64Data = pathOrData.contains(",") ? pathOrData.substring(pathOrData.indexOf(",") + 1) : pathOrData;
+                    byte[] imageBytes = Base64.decode(base64Data, Base64.DEFAULT);
+                    ivFotoPerfil.setImageTintList(null);
+                    Glide.with(this)
+                            .load(imageBytes)
+                            .circleCrop()
+                            .into(ivFotoPerfil);
+                    return;
+                } catch (Exception ignored) {}
+            }
+            File file = new File(pathOrData);
             if (file.exists()) {
                 ivFotoPerfil.setImageTintList(null);
                 Glide.with(this)
@@ -340,6 +416,20 @@ public class PerfilUsuarioFragment extends Fragment {
             destFile.delete();
         }
         prefs.edit().remove("user_foto_perfil").apply();
+
+        // 1. Eliminar en Room (base de datos local)
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try {
+                AppDatabase.getInstance(requireContext())
+                        .usuarioDao().actualizarFotoPerfil(userId, null);
+            } catch (Exception ignored) {}
+        });
+
+        // 2. Eliminar en Supabase (base de datos remota)
+        if (!userId.isEmpty() && !"local_user".equals(userId)) {
+            SupabaseClient.actualizarFotoPerfil(userId, null, null);
+        }
+
         mostrarFotoPerfil(null);
         Toast.makeText(requireContext(), "Foto de perfil eliminada correctamente", Toast.LENGTH_SHORT).show();
     }

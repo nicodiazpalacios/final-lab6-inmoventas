@@ -35,4 +35,8 @@ public class Usuario {
     
     @ColumnInfo(name = "estadoSincronizacion")
     public String estadoSincronizacion;
+
+    @ColumnInfo(name = "foto_perfil")
+    @SerializedName(value = "fotoperfil", alternate = {"foto_perfil", "fotoPerfil"})
+    public String fotoPerfil;
 }

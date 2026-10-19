@@ -41,4 +41,7 @@ public interface UsuarioDao {
 
     @Query("SELECT * FROM usuarios WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Usuario> obtenerPendientesDeSubir();
+
+    @Query("UPDATE usuarios SET foto_perfil = :fotoPerfil WHERE id = :userId")
+    void actualizarFotoPerfil(String userId, String fotoPerfil);
 }

@@ -234,8 +234,17 @@ public class SupabaseClient {
     }
 
     public static void registrarUsuario(Usuario usuario, SupabaseCallback<Boolean> callback) {
-        String json = gson.toJson(usuario);
-        RequestBody requestBody = RequestBody.create(json, JSON);
+        JsonObject json = new JsonObject();
+        if (usuario.id != null) json.addProperty("id", usuario.id);
+        if (usuario.nombre != null) json.addProperty("nombre", usuario.nombre);
+        if (usuario.email != null) json.addProperty("email", usuario.email);
+        if (usuario.telefono != null) json.addProperty("telefono", usuario.telefono);
+        if (usuario.rol != null) json.addProperty("rol", usuario.rol);
+        if (usuario.fotoPerfil != null && !usuario.fotoPerfil.isEmpty()) {
+            json.addProperty("fotoperfil", usuario.fotoPerfil);
+        }
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
 
         Request request = buildBaseRequest("/rest/v1/usuarios")
                 .header("Prefer", "return=minimal")
@@ -259,6 +268,47 @@ public class SupabaseClient {
                     String msg = "HTTP " + response.code() + ": " + errorBody;
                     Log.e(TAG, "Error registrando usuario en Supabase: " + msg);
                     mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    public static void actualizarFotoPerfil(String userId, String fotoBase64, SupabaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("User ID inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        if (fotoBase64 != null && !fotoBase64.isEmpty()) {
+            json.addProperty("fotoperfil", fotoBase64);
+        } else {
+            json.add("fotoperfil", com.google.gson.JsonNull.INSTANCE);
+        }
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/usuarios?id=eq." + userId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar foto de perfil en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Foto de perfil actualizada en Supabase para: " + userId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    Log.w(TAG, "Aviso Supabase al actualizar foto de perfil: " + response.code() + " - " + errorBody);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorBody)));
                 }
             }
         });

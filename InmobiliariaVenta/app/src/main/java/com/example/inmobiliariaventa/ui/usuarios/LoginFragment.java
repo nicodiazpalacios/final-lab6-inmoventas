@@ -192,13 +192,19 @@ public class LoginFragment extends Fragment {
 
     private void guardarSesion(Usuario usuario) {
         SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
-        prefs.edit()
+        SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean("is_user_logged_in", true)
                 .putString("user_id", usuario.id)
                 .putString("user_email", usuario.email)
                 .putString("user_nombre", usuario.nombre != null ? usuario.nombre : "Usuario")
                 .putString("user_telefono", usuario.telefono != null ? usuario.telefono : "")
-                .putString("user_rol", usuario.rol != null ? usuario.rol : "CLIENTE")
-                .apply();
+                .putString("user_rol", usuario.rol != null ? usuario.rol : "CLIENTE");
+
+        if (usuario.fotoPerfil != null && !usuario.fotoPerfil.isEmpty()) {
+            editor.putString("user_foto_perfil", usuario.fotoPerfil);
+        } else {
+            editor.remove("user_foto_perfil");
+        }
+        editor.apply();
     }
 }
