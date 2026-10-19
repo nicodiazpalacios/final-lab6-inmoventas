@@ -699,7 +699,7 @@ public class PropiedadDetalleFragment extends Fragment {
                 MensajeContactoRepositoryImpl.getInstance(requireContext()).enviarMensaje(nuevoMensaje);
 
                 dialog.dismiss();
-                Toast.makeText(requireContext(), "¡Mensaje enviado con éxito! Un asesor de la inmobiliaria revisará tu consulta.", Toast.LENGTH_LONG).show();
+                mostrarSnackbarElegante("¡Mensaje enviado con éxito! Un asesor de la inmobiliaria revisará tu consulta.", Snackbar.LENGTH_LONG);
             });
         }
 
@@ -819,25 +819,7 @@ public class PropiedadDetalleFragment extends Fragment {
 
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        if (getView() == null) return;
-                        Snackbar snackbar = Snackbar.make(getView(), "¡Propiedad guardada en Favoritos!", Snackbar.LENGTH_SHORT)
-                                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
-
-                        View snackbarView = snackbar.getView();
-                        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
-                        snackbarView.setBackgroundTintList(null);
-
-                        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
-                        if (lp instanceof ViewGroup.MarginLayoutParams) {
-                            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
-                            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-                            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
-                            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
-                            snackbarView.setLayoutParams(marginParams);
-                        }
-                        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
-
-                        snackbar.show();
+                        mostrarSnackbarElegante("¡Propiedad guardada en Favoritos!", Snackbar.LENGTH_SHORT);
                     });
                 }
             } else {
@@ -870,11 +852,16 @@ public class PropiedadDetalleFragment extends Fragment {
                         if (lp instanceof ViewGroup.MarginLayoutParams) {
                             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
                             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-                            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+                            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
                             marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
                             snackbarView.setLayoutParams(marginParams);
                         }
                         snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+                        View anchor = getView().findViewById(R.id.btn_contactar_agente);
+                        if (anchor != null) {
+                            snackbar.setAnchorView(anchor);
+                        }
 
                         TextView actionTextView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
                         if (actionTextView != null) {
@@ -886,6 +873,38 @@ public class PropiedadDetalleFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private void mostrarSnackbarElegante(String mensaje, int duracion) {
+        if (getView() == null || getContext() == null) return;
+        Snackbar snackbar = Snackbar.make(getView(), mensaje, duracion)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View anchor = getView().findViewById(R.id.btn_contactar_agente);
+        if (anchor != null) {
+            snackbar.setAnchorView(anchor);
+        }
+
+        snackbar.show();
     }
 
     private void verificarEstadoFavorito(Propiedad prop) {

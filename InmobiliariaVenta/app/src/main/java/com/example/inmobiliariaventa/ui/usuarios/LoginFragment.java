@@ -14,8 +14,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
@@ -123,10 +126,10 @@ public class LoginFragment extends Fragment {
                         btnLogin.setEnabled(true);
 
                         if ("ADMIN".equalsIgnoreCase(usuario.rol)) {
-                            Toast.makeText(getContext(), "Acceso concedido: Administrador", Toast.LENGTH_SHORT).show();
+                            mostrarSnackbarElegante("Acceso concedido: Administrador", true);
                             Navigation.findNavController(v).navigate(R.id.nav_admin_home);
                         } else {
-                            Toast.makeText(getContext(), "Bienvenido " + usuario.nombre, Toast.LENGTH_SHORT).show();
+                            mostrarSnackbarElegante("Bienvenido " + usuario.nombre, true);
                             Navigation.findNavController(v).navigate(R.id.nav_inicio);
                         }
                     } else {
@@ -159,14 +162,14 @@ public class LoginFragment extends Fragment {
                     guardarSesion(local);
                     FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(local.id, null);
                     if ("ADMIN".equalsIgnoreCase(local.rol)) {
-                        Toast.makeText(getContext(), "Bienvenido Administrador (offline)", Toast.LENGTH_SHORT).show();
+                        mostrarSnackbarElegante("Bienvenido Administrador (offline)", true);
                         Navigation.findNavController(view).navigate(R.id.nav_admin_home);
                     } else {
-                        Toast.makeText(getContext(), "Bienvenido " + local.nombre, Toast.LENGTH_SHORT).show();
+                        mostrarSnackbarElegante("Bienvenido " + local.nombre, true);
                         Navigation.findNavController(view).navigate(R.id.nav_inicio);
                     }
                 } else {
-                    Toast.makeText(getContext(), "No se encontró una cuenta con ese correo. Puedes registrarte.", Toast.LENGTH_LONG).show();
+                    mostrarSnackbarElegante("No se encontró una cuenta con ese correo. Puedes registrarte.", false);
                 }
             });
         });
@@ -206,5 +209,46 @@ public class LoginFragment extends Fragment {
             editor.remove("user_foto_perfil");
         }
         editor.apply();
+    }
+
+    private void mostrarSnackbarElegante(String mensaje, boolean tieneBottomNav) {
+        if (!isAdded() || getActivity() == null) return;
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && tieneBottomNav) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
     }
 }

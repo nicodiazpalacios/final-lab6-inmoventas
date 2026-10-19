@@ -22,10 +22,12 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 import com.bumptech.glide.Glide;
 import com.canhub.cropper.CropImageContract;
@@ -61,7 +63,7 @@ public class PerfilUsuarioFragment extends Fragment {
                         guardarYAplicarFotoPerfil(croppedUri);
                     }
                 } else if (result.getError() != null) {
-                    Toast.makeText(getContext(), "Error al recortar la imagen", Toast.LENGTH_SHORT).show();
+                    mostrarSnackbarElegante("Error al recortar la imagen");
                 }
             });
 
@@ -85,7 +87,7 @@ public class PerfilUsuarioFragment extends Fragment {
                         fos.close();
                         iniciarRecorte(Uri.fromFile(tempFile));
                     } catch (Exception e) {
-                        Toast.makeText(getContext(), "Error al procesar la foto de cámara", Toast.LENGTH_SHORT).show();
+                        mostrarSnackbarElegante("Error al procesar la foto de cámara");
                     }
                 }
             });
@@ -187,7 +189,7 @@ public class PerfilUsuarioFragment extends Fragment {
         View btnSeguridad = view.findViewById(R.id.btn_perfil_seguridad);
         if (btnSeguridad != null) {
             btnSeguridad.setOnClickListener(v -> {
-                Toast.makeText(requireContext(), "Tu cuenta se encuentra protegida con contraseña.", Toast.LENGTH_SHORT).show();
+                mostrarSnackbarElegante("Tu cuenta se encuentra protegida con contraseña.");
             });
         }
 
@@ -195,7 +197,7 @@ public class PerfilUsuarioFragment extends Fragment {
         View btnNotificaciones = view.findViewById(R.id.btn_perfil_notificaciones);
         if (btnNotificaciones != null) {
             btnNotificaciones.setOnClickListener(v -> {
-                Toast.makeText(requireContext(), "Notificaciones del sistema activadas.", Toast.LENGTH_SHORT).show();
+                mostrarSnackbarElegante("Notificaciones del sistema activadas.");
             });
         }
 
@@ -225,7 +227,7 @@ public class PerfilUsuarioFragment extends Fragment {
                         .setMessage("¿Estás seguro de que deseas cerrar sesión?")
                         .setPositiveButton("Sí", (dialog, which) -> {
                             prefs.edit().clear().apply();
-                            Toast.makeText(requireContext(), "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show();
+                            mostrarSnackbarElegante("Sesión cerrada correctamente");
                             Navigation.findNavController(view).navigate(R.id.nav_inicio);
                         })
                         .setNegativeButton("No", null)
@@ -381,10 +383,10 @@ public class PerfilUsuarioFragment extends Fragment {
                 }
 
                 mostrarFotoPerfil(destFile.getAbsolutePath());
-                Toast.makeText(requireContext(), "Foto de perfil actualizada correctamente", Toast.LENGTH_SHORT).show();
+                mostrarSnackbarElegante("Foto de perfil actualizada correctamente");
             }
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No se pudo guardar la imagen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("No se pudo guardar la imagen: " + e.getMessage());
         }
     }
 
@@ -446,7 +448,7 @@ public class PerfilUsuarioFragment extends Fragment {
         }
 
         mostrarFotoPerfil(null);
-        Toast.makeText(requireContext(), "Foto de perfil eliminada correctamente", Toast.LENGTH_SHORT).show();
+        mostrarSnackbarElegante("Foto de perfil eliminada correctamente");
     }
 
     private String getTelefonoEmpresa() {
@@ -468,7 +470,7 @@ public class PerfilUsuarioFragment extends Fragment {
             whatsappIntent.setData(Uri.parse(url));
             startActivity(whatsappIntent);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No se pudo abrir WhatsApp. Verifique tener la aplicación instalada.", Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("No se pudo abrir WhatsApp. Verifique tener la aplicación instalada.");
         }
     }
 
@@ -480,7 +482,7 @@ public class PerfilUsuarioFragment extends Fragment {
             dialIntent.setData(Uri.parse("tel:" + cleanPhone));
             startActivity(dialIntent);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No se pudo iniciar la llamada.", Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("No se pudo iniciar la llamada.");
         }
     }
 
@@ -526,5 +528,46 @@ public class PerfilUsuarioFragment extends Fragment {
         }
 
         dialog.show();
+    }
+
+    private void mostrarSnackbarElegante(String mensaje) {
+        if (!isAdded() || getActivity() == null) return;
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
     }
 }

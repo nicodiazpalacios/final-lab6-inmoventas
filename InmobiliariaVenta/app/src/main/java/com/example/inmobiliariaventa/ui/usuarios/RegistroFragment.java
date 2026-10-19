@@ -20,6 +20,8 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
@@ -208,7 +210,7 @@ public class RegistroFragment extends Fragment {
                         btnRegister.setText("Registrarse");
                         btnRegister.setEnabled(true);
 
-                        Toast.makeText(getContext(), "¡Bienvenido, " + nuevoUsuario.nombre + "!", Toast.LENGTH_SHORT).show();
+                        mostrarSnackbarElegante("¡Bienvenido, " + nuevoUsuario.nombre + "!", true);
                         Navigation.findNavController(v).navigate(R.id.nav_inicio);
                     }
 
@@ -221,9 +223,9 @@ public class RegistroFragment extends Fragment {
                         String msg = error != null && error.getMessage() != null ? error.getMessage() : "";
                         if (msg.contains("23505") || msg.contains("duplicate") || msg.contains("409")) {
                             if (etEmail != null) etEmail.setError("Este correo ya está registrado");
-                            Toast.makeText(getContext(), "Ya existe una cuenta con este correo electrónico", Toast.LENGTH_LONG).show();
+                            mostrarSnackbarElegante("Ya existe una cuenta con este correo electrónico", false);
                         } else {
-                            Toast.makeText(getContext(), "No se pudo registrar en la nube. Verifique su conexión.", Toast.LENGTH_LONG).show();
+                            mostrarSnackbarElegante("No se pudo registrar en la nube. Verifique su conexión.", false);
                         }
                     }
                 });
@@ -258,5 +260,46 @@ public class RegistroFragment extends Fragment {
         if (tv != null) {
             tv.setTextColor(fulfilled ? colorOk : colorPending);
         }
+    }
+
+    private void mostrarSnackbarElegante(String mensaje, boolean tieneBottomNav) {
+        if (!isAdded() || getActivity() == null) return;
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && tieneBottomNav) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
     }
 }

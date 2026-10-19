@@ -1,18 +1,22 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
-import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar;
 
 public class AdminPerfilFragment extends Fragment {
 
@@ -23,7 +27,6 @@ public class AdminPerfilFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_admin_perfil, container, false);
     }
 
@@ -33,15 +36,15 @@ public class AdminPerfilFragment extends Fragment {
 
         // Configuración de Cuenta
         view.findViewById(R.id.btn_personal_info).setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Información Personal", Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("Información Personal");
         });
 
         view.findViewById(R.id.btn_security).setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Seguridad", Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("Seguridad de la cuenta");
         });
 
         view.findViewById(R.id.btn_notifications).setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Notificaciones", Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("Notificaciones del sistema");
         });
 
         View btnMensajes = view.findViewById(R.id.btn_mensajes_clientes);
@@ -51,15 +54,63 @@ public class AdminPerfilFragment extends Fragment {
             });
         }
 
-        // Logout
+        // Logout con confirmación y snackbar elegante
         View btnLogout = view.findViewById(R.id.btn_logout);
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> {
-                android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
-                prefs.edit().clear().apply();
-                Toast.makeText(getContext(), "Sesión cerrada", Toast.LENGTH_SHORT).show();
-                Navigation.findNavController(view).navigate(R.id.nav_inicio);
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Cerrar Sesión")
+                        .setMessage("¿Estás seguro de que deseas cerrar sesión?")
+                        .setPositiveButton("Sí", (dialog, which) -> {
+                            SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+                            prefs.edit().clear().apply();
+                            mostrarSnackbarElegante("Sesión cerrada correctamente");
+                            Navigation.findNavController(view).navigate(R.id.nav_inicio);
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
             });
         }
+    }
+
+    private void mostrarSnackbarElegante(String mensaje) {
+        if (!isAdded() || getActivity() == null) return;
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
     }
 }
