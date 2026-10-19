@@ -6,6 +6,8 @@ import androidx.room.Index;
 import androidx.annotation.NonNull;
 import com.google.gson.annotations.SerializedName;
 
+import androidx.room.Ignore;
+
 @Entity(
     tableName = "favoritos",
     primaryKeys = {"usuarioId", "propiedadId"},
@@ -25,4 +27,14 @@ public class Favorito {
     
     @ColumnInfo(name = "estadoSincronizacion")
     public String estadoSincronizacion;
+
+    public Favorito() {}
+
+    @Ignore
+    public Favorito(@NonNull String usuarioId, @NonNull String propiedadId, long fechaGuardado, String estadoSincronizacion) {
+        this.usuarioId = usuarioId;
+        this.propiedadId = propiedadId;
+        this.fechaGuardado = fechaGuardado;
+        this.estadoSincronizacion = estadoSincronizacion;
+    }
 }

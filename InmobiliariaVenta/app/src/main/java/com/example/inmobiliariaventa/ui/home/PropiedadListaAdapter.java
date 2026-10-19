@@ -24,6 +24,7 @@ import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -157,8 +158,7 @@ public class PropiedadListaAdapter extends RecyclerView.Adapter<PropiedadListaAd
                     fav.usuarioId = uId;
                     fav.propiedadId = prop.id;
                     fav.fechaGuardado = System.currentTimeMillis();
-                    fav.estadoSincronizacion = "SINCRONIZADO";
-                    db.favoritoDao().insertar(fav);
+                    FavoritoRepositoryImpl.getInstance(context).agregarFavorito(fav);
 
                     holder.itemView.post(() -> {
                         View targetView = obtenerTargetCoordinator(holder.itemView);
@@ -189,10 +189,9 @@ public class PropiedadListaAdapter extends RecyclerView.Adapter<PropiedadListaAd
                     favRespaldo.propiedadId = prop.id;
                     favRespaldo.fechaGuardado = (existente != null && existente.fechaGuardado > 0)
                             ? existente.fechaGuardado : System.currentTimeMillis();
-                    favRespaldo.estadoSincronizacion = (existente != null && existente.estadoSincronizacion != null)
-                            ? existente.estadoSincronizacion : "SINCRONIZADO";
+                    favRespaldo.estadoSincronizacion = "PENDIENTE_SUBIR";
 
-                    db.favoritoDao().eliminarPorIds(uId, prop.id);
+                    FavoritoRepositoryImpl.getInstance(context).eliminarFavorito(uId, prop.id);
 
                     holder.itemView.post(() -> {
                         View targetView = obtenerTargetCoordinator(holder.itemView);
@@ -200,9 +199,7 @@ public class PropiedadListaAdapter extends RecyclerView.Adapter<PropiedadListaAd
                         Snackbar snackbar = Snackbar.make(targetView, "Propiedad eliminada de Favoritos", Snackbar.LENGTH_LONG)
                                 .setAction("DESHACER", vUndo -> {
                                     actualizarEstadoVisualFavorito(holder, true);
-                                    AppDatabase.databaseWriteExecutor.execute(() -> {
-                                        db.favoritoDao().insertar(favRespaldo);
-                                    });
+                                    FavoritoRepositoryImpl.getInstance(context).agregarFavorito(favRespaldo);
                                 })
                                 .setActionTextColor(ContextCompat.getColor(context, R.color.colorSnackbarAction))
                                 .setTextColor(ContextCompat.getColor(context, R.color.white));

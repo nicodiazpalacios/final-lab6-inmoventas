@@ -48,4 +48,16 @@ public interface FavoritoDao {
 
     @Query("SELECT * FROM favoritos WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Favorito> obtenerPendientesDeSubir();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertarTodos(List<Favorito> favoritos);
+
+    @Query("SELECT * FROM favoritos WHERE usuarioId = :usuarioId")
+    List<Favorito> obtenerFavoritosCompletosDeUsuario(String usuarioId);
+
+    @Query("UPDATE favoritos SET estadoSincronizacion = :estado WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId")
+    void actualizarEstadoSincronizacion(String usuarioId, String propiedadId, String estado);
+
+    @Query("DELETE FROM favoritos WHERE usuarioId = :usuarioId")
+    void eliminarTodosDeUsuario(String usuarioId);
 }

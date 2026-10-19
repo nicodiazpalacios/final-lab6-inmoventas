@@ -20,6 +20,7 @@ import androidx.navigation.Navigation;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
@@ -112,10 +113,11 @@ public class LoginFragment extends Fragment {
                         // Guardar sesión en SharedPreferences
                         guardarSesion(usuario);
 
-                        // Guardar en base local Room
+                        // Guardar en base local Room y sincronizar sus favoritos
                         AppDatabase.databaseWriteExecutor.execute(() -> {
                             AppDatabase.getInstance(requireContext()).usuarioDao().insertar(usuario);
                         });
+                        FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(usuario.id, null);
 
                         btnLogin.setText("Iniciar sesión");
                         btnLogin.setEnabled(true);
@@ -155,6 +157,7 @@ public class LoginFragment extends Fragment {
                 if (local != null) {
                     procesarRecordarme(email, password, isRememberChecked);
                     guardarSesion(local);
+                    FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(local.id, null);
                     if ("ADMIN".equalsIgnoreCase(local.rol)) {
                         Toast.makeText(getContext(), "Bienvenido Administrador (offline)", Toast.LENGTH_SHORT).show();
                         Navigation.findNavController(view).navigate(R.id.nav_admin_home);

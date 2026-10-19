@@ -25,6 +25,7 @@ import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -96,6 +97,22 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
         String userId = prefs.getString("user_id", "");
         if (isLoggedIn && !userId.isEmpty()) {
+            // Sincronizar en background con Supabase y refrescar si hubo cambios
+            FavoritoRepositoryImpl.getInstance(context).sincronizarConNube(userId, () -> {
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    List<String> ids = FavoritoRepositoryImpl.getInstance(context).obtenerIdsFavoritosDeUsuario(userId);
+                    synchronized (favoritosUsuarioIds) {
+                        favoritosUsuarioIds.clear();
+                        if (ids != null) {
+                            favoritosUsuarioIds.addAll(ids);
+                        }
+                        favoritosInicializados = true;
+                    }
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
+                });
+            });
+
+            // Cargar de Room de inmediato para respuesta visual instantánea
             AppDatabase.databaseWriteExecutor.execute(() -> {
                 List<String> ids = AppDatabase.getInstance(context).favoritoDao().obtenerIdsFavoritosDeUsuario(userId);
                 synchronized (favoritosUsuarioIds) {
@@ -252,8 +269,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                     fav.usuarioId = uId;
                     fav.propiedadId = prop.id;
                     fav.fechaGuardado = System.currentTimeMillis();
-                    fav.estadoSincronizacion = "SINCRONIZADO";
-                    db.favoritoDao().insertar(fav);
+                    FavoritoRepositoryImpl.getInstance(context).agregarFavorito(fav);
 
                     holder.itemView.post(() -> {
                         View targetView = obtenerTargetCoordinator(holder.itemView);
@@ -284,10 +300,9 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                     favRespaldo.propiedadId = prop.id;
                     favRespaldo.fechaGuardado = (existente != null && existente.fechaGuardado > 0)
                             ? existente.fechaGuardado : System.currentTimeMillis();
-                    favRespaldo.estadoSincronizacion = (existente != null && existente.estadoSincronizacion != null)
-                            ? existente.estadoSincronizacion : "SINCRONIZADO";
+                    favRespaldo.estadoSincronizacion = "PENDIENTE_SUBIR";
 
-                    db.favoritoDao().eliminarPorIds(uId, prop.id);
+                    FavoritoRepositoryImpl.getInstance(context).eliminarFavorito(uId, prop.id);
 
                     holder.itemView.post(() -> {
                         View targetView = obtenerTargetCoordinator(holder.itemView);
@@ -300,10 +315,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                                         }
                                     }
                                     actualizarEstadoVisualFavorito(holder, true);
-
-                                    AppDatabase.databaseWriteExecutor.execute(() -> {
-                                        db.favoritoDao().insertar(favRespaldo);
-                                    });
+                                    FavoritoRepositoryImpl.getInstance(context).agregarFavorito(favRespaldo);
                                 })
                                 .setActionTextColor(ContextCompat.getColor(context, R.color.colorSnackbarAction))
                                 .setTextColor(ContextCompat.getColor(context, R.color.white));

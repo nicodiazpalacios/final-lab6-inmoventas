@@ -302,13 +302,16 @@ public class SupabaseClient {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al obtener favoritos en Supabase", e);
                 mainHandler.post(() -> callback.onError(e));
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (!response.isSuccessful()) {
-                    mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code())));
+                    String errorMsg = "HTTP Error " + response.code() + ": " + (response.body() != null ? response.body().string() : "");
+                    Log.e(TAG, "Error al obtener favoritos: " + errorMsg);
+                    mainHandler.post(() -> callback.onError(new Exception(errorMsg)));
                     return;
                 }
                 String body = response.body() != null ? response.body().string() : "[]";
@@ -319,11 +322,14 @@ public class SupabaseClient {
         });
     }
 
-    public static void agregarFavorito(String usuarioId, String propiedadId, SupabaseCallback<Boolean> callback) {
-        Favorito fav = new Favorito();
-        fav.usuarioId = usuarioId;
-        fav.propiedadId = propiedadId;
-        fav.fechaGuardado = System.currentTimeMillis();
+    public static void agregarFavorito(Favorito fav, SupabaseCallback<Boolean> callback) {
+        if (fav == null || fav.usuarioId == null || fav.propiedadId == null) {
+            mainHandler.post(() -> callback.onError(new IllegalArgumentException("Favorito o IDs inválidos")));
+            return;
+        }
+        if (fav.fechaGuardado <= 0) {
+            fav.fechaGuardado = System.currentTimeMillis();
+        }
 
         String json = gson.toJson(fav);
         RequestBody requestBody = RequestBody.create(json, JSON);
@@ -336,14 +342,31 @@ public class SupabaseClient {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al agregar favorito en Supabase: " + e.getMessage());
                 mainHandler.post(() -> callback.onError(e));
             }
 
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Favorito guardado en Supabase con éxito: " + fav.usuarioId + " -> " + fav.propiedadId);
+                    mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al agregar favorito en Supabase: " + msg);
+                    mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
             }
         });
+    }
+
+    public static void agregarFavorito(String usuarioId, String propiedadId, SupabaseCallback<Boolean> callback) {
+        Favorito fav = new Favorito();
+        fav.usuarioId = usuarioId;
+        fav.propiedadId = propiedadId;
+        fav.fechaGuardado = System.currentTimeMillis();
+        agregarFavorito(fav, callback);
     }
 
     public static void eliminarFavorito(String usuarioId, String propiedadId, SupabaseCallback<Boolean> callback) {
@@ -354,12 +377,21 @@ public class SupabaseClient {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al eliminar favorito en Supabase: " + e.getMessage());
                 mainHandler.post(() -> callback.onError(e));
             }
 
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Favorito eliminado en Supabase con éxito: " + usuarioId + " -> " + propiedadId);
+                    mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al eliminar favorito en Supabase: " + msg);
+                    mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
             }
         });
     }

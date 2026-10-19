@@ -19,6 +19,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.util.List;
@@ -209,6 +210,15 @@ public class MainActivity extends AppCompatActivity {
                             });
                         }
                     }
+                }
+            } catch (Exception ignored) {}
+
+            // Sincronizar favoritos del usuario activo si tiene sesión iniciada
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                String userId = prefs.getString("user_id", "");
+                if (prefs.getBoolean("is_user_logged_in", false) && !userId.isEmpty()) {
+                    FavoritoRepositoryImpl.getInstance(getApplicationContext()).sincronizarConNube(userId, null);
                 }
             } catch (Exception ignored) {}
         });

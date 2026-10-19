@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.google.android.material.button.MaterialButton;
@@ -155,6 +156,15 @@ public class MisFavoritosFragment extends Fragment {
 
                     actualizarVistaFavoritos();
                 });
+
+        // Sincronizar en tiempo real con Supabase
+        FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(userId, () -> {
+            if (isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (pbFavoritos != null) pbFavoritos.setVisibility(View.GONE);
+                });
+            }
+        });
     }
 
     private void actualizarVistaFavoritos() {
@@ -242,20 +252,18 @@ public class MisFavoritosFragment extends Fragment {
 
             favoritoRespaldo[0] = respaldo;
 
-            // Eliminamos de la base de datos local
-            AppDatabase.getInstance(requireContext()).favoritoDao().eliminarPorIds(userId, prop.id);
+            // Eliminamos de la base de datos local y de Supabase
+            FavoritoRepositoryImpl.getInstance(requireContext()).eliminarFavorito(userId, prop.id);
         });
 
         // 2. Snackbar interactivo integrado con la arquitectura visual de la app
         View targetView = coordinatorLayout != null ? coordinatorLayout : requireView();
         Snackbar snackbar = Snackbar.make(targetView, "Propiedad eliminada de Favoritos", Snackbar.LENGTH_LONG)
                 .setAction("DESHACER", v -> {
-                    AppDatabase.databaseWriteExecutor.execute(() -> {
-                        Favorito fav = favoritoRespaldo[0];
-                        if (fav != null) {
-                            AppDatabase.getInstance(requireContext()).favoritoDao().insertar(fav);
-                        }
-                    });
+                    Favorito fav = favoritoRespaldo[0];
+                    if (fav != null) {
+                        FavoritoRepositoryImpl.getInstance(requireContext()).agregarFavorito(fav);
+                    }
                 })
                 .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))
                 .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));

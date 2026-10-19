@@ -35,6 +35,7 @@ import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
 import com.example.inmobiliariaventa.domain.entity.Disposicion;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
+import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import android.graphics.Typeface;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
@@ -814,8 +815,7 @@ public class PropiedadDetalleFragment extends Fragment {
                 fav.usuarioId = userId;
                 fav.propiedadId = currentPropiedad.id;
                 fav.fechaGuardado = System.currentTimeMillis();
-                fav.estadoSincronizacion = "SINCRONIZADO";
-                db.favoritoDao().insertar(fav);
+                FavoritoRepositoryImpl.getInstance(requireContext()).agregarFavorito(fav);
 
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
@@ -847,10 +847,9 @@ public class PropiedadDetalleFragment extends Fragment {
                 favRespaldo.propiedadId = currentPropiedad.id;
                 favRespaldo.fechaGuardado = (existente != null && existente.fechaGuardado > 0)
                         ? existente.fechaGuardado : System.currentTimeMillis();
-                favRespaldo.estadoSincronizacion = (existente != null && existente.estadoSincronizacion != null)
-                        ? existente.estadoSincronizacion : "SINCRONIZADO";
+                favRespaldo.estadoSincronizacion = "PENDIENTE_SUBIR";
 
-                db.favoritoDao().eliminarPorIds(userId, currentPropiedad.id);
+                FavoritoRepositoryImpl.getInstance(requireContext()).eliminarFavorito(userId, currentPropiedad.id);
 
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
@@ -858,9 +857,7 @@ public class PropiedadDetalleFragment extends Fragment {
                         Snackbar snackbar = Snackbar.make(getView(), "Propiedad eliminada de Favoritos", Snackbar.LENGTH_LONG)
                                 .setAction("DESHACER", vUndo -> {
                                     actualizarIconoFavorito(true);
-                                    AppDatabase.databaseWriteExecutor.execute(() -> {
-                                        db.favoritoDao().insertar(favRespaldo);
-                                    });
+                                    FavoritoRepositoryImpl.getInstance(requireContext()).agregarFavorito(favRespaldo);
                                 })
                                 .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))
                                 .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
@@ -901,6 +898,8 @@ public class PropiedadDetalleFragment extends Fragment {
             actualizarIconoFavorito(false);
             return;
         }
+
+        FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(userId, null);
 
         AppDatabase.getInstance(requireContext())
                 .favoritoDao()
