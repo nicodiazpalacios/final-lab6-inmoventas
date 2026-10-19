@@ -8,13 +8,16 @@ import androidx.annotation.NonNull;
 
 import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
+import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import java.util.UUID;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -391,6 +394,131 @@ public class SupabaseClient {
                     String msg = "HTTP " + response.code() + ": " + errorBody;
                     Log.e(TAG, "Error al eliminar favorito en Supabase: " + msg);
                     mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    // ==========================================
+    // MENSAJES DE CONTACTO
+    // ==========================================
+
+    public static void enviarMensajeContacto(MensajeContacto mensaje, SupabaseCallback<Boolean> callback) {
+        if (mensaje == null) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("Mensaje nulo")));
+            return;
+        }
+
+        if (mensaje.remoteId == null || mensaje.remoteId.trim().isEmpty()) {
+            mensaje.remoteId = UUID.randomUUID().toString();
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("id", mensaje.remoteId);
+        json.addProperty("clientenombre", mensaje.clienteNombre != null ? mensaje.clienteNombre : "");
+        json.addProperty("clientetelefono", mensaje.clienteTelefono != null ? mensaje.clienteTelefono : "");
+        json.addProperty("clienteemail", mensaje.clienteEmail != null ? mensaje.clienteEmail : "");
+        if (mensaje.propiedadId != null && !mensaje.propiedadId.isEmpty()) {
+            json.addProperty("propiedadid", mensaje.propiedadId);
+        } else {
+            json.add("propiedadid", com.google.gson.JsonNull.INSTANCE);
+        }
+        json.addProperty("propiedadtitulo", mensaje.propiedadTitulo != null ? mensaje.propiedadTitulo : "");
+        json.addProperty("mensaje", mensaje.mensaje != null ? mensaje.mensaje : "");
+        json.addProperty("fecha", mensaje.fecha != null ? mensaje.fecha : "");
+        json.addProperty("hora", mensaje.hora != null ? mensaje.hora : "");
+        json.addProperty("isleido", mensaje.leido);
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/mensajes")
+                .header("Prefer", "return=minimal")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al enviar mensaje a Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Mensaje enviado exitosamente a Supabase: " + mensaje.remoteId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al enviar mensaje a Supabase: " + msg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    public static void obtenerMensajes(SupabaseCallback<List<MensajeContacto>> callback) {
+        Request request = buildBaseRequest("/rest/v1/mensajes?select=*&order=created_at.desc").build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al obtener mensajes desde Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String errorMsg = "HTTP Error " + response.code() + ": " + (response.body() != null ? response.body().string() : "");
+                    Log.e(TAG, "Error al obtener mensajes de Supabase: " + errorMsg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorMsg)));
+                    return;
+                }
+                try {
+                    String body = response.body() != null ? response.body().string() : "[]";
+                    Type listType = new TypeToken<List<MensajeContacto>>() {}.getType();
+                    List<MensajeContacto> lista = gson.fromJson(body, listType);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(lista));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al deserializar mensajes de Supabase: " + e.getMessage(), e);
+                    if (callback != null) mainHandler.post(() -> callback.onError(e));
+                }
+            }
+        });
+    }
+
+    public static void marcarMensajeComoLeido(String remoteId, SupabaseCallback<Boolean> callback) {
+        if (remoteId == null || remoteId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("isleido", true);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/mensajes?id=eq." + remoteId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al marcar mensaje leído en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Mensaje marcado como leído en Supabase: " + remoteId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String msg = "HTTP " + response.code();
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
                 }
             }
         });

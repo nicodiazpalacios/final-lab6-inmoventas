@@ -221,6 +221,12 @@ public class MainActivity extends AppCompatActivity {
                     FavoritoRepositoryImpl.getInstance(getApplicationContext()).sincronizarConNube(userId, null);
                 }
             } catch (Exception ignored) {}
+
+            // Sincronizar mensajes de contacto con Supabase
+            try {
+                com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl.getInstance(getApplicationContext())
+                        .sincronizarConNube(null);
+            } catch (Exception ignored) {}
         });
     }
 

@@ -21,7 +21,7 @@ import com.example.inmobiliariaventa.data.local.dao.ContratoDao;
 import com.example.inmobiliariaventa.data.local.dao.ConfiguracionEmpresaDao;
 import com.example.inmobiliariaventa.data.local.dao.MensajeContactoDao;
 
-@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class, MensajeContacto.class}, version = 6, exportSchema = false)
+@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class, MensajeContacto.class}, version = 7, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

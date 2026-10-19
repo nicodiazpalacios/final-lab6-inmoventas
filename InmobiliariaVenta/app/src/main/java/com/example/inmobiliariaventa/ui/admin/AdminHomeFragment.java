@@ -52,8 +52,10 @@ public class AdminHomeFragment extends Fragment {
             });
 
             if (tvMensajesSub != null && getContext() != null) {
-                com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
-                        .mensajeContactoDao()
+                com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl.getInstance(requireContext())
+                        .sincronizarConNube(null);
+
+                com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl.getInstance(requireContext())
                         .getMensajesNoLeidosCount()
                         .observe(getViewLifecycleOwner(), unreadCount -> {
                             if (unreadCount != null && unreadCount > 0) {

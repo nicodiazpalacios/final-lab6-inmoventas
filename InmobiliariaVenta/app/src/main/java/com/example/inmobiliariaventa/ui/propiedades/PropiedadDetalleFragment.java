@@ -36,6 +36,8 @@ import com.example.inmobiliariaventa.domain.entity.Disposicion;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
+import com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl;
+import java.util.UUID;
 import android.graphics.Typeface;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
@@ -692,11 +694,9 @@ public class PropiedadDetalleFragment extends Fragment {
                         timestamp,
                         false
                 );
+                nuevoMensaje.remoteId = UUID.randomUUID().toString();
 
-                AppDatabase db = AppDatabase.getInstance(requireContext());
-                AppDatabase.databaseWriteExecutor.execute(() -> {
-                    db.mensajeContactoDao().insert(nuevoMensaje);
-                });
+                MensajeContactoRepositoryImpl.getInstance(requireContext()).enviarMensaje(nuevoMensaje);
 
                 dialog.dismiss();
                 Toast.makeText(requireContext(), "¡Mensaje enviado con éxito! Un asesor de la inmobiliaria revisará tu consulta.", Toast.LENGTH_LONG).show();

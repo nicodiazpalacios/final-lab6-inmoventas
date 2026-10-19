@@ -30,6 +30,7 @@ import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -121,22 +122,25 @@ public class AdminMensajesFragment extends Fragment {
 
     private void initDatabaseAndObserve(View root) {
         if (getContext() == null) return;
-        AppDatabase db = AppDatabase.getInstance(requireContext());
-
-        // Si la base de datos está vacía, sembrar mensajes iniciales de demostración
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            if (db.mensajeContactoDao().countMensajesSync() == 0) {
-                List<MensajeContacto> seed = createInitialDemoMessages();
-                db.mensajeContactoDao().insertAll(seed);
-            }
-        });
+        MensajeContactoRepositoryImpl repository = MensajeContactoRepositoryImpl.getInstance(requireContext());
 
         // Observar mensajes en tiempo real desde Room
-        db.mensajeContactoDao().getAllMensajesLiveData().observe(getViewLifecycleOwner(), mensajes -> {
+        repository.getAllMensajesLiveData().observe(getViewLifecycleOwner(), mensajes -> {
             if (mensajes != null) {
                 listaMensajes = new ArrayList<>(mensajes);
                 applyFilters(root);
             }
+        });
+
+        // Sincronizar en segundo plano con Supabase para traer mensajes enviados por los clientes
+        repository.sincronizarConNube(() -> {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                if (db.mensajeContactoDao().countMensajesSync() == 0) {
+                    List<MensajeContacto> seed = createInitialDemoMessages();
+                    db.mensajeContactoDao().insertAll(seed);
+                }
+            });
         });
     }
 
@@ -367,11 +371,8 @@ public class AdminMensajesFragment extends Fragment {
                 item.leido = true;
                 actualizarEstadoBadgeDialog(tvEstado, btnMarcarLeido, true);
 
-                // Guardar en la base de datos Room
-                AppDatabase db = AppDatabase.getInstance(requireContext());
-                AppDatabase.databaseWriteExecutor.execute(() -> {
-                    db.mensajeContactoDao().marcarComoLeido(item.id);
-                });
+                // Guardar en la base de datos Room y en Supabase
+                MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoLeido(item);
 
                 Toast.makeText(requireContext(), "Mensaje marcado como leído", Toast.LENGTH_SHORT).show();
                 applyFilters(root);

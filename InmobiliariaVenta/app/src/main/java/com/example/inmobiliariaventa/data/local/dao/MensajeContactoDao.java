@@ -36,11 +36,23 @@ public interface MensajeContactoDao {
     @Query("SELECT * FROM mensajes_contacto WHERE id = :id LIMIT 1")
     MensajeContacto getMensajePorId(long id);
 
+    @Query("SELECT * FROM mensajes_contacto WHERE remote_id = :remoteId LIMIT 1")
+    MensajeContacto getMensajePorRemoteId(String remoteId);
+
+    @Query("SELECT * FROM mensajes_contacto WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
+    List<MensajeContacto> getPendientesDeSubir();
+
     @Query("SELECT COUNT(*) FROM mensajes_contacto")
     int countMensajesSync();
 
     @Query("UPDATE mensajes_contacto SET leido = 1 WHERE id = :id")
     void marcarComoLeido(long id);
+
+    @Query("UPDATE mensajes_contacto SET leido = 1 WHERE remote_id = :remoteId")
+    void marcarComoLeidoPorRemoteId(String remoteId);
+
+    @Query("UPDATE mensajes_contacto SET estadoSincronizacion = :estado WHERE id = :id")
+    void actualizarEstadoSincronizacion(long id, String estado);
 
     @Query("SELECT COUNT(*) FROM mensajes_contacto WHERE leido = 0")
     LiveData<Integer> getMensajesNoLeidosCount();
