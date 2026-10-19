@@ -50,6 +50,7 @@ public class PerfilUsuarioFragment extends Fragment {
 
     private EmpresaRepository empresaRepository;
     private ImageView ivFotoPerfil;
+    private boolean tieneFotoPersonalizada = false;
 
     // Launcher para el recortador de imagen
     private final ActivityResultLauncher<CropImageContractOptions> cropImageLauncher =
@@ -234,14 +235,25 @@ public class PerfilUsuarioFragment extends Fragment {
     }
 
     private boolean tieneFotoPerfilPersonalizada() {
+        if (tieneFotoPersonalizada) {
+            return true;
+        }
         if (getContext() == null) return false;
         SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
         String path = prefs.getString("user_foto_perfil", null);
-        if (path != null && !path.isEmpty()) {
-            return new File(path).exists();
+        if (path != null && !path.trim().isEmpty()) {
+            if (path.startsWith("data:image/") || path.startsWith("/9j/") || path.length() > 200) {
+                return true;
+            }
+            if (new File(path).exists()) {
+                return true;
+            }
         }
-        String userId = prefs.getString("user_id", "local_user");
-        return new File(requireContext().getFilesDir(), "profile_photo_" + userId + ".jpg").exists();
+        String userId = prefs.getString("user_id", "");
+        if (!userId.isEmpty() && new File(requireContext().getFilesDir(), "profile_photo_" + userId + ".jpg").exists()) {
+            return true;
+        }
+        return false;
     }
 
     private void mostrarDialogoSeleccionFoto() {
@@ -378,7 +390,7 @@ public class PerfilUsuarioFragment extends Fragment {
 
     private void mostrarFotoPerfil(String pathOrData) {
         if (ivFotoPerfil == null || getContext() == null) return;
-        if (pathOrData != null && !pathOrData.isEmpty()) {
+        if (pathOrData != null && !pathOrData.trim().isEmpty()) {
             if (pathOrData.startsWith("data:image/") || pathOrData.startsWith("/9j/")) {
                 try {
                     String base64Data = pathOrData.contains(",") ? pathOrData.substring(pathOrData.indexOf(",") + 1) : pathOrData;
@@ -388,6 +400,7 @@ public class PerfilUsuarioFragment extends Fragment {
                             .load(imageBytes)
                             .circleCrop()
                             .into(ivFotoPerfil);
+                    tieneFotoPersonalizada = true;
                     return;
                 } catch (Exception ignored) {}
             }
@@ -398,9 +411,11 @@ public class PerfilUsuarioFragment extends Fragment {
                         .load(file)
                         .circleCrop()
                         .into(ivFotoPerfil);
+                tieneFotoPersonalizada = true;
                 return;
             }
         }
+        tieneFotoPersonalizada = false;
         Glide.with(this).clear(ivFotoPerfil);
         ivFotoPerfil.setImageResource(R.drawable.ic_person);
         ivFotoPerfil.setImageTintList(ColorStateList.valueOf(0xFF1A1B21));
