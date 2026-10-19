@@ -35,8 +35,12 @@
                 android:padding="24dp">
 
                 <FrameLayout
+                    android:id="@+id/btn_cambiar_foto_perfil"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless">
 
                     <androidx.cardview.widget.CardView
                         android:layout_width="100dp"
@@ -46,6 +50,7 @@
                         app:cardBackgroundColor="#ffffff">
 
                         <ImageView
+                            android:id="@+id/iv_foto_perfil"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:src="@drawable/ic_person"
@@ -54,22 +59,22 @@
                             android:tint="#1a1b21"/>
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Verified Badge -->
+                    <!-- Edit / Camera Badge -->
                     <androidx.cardview.widget.CardView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:layout_gravity="bottom|end"
-                        android:layout_marginEnd="4dp"
-                        android:layout_marginBottom="4dp"
-                        app:cardCornerRadius="12dp"
-                        app:cardBackgroundColor="#006c49"
+                        android:layout_marginEnd="2dp"
+                        android:layout_marginBottom="2dp"
+                        app:cardCornerRadius="15dp"
+                        app:cardBackgroundColor="#00236f"
                         app:strokeWidth="2dp"
                         app:strokeColor="#ffffff">
                         <ImageView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:padding="4dp"
-                            android:src="@android:drawable/ic_input_add"
+                            android:padding="6dp"
+                            android:src="@android:drawable/ic_menu_camera"
                             android:tint="#ffffff" />
                     </androidx.cardview.widget.CardView>
                 </FrameLayout>
@@ -83,6 +88,15 @@
                     android:textColor="#1a1b21"
                     android:textSize="24sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_email_usuario_perfil"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="usuario@email.com"
+                    android:textColor="#757682"
+                    android:textSize="14sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -120,6 +134,7 @@
 
                 <!-- Información Personal -->
                 <LinearLayout
+                    android:id="@+id/btn_perfil_info_personal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -150,19 +165,13 @@
                         android:text="Información Personal"
                         android:textColor="#1a1b21"
                         android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
                 </LinearLayout>
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
 
                 <!-- Seguridad -->
                 <LinearLayout
+                    android:id="@+id/btn_perfil_seguridad"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -193,19 +202,13 @@
                         android:text="Seguridad"
                         android:textColor="#1a1b21"
                         android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
                 </LinearLayout>
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
 
                 <!-- Notificaciones -->
                 <LinearLayout
+                    android:id="@+id/btn_perfil_notificaciones"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -236,13 +239,6 @@
                         android:text="Notificaciones"
                         android:textColor="#1a1b21"
                         android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -281,6 +277,7 @@
 
                 <!-- Mis Favoritos -->
                 <LinearLayout
+                    android:id="@+id/btn_perfil_favoritos"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -311,99 +308,6 @@
                         android:text="Mis Favoritos"
                         android:textColor="#1a1b21"
                         android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
-
-                <!-- Búsquedas Guardadas -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        app:cardBackgroundColor="#6ffbbe"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_search"
-                            app:tint="#006c49" />
-                    </androidx.cardview.widget.CardView>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Búsquedas Guardadas"
-                        android:textColor="#1a1b21"
-                        android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
-                </LinearLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
-
-                <!-- Alertas de Precio -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        app:cardBackgroundColor="#6ffbbe"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_notifications"
-                            app:tint="#006c49" />
-                    </androidx.cardview.widget.CardView>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Alertas de Precio"
-                        android:textColor="#1a1b21"
-                        android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -440,8 +344,9 @@
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
 
-                <!-- Centro de Ayuda -->
+                <!-- Centro de Ayuda con Teléfono, Llamada y WhatsApp -->
                 <LinearLayout
+                    android:id="@+id/btn_perfil_ayuda"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -461,68 +366,75 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_menu_help"
-                            app:tint="#444651" />
+                            app:tint="#00236f" />
                     </androidx.cardview.widget.CardView>
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="16dp"
-                        android:text="Centro de Ayuda"
-                        android:textColor="#1a1b21"
-                        android:textSize="16sp" />
+                        android:orientation="vertical">
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Centro de Ayuda"
+                            android:textColor="#1a1b21"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_soporte_telefono"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="+54 9 11 5842-1102"
+                            android:textColor="#006c49"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Acceso rápido a llamada -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/btn_soporte_llamar"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="#dce1ff"
+                        app:cardCornerRadius="19dp"
+                        app:cardElevation="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_phone"
+                            app:tint="#00236f" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Acceso rápido a WhatsApp -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/btn_soporte_whatsapp"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        app:cardBackgroundColor="#d1f8df"
+                        app:cardCornerRadius="19dp"
+                        app:cardElevation="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_whatsapp"
+                            app:tint="#006c49" />
+                    </androidx.cardview.widget.CardView>
                 </LinearLayout>
 
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#eeedf4"/>
-
-                <!-- Términos y Condiciones -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:padding="16dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        app:cardBackgroundColor="#e3e1e9"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@android:drawable/ic_menu_info_details"
-                            app:tint="#444651" />
-                    </androidx.cardview.widget.CardView>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:text="Términos y Condiciones"
-                        android:textColor="#1a1b21"
-                        android:textSize="16sp" />
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_media_play"
-                        app:tint="#757682"
-                        android:rotation="90"/>
-                </LinearLayout>
 
                 <!-- Cerrar Sesión Button -->
                 <LinearLayout

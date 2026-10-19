@@ -55,4 +55,7 @@ dependencies {
 
     // Glide para carga fluida y optimizada de imágenes
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Recortador de imágenes profesional
+    implementation("com.vanniktech:android-image-cropper:4.7.0")
 }

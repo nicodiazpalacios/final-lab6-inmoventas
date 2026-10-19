@@ -36,6 +36,9 @@ public interface UsuarioDao {
     @Query("SELECT * FROM usuarios ORDER BY nombre ASC")
     LiveData<List<Usuario>> obtenerTodos();
 
+    @Query("SELECT * FROM usuarios ORDER BY nombre ASC")
+    List<Usuario> obtenerTodosDirecto();
+
     @Query("SELECT * FROM usuarios WHERE estadoSincronizacion = 'PENDIENTE_SUBIR'")
     List<Usuario> obtenerPendientesDeSubir();
 }

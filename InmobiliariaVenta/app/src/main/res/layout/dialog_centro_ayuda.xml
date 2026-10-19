@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="20dp"
+    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header con ícono, título y botón cerrar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardBackgroundColor="#dce1ff"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_help"
+                    app:tint="#00236f" />
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/dialog_ayuda_tv_titulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Centro de Ayuda"
+                    android:textColor="@color/colorOnSurface"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Soporte y Atención Oficial"
+                    android:textColor="@color/colorOutline"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/dialog_ayuda_btn_cerrar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="@color/colorOutline"
+                android:contentDescription="Cerrar" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorOutlineVariant"
+            android:layout_marginBottom="16dp"
+            android:alpha="0.4" />
+
+        <!-- Mensaje descriptivo -->
+        <TextView
+            android:id="@+id/dialog_ayuda_tv_mensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="¿En qué podemos ayudarte? Nuestro equipo está disponible para responder tus consultas sobre propiedades, coordinar visitas o brindarte asesoramiento personalizado."
+            android:textColor="@color/colorOnSurfaceVariant"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Caja destacada con el teléfono -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#f4f3fa"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_phone"
+                    app:tint="#00236f" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Línea de contacto directa"
+                        android:textColor="#757682"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/dialog_ayuda_tv_telefono"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+54 9 11 5842-1102"
+                        android:textColor="#00236f"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botones de Acción: Llamar (izquierda), WhatsApp (medio), Cancelar (derecha) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:weightSum="3">
+
+            <!-- 1. Llamar (Izquierda) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dialog_ayuda_btn_llamar"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginEnd="4dp"
+                android:text="Llamar"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:icon="@drawable/ic_phone"
+                app:iconSize="14dp"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/colorOnPrimary"
+                app:iconTint="@color/colorOnPrimary" />
+
+            <!-- 2. WhatsApp (En el medio) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dialog_ayuda_btn_whatsapp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginHorizontal="4dp"
+                android:text="WhatsApp"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:icon="@drawable/ic_whatsapp"
+                app:iconSize="14dp"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="#25D366"
+                android:textColor="#FFFFFF"
+                app:iconTint="#FFFFFF" />
+
+            <!-- 3. Cancelar (A la derecha) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dialog_ayuda_btn_cancelar"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginStart="4dp"
+                android:text="Cancelar"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="@color/colorSurfaceContainerHigh"
+                android:textColor="@color/colorOnSurfaceVariant"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

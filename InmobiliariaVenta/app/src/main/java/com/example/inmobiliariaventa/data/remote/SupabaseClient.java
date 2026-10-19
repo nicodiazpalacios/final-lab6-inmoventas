@@ -10,7 +10,10 @@ import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
@@ -40,7 +43,19 @@ public class SupabaseClient {
             .writeTimeout(20, TimeUnit.SECONDS)
             .build();
 
-    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+            .setExclusionStrategies(new ExclusionStrategy() {
+                @Override
+                public boolean shouldSkipField(FieldAttributes f) {
+                    return f.getName().equals("estadoSincronizacion");
+                }
+
+                @Override
+                public boolean shouldSkipClass(Class<?> clazz) {
+                    return false;
+                }
+            })
+            .create();
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface SupabaseCallback<T> {
@@ -227,12 +242,21 @@ public class SupabaseClient {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al registrar usuario en Supabase: " + e.getMessage());
                 mainHandler.post(() -> callback.onError(e));
             }
 
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Usuario registrado exitosamente en Supabase: " + usuario.email);
+                    mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error registrando usuario en Supabase: " + msg);
+                    mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
             }
         });
     }
@@ -272,6 +296,29 @@ public class SupabaseClient {
     // FAVORITOS
     // ==========================================
 
+    public static void obtenerFavoritosPorUsuario(String usuarioId, SupabaseCallback<List<Favorito>> callback) {
+        Request request = buildBaseRequest("/rest/v1/favoritos?usuarioid=eq." + usuarioId + "&select=*").build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code())));
+                    return;
+                }
+                String body = response.body() != null ? response.body().string() : "[]";
+                Type listType = new TypeToken<List<Favorito>>() {}.getType();
+                List<Favorito> lista = gson.fromJson(body, listType);
+                mainHandler.post(() -> callback.onSuccess(lista));
+            }
+        });
+    }
+
     public static void agregarFavorito(String usuarioId, String propiedadId, SupabaseCallback<Boolean> callback) {
         Favorito fav = new Favorito();
         fav.usuarioId = usuarioId;
@@ -300,7 +347,7 @@ public class SupabaseClient {
     }
 
     public static void eliminarFavorito(String usuarioId, String propiedadId, SupabaseCallback<Boolean> callback) {
-        Request request = buildBaseRequest("/rest/v1/favoritos?usuarioId=eq." + usuarioId + "&propiedadId=eq." + propiedadId)
+        Request request = buildBaseRequest("/rest/v1/favoritos?usuarioid=eq." + usuarioId + "&propiedadid=eq." + propiedadId)
                 .delete()
                 .build();
 

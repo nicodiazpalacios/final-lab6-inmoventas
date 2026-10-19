@@ -18,7 +18,7 @@ public class Propiedad {
     @SerializedName("titulo")
     public String titulo;
 
-    @SerializedName(value = "tipoPropiedad", alternate = {"tipopropiedad"})
+    @SerializedName(value = "tipopropiedad", alternate = {"tipoPropiedad"})
     public TipoPropiedad tipoPropiedad;
 
     @SerializedName("disposicion")
@@ -38,7 +38,7 @@ public class Propiedad {
     public String ciudad;
 
     @ColumnInfo(name = "estado_provincia")
-    @SerializedName(value = "estadoProvincia", alternate = {"estado_provincia"})
+    @SerializedName(value = "estado_provincia", alternate = {"estadoProvincia"})
     public String estadoProvincia;
 
     @SerializedName("ambientes")
@@ -48,19 +48,19 @@ public class Propiedad {
     public int banos;
 
     @ColumnInfo(name = "superficie_m2")
-    @SerializedName(value = "superficieM2", alternate = {"superficie_m2"})
+    @SerializedName(value = "superficie_m2", alternate = {"superficieM2"})
     public Double superficieM2;
 
-    @SerializedName(value = "tieneCochera", alternate = {"tienecochera"})
+    @SerializedName(value = "tienecochera", alternate = {"tieneCochera"})
     public boolean tieneCochera;
 
-    @SerializedName(value = "tienePatio", alternate = {"tienepatio"})
+    @SerializedName(value = "tienepatio", alternate = {"tienePatio"})
     public boolean tienePatio;
 
-    @SerializedName(value = "tieneBalcon", alternate = {"tienebalcon"})
+    @SerializedName(value = "tienebalcon", alternate = {"tieneBalcon"})
     public boolean tieneBalcon;
 
-    @SerializedName(value = "tieneAscensor", alternate = {"tieneascensor"})
+    @SerializedName(value = "tieneascensor", alternate = {"tieneAscensor"})
     public boolean tieneAscensor;
     
     @ColumnInfo(name = "expensas")

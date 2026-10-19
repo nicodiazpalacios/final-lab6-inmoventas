@@ -17,7 +17,11 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -202,6 +206,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
+        // Sincronizar en segundo plano cualquier usuario local pendiente de subir a Supabase
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try {
+                List<Usuario> usuariosLocales = AppDatabase.getInstance(getApplicationContext())
+                        .usuarioDao().obtenerTodosDirecto();
+                if (usuariosLocales != null) {
+                    for (Usuario u : usuariosLocales) {
+                        if (u.email != null && !u.email.isEmpty()) {
+                            SupabaseClient.obtenerUsuarioPorEmail(u.email, new SupabaseClient.SupabaseCallback<Usuario>() {
+                                @Override
+                                public void onSuccess(Usuario remoto) {
+                                    if (remoto == null) {
+                                        SupabaseClient.registrarUsuario(u, new SupabaseClient.SupabaseCallback<Boolean>() {
+                                            @Override
+                                            public void onSuccess(Boolean result) {
+                                                AppDatabase.databaseWriteExecutor.execute(() -> {
+                                                    u.estadoSincronizacion = "SINCRONIZADO";
+                                                    AppDatabase.getInstance(getApplicationContext()).usuarioDao().actualizar(u);
+                                                });
+                                            }
+
+                                            @Override
+                                            public void onError(Exception error) {}
+                                        });
+                                    }
+                                }
+
+                                @Override
+                                public void onError(Exception error) {}
+                            });
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
     }
 
     private void checkAndRequestLocationPermission() {

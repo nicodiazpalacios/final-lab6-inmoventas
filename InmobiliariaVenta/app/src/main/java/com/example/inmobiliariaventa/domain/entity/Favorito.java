@@ -5,6 +5,7 @@ import androidx.room.ForeignKey;
 import androidx.room.ColumnInfo;
 import androidx.room.Index;
 import androidx.annotation.NonNull;
+import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "favoritos",
@@ -17,9 +18,14 @@ import androidx.annotation.NonNull;
 )
 public class Favorito {
     @NonNull
+    @SerializedName(value = "usuarioid", alternate = {"usuarioId"})
     public String usuarioId;
+
     @NonNull
+    @SerializedName(value = "propiedadid", alternate = {"propiedadId"})
     public String propiedadId;
+
+    @SerializedName(value = "fechaguardado", alternate = {"fechaGuardado"})
     public long fechaGuardado;
     
     @ColumnInfo(name = "estadoSincronizacion")
