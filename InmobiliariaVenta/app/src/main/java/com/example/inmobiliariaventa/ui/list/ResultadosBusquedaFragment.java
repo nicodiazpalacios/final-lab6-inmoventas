@@ -321,6 +321,11 @@ public class ResultadosBusquedaFragment extends Fragment {
                 if (txtTipoPropiedad != null) {
                     txtTipoPropiedad.setText(initialTipo);
                 }
+            } else {
+                selectedTipo = "Todas";
+                if (txtTipoPropiedad != null) {
+                    txtTipoPropiedad.setText("Todas las propiedades");
+                }
             }
         }
 

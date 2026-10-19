@@ -580,7 +580,8 @@
                     android:text="Leer descripción completa ⌄"
                     android:textColor="@color/colorPrimary"
                     android:textSize="14sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:visibility="gone"/>
 
                 <!-- Disposición de la propiedad (especial departamentos) -->
                 <androidx.cardview.widget.CardView

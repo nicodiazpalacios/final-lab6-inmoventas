@@ -118,23 +118,44 @@ public class FiltrosFragment extends Fragment {
         });
 
         // Toggle tipo de propiedad
+        tipoPropiedadGroup.setSelectionRequired(true);
         tipoPropiedadGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            int selectedId = group.getCheckedButtonId();
-            if (selectedId == R.id.btnCasa) {
-                caracteristicasCasaContainer.setVisibility(View.VISIBLE);
-                caracteristicasDeptoContainer.setVisibility(View.GONE);
-            } else if (selectedId == R.id.btnDepartamento) {
-                caracteristicasCasaContainer.setVisibility(View.GONE);
-                caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
+            if (isChecked) {
+                if (checkedId == R.id.btnCasa) {
+                    caracteristicasCasaContainer.setVisibility(View.VISIBLE);
+                    caracteristicasDeptoContainer.setVisibility(View.GONE);
+                } else if (checkedId == R.id.btnDepartamento) {
+                    caracteristicasCasaContainer.setVisibility(View.GONE);
+                    caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
+                } else {
+                    // btnTipoTodas
+                    caracteristicasCasaContainer.setVisibility(View.GONE);
+                    caracteristicasDeptoContainer.setVisibility(View.GONE);
+                }
             } else {
-                caracteristicasCasaContainer.setVisibility(View.VISIBLE);
-                caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
+                // Siempre debe haber uno seleccionado: si se desmarcó, se restaura
+                if (group.getCheckedButtonId() == View.NO_ID) {
+                    group.check(checkedId);
+                }
             }
             updateMatchingCountAndButton();
         });
 
-        caracteristicasCasaContainer.setVisibility(View.VISIBLE);
-        caracteristicasDeptoContainer.setVisibility(View.GONE);
+        // Configuración inicial de Tipo de Propiedad: Todas por default
+        String initialTipo = (getArguments() != null) ? getArguments().getString("tipo", "") : "";
+        if ("Casa".equalsIgnoreCase(initialTipo)) {
+            tipoPropiedadGroup.check(R.id.btnCasa);
+            caracteristicasCasaContainer.setVisibility(View.VISIBLE);
+            caracteristicasDeptoContainer.setVisibility(View.GONE);
+        } else if ("Departamento".equalsIgnoreCase(initialTipo)) {
+            tipoPropiedadGroup.check(R.id.btnDepartamento);
+            caracteristicasCasaContainer.setVisibility(View.GONE);
+            caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
+        } else {
+            tipoPropiedadGroup.check(R.id.btnTipoTodas);
+            caracteristicasCasaContainer.setVisibility(View.GONE);
+            caracteristicasDeptoContainer.setVisibility(View.GONE);
+        }
 
         // Listeners para precio
         TextWatcher priceWatcher = new TextWatcher() {
@@ -183,7 +204,11 @@ public class FiltrosFragment extends Fragment {
                 chipGroupUbicaciones.setVisibility(View.GONE);
             }
 
-            if (tipoPropiedadGroup != null) tipoPropiedadGroup.clearChecked();
+            if (tipoPropiedadGroup != null) {
+                tipoPropiedadGroup.check(R.id.btnTipoTodas);
+                caracteristicasCasaContainer.setVisibility(View.GONE);
+                caracteristicasDeptoContainer.setVisibility(View.GONE);
+            }
             if (ambientesGroup != null) ambientesGroup.clearChecked();
             if (banosGroup != null) banosGroup.clearChecked();
 
@@ -228,12 +253,7 @@ public class FiltrosFragment extends Fragment {
                 }
             }
 
-            String tipoArg = getArguments().getString("tipo", "");
-            if ("Casa".equalsIgnoreCase(tipoArg)) {
-                if (tipoPropiedadGroup != null) tipoPropiedadGroup.check(R.id.btnCasa);
-            } else if ("Departamento".equalsIgnoreCase(tipoArg)) {
-                if (tipoPropiedadGroup != null) tipoPropiedadGroup.check(R.id.btnDepartamento);
-            }
+
 
             double precioDesdeArg = getArguments().getDouble("precio_desde", -1);
             if (precioDesdeArg > 0 && inputPrecioDesde != null) {
@@ -366,7 +386,7 @@ public class FiltrosFragment extends Fragment {
         List<Propiedad> result = new ArrayList<>();
         if (cachedProperties == null) return result;
 
-        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : View.NO_ID;
+        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : R.id.btnTipoTodas;
         String tipo = "";
         if (checkedTipoId == R.id.btnCasa) {
             tipo = "Casa";
@@ -492,8 +512,8 @@ public class FiltrosFragment extends Fragment {
             bundle.putString("filtro_ubicacion", "");
         }
 
-        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : View.NO_ID;
-        String tipo = "";
+        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : R.id.btnTipoTodas;
+        String tipo = "Todas";
         if (checkedTipoId == R.id.btnCasa) {
             tipo = "Casa";
         } else if (checkedTipoId == R.id.btnDepartamento) {
@@ -522,12 +542,12 @@ public class FiltrosFragment extends Fragment {
         bundle.putInt("ambientes", getSelectedAmbientes());
         bundle.putInt("banos", getSelectedBanos());
 
-        bundle.putBoolean("tiene_cochera", switchCochera != null && switchCochera.isChecked());
-        bundle.putBoolean("tiene_patio", switchPatio != null && switchPatio.isChecked());
-        bundle.putBoolean("tiene_balcon", switchBalcon != null && switchBalcon.isChecked());
-        bundle.putBoolean("tiene_ascensor", switchAscensor != null && switchAscensor.isChecked());
+        bundle.putBoolean("tiene_cochera", "Casa".equals(tipo) && switchCochera != null && switchCochera.isChecked());
+        bundle.putBoolean("tiene_patio", "Casa".equals(tipo) && switchPatio != null && switchPatio.isChecked());
+        bundle.putBoolean("tiene_balcon", "Departamento".equals(tipo) && switchBalcon != null && switchBalcon.isChecked());
+        bundle.putBoolean("tiene_ascensor", "Departamento".equals(tipo) && switchAscensor != null && switchAscensor.isChecked());
 
-        String disp = dropdownDisposicion != null ? dropdownDisposicion.getText().toString().trim() : "Cualquiera";
+        String disp = ("Departamento".equals(tipo) && dropdownDisposicion != null) ? dropdownDisposicion.getText().toString().trim() : "Cualquiera";
         bundle.putString("disposicion", disp);
 
         return bundle;

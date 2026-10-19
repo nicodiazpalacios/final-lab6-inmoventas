@@ -139,17 +139,23 @@ public class PropiedadDetalleFragment extends Fragment {
         // Toggle Expandir / Contraer descripción
         if (btnToggleDescripcion != null) {
             btnToggleDescripcion.setOnClickListener(v -> {
+                if (tvDetalleDescripcion == null) return;
                 isDescripcionExpandida = !isDescripcionExpandida;
-                if (tvDetalleDescripcion != null) {
-                    if (isDescripcionExpandida) {
-                        tvDetalleDescripcion.setMaxLines(Integer.MAX_VALUE);
-                        tvDetalleDescripcion.setEllipsize(null);
-                        btnToggleDescripcion.setText("Leer menos ⌃");
-                    } else {
-                        tvDetalleDescripcion.setMaxLines(3);
-                        tvDetalleDescripcion.setEllipsize(TextUtils.TruncateAt.END);
-                        btnToggleDescripcion.setText("Leer descripción completa ⌄");
+
+                try {
+                    if (getView() instanceof ViewGroup) {
+                        android.transition.TransitionManager.beginDelayedTransition((ViewGroup) getView(), new android.transition.AutoTransition());
                     }
+                } catch (Exception ignored) {}
+
+                if (isDescripcionExpandida) {
+                    tvDetalleDescripcion.setMaxLines(Integer.MAX_VALUE);
+                    tvDetalleDescripcion.setEllipsize(null);
+                    btnToggleDescripcion.setText("Leer menos ⌃");
+                } else {
+                    tvDetalleDescripcion.setMaxLines(3);
+                    tvDetalleDescripcion.setEllipsize(TextUtils.TruncateAt.END);
+                    btnToggleDescripcion.setText("Leer descripción completa ⌄");
                 }
             });
         }
@@ -280,12 +286,29 @@ public class PropiedadDetalleFragment extends Fragment {
             tvDetalleDescripcion.setEllipsize(TextUtils.TruncateAt.END);
 
             if (btnToggleDescripcion != null) {
-                if (desc.length() > 90 || desc.contains("\n")) {
-                    btnToggleDescripcion.setVisibility(View.VISIBLE);
-                    btnToggleDescripcion.setText("Leer descripción completa ⌄");
-                } else {
-                    btnToggleDescripcion.setVisibility(View.GONE);
-                }
+                btnToggleDescripcion.setText("Leer descripción completa ⌄");
+                btnToggleDescripcion.setVisibility(View.GONE);
+
+                // Determinar con precisión en el layout pass si el texto realmente supera las 3 líneas
+                tvDetalleDescripcion.post(() -> {
+                    if (tvDetalleDescripcion != null && btnToggleDescripcion != null && !isDescripcionExpandida) {
+                        android.text.Layout layout = tvDetalleDescripcion.getLayout();
+                        if (layout != null) {
+                            int lineCount = layout.getLineCount();
+                            boolean hasEllipsis = false;
+                            if (lineCount > 0) {
+                                hasEllipsis = layout.getEllipsisCount(lineCount - 1) > 0;
+                            }
+                            boolean superaTresLineas = hasEllipsis || lineCount > 3;
+                            btnToggleDescripcion.setVisibility(superaTresLineas ? View.VISIBLE : View.GONE);
+                        } else {
+                            // Estimación segura: ~160 caracteres en pantalla móvil a 16sp
+                            int saltos = desc.split("\n", -1).length;
+                            boolean superaTresLineas = desc.length() > 160 || saltos > 3;
+                            btnToggleDescripcion.setVisibility(superaTresLineas ? View.VISIBLE : View.GONE);
+                        }
+                    }
+                });
             }
         }
 
