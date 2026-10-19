@@ -2,6 +2,8 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator_favoritos"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorSurface">
@@ -17,32 +19,56 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="20dp">
 
             <!-- Page Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="24dp">
+                android:paddingBottom="20dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Mis Favoritos"
-                    android:textColor="@color/colorOnSurface"
-                    android:textSize="32sp"
-                    android:textStyle="bold" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/btn_back_favoritos"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_arrow_back"
+                        android:visibility="gone"
+                        app:tint="@color/colorOnSurface" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Mis Favoritos"
+                        android:textColor="@color/colorOnSurface"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <TextView
+                    android:id="@+id/tv_favoritos_contador"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Tienes 3 propiedades guardadas que coinciden con tu búsqueda."
+                    android:layout_marginTop="6dp"
+                    android:text="Cargando tus propiedades guardadas..."
                     android:textColor="@color/colorOnSurfaceVariant"
                     android:textSize="14sp" />
 
+                <!-- Botón de Ordenamiento -->
                 <LinearLayout
+                    android:id="@+id/btn_ordenar_favoritos"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -54,7 +80,8 @@
                     android:paddingBottom="8dp"
                     android:gravity="center_vertical"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="18dp"
@@ -63,6 +90,7 @@
                         app:tint="@color/colorPrimary" />
 
                     <TextView
+                        android:id="@+id/tv_ordenar_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
@@ -77,424 +105,153 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="@color/colorOutlineVariant"
-                android:layout_marginBottom="24dp"/>
+                android:layout_marginBottom="20dp"/>
 
-            <!-- Property Grid / List -->
-            
-            <!-- Card 1 -->
-            <androidx.cardview.widget.CardView
+            <!-- Indicador de Carga -->
+            <ProgressBar
+                android:id="@+id/pb_favoritos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="32dp"
+                android:indeterminateTint="@color/colorPrimary"
+                android:visibility="visible" />
+
+            <!-- Estado Vacío cuando no hay favoritos -->
+            <LinearLayout
+                android:id="@+id/layout_favoritos_vacio"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorOutlineVariant"
-                app:strokeWidth="1dp">
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="48dp"
+                android:paddingBottom="48dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:visibility="gone">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <androidx.cardview.widget.CardView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    app:cardCornerRadius="44dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerHigh">
+
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_favorite_border"
+                        app:tint="@color/colorPrimary" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginTop="20dp"
+                    android:text="No tienes favoritos guardados"
+                    android:textColor="@color/colorOnSurface"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textAlignment="center" />
 
-                    <!-- Image Container -->
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp">
-                        
-                        <ImageView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:background="@color/colorSurfaceContainerHigh"
-                            android:src="@android:drawable/ic_menu_gallery"/>
-                            
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="16dp"
-                            app:cardBackgroundColor="@color/colorOnSecondaryContainer"
-                            app:cardCornerRadius="16dp">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:paddingStart="12dp"
-                                android:paddingEnd="12dp"
-                                android:paddingTop="4dp"
-                                android:paddingBottom="4dp"
-                                android:text="Construcción Nueva"
-                                android:textColor="@color/colorOnPrimary"
-                                android:textSize="12sp"
-                                android:textStyle="bold"/>
-                        </androidx.cardview.widget.CardView>
-                        
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_gravity="top|end"
-                            android:layout_margin="16dp"
-                            app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                            app:cardCornerRadius="20dp">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_favorite"
-                                app:tint="@color/colorPrimary" />
-                        </androidx.cardview.widget.CardView>
-                    </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Guarda las propiedades que más te interesen tocando el ícono de corazón para encontrarlas rápidamente."
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="14sp"
+                    android:textAlignment="center"
+                    android:lineSpacingExtra="4dp" />
 
-                    <!-- Content Area -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-                        
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="$2,450,000"
-                            android:textColor="@color/colorPrimary"
-                            android:textSize="24sp"
-                            android:textStyle="bold"/>
-                            
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="The Glass Pavilion"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@android:drawable/ic_dialog_map"
-                                app:tint="@color/colorOnSurfaceVariant" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="Beverly Hills, CA"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                        
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/colorOutlineVariant"
-                            android:layout_marginTop="16dp"
-                            android:layout_marginBottom="16dp"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-                            
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🛏 4"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🚿 5"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="📐 4,200"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_explorar_propiedades"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="24dp"
+                    android:text="Explorar propiedades"
+                    android:textAllCaps="false"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/colorOnPrimary"
+                    app:icon="@drawable/ic_search"
+                    app:iconTint="@color/colorOnPrimary" />
+            </LinearLayout>
 
-            <!-- Card 2 -->
-            <androidx.cardview.widget.CardView
+            <!-- Estado cuando el usuario no está logueado -->
+            <LinearLayout
+                android:id="@+id/layout_favoritos_no_login"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorOutlineVariant"
-                app:strokeWidth="1dp">
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="48dp"
+                android:paddingBottom="48dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:visibility="gone">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <androidx.cardview.widget.CardView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    app:cardCornerRadius="44dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/colorSurfaceContainerHigh">
+
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_person"
+                        app:tint="@color/colorPrimary" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginTop="20dp"
+                    android:text="Inicia sesión para ver tus favoritos"
+                    android:textColor="@color/colorOnSurface"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textAlignment="center" />
 
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp">
-                        
-                        <ImageView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:background="@color/colorSurfaceContainerHigh"
-                            android:src="@android:drawable/ic_menu_gallery"/>
-                        
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_gravity="top|end"
-                            android:layout_margin="16dp"
-                            app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                            app:cardCornerRadius="20dp">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_favorite"
-                                app:tint="@color/colorPrimary" />
-                        </androidx.cardview.widget.CardView>
-                    </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Accede a tu cuenta de cliente para guardar tus inmuebles favoritos y sincronizarlos en tu dispositivo."
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="14sp"
+                    android:textAlignment="center"
+                    android:lineSpacingExtra="4dp" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-                        
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="$1,875,000"
-                            android:textColor="@color/colorPrimary"
-                            android:textSize="24sp"
-                            android:textStyle="bold"/>
-                            
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Skyline Penthouse"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@android:drawable/ic_dialog_map"
-                                app:tint="@color/colorOnSurfaceVariant" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="Downtown Metropolis"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                        
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/colorOutlineVariant"
-                            android:layout_marginTop="16dp"
-                            android:layout_marginBottom="16dp"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-                            
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🛏 3"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🚿 3.5"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="📐 2,850"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_login_favoritos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="24dp"
+                    android:text="Iniciar sesión"
+                    android:textAllCaps="false"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/colorOnPrimary" />
+            </LinearLayout>
 
-            <!-- Card 3 -->
-            <androidx.cardview.widget.CardView
+            <!-- Lista de Favoritos Reales -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_mis_favoritos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="0dp"
-                app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorOutlineVariant"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp">
-                        
-                        <ImageView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:background="@color/colorSurfaceContainerHigh"
-                            android:src="@android:drawable/ic_menu_gallery"/>
-                            
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="16dp"
-                            app:cardBackgroundColor="@color/colorSurfaceContainerHighest"
-                            app:cardCornerRadius="16dp">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:paddingStart="12dp"
-                                android:paddingEnd="12dp"
-                                android:paddingTop="4dp"
-                                android:paddingBottom="4dp"
-                                android:text="Open House Dom"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp"
-                                android:textStyle="bold"/>
-                        </androidx.cardview.widget.CardView>
-                        
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_gravity="top|end"
-                            android:layout_margin="16dp"
-                            app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                            app:cardCornerRadius="20dp">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_favorite"
-                                app:tint="@color/colorPrimary" />
-                        </androidx.cardview.widget.CardView>
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-                        
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="$3,100,000"
-                            android:textColor="@color/colorPrimary"
-                            android:textSize="24sp"
-                            android:textStyle="bold"/>
-                            
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="The Architectural Estate"
-                            android:textColor="@color/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@android:drawable/ic_dialog_map"
-                                app:tint="@color/colorOnSurfaceVariant" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="Silicon Valley, CA"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                        
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="@color/colorOutlineVariant"
-                            android:layout_marginTop="16dp"
-                            android:layout_marginBottom="16dp"/>
-                            
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-                            
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🛏 5"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🚿 6"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginEnd="16dp"/>
-                                
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="📐 5,400"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false"
+                android:visibility="gone"
+                tools:listitem="@layout/item_propiedad_destacada" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

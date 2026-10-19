@@ -28,10 +28,16 @@ public interface FavoritoDao {
     @Query("SELECT EXISTS(SELECT 1 FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId LIMIT 1)")
     LiveData<Boolean> esFavoritoLiveData(String usuarioId, String propiedadId);
 
-    @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
+    @Query("SELECT * FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId LIMIT 1")
+    Favorito obtenerFavorito(String usuarioId, String propiedadId);
+
+    @Query("SELECT fechaGuardado FROM favoritos WHERE usuarioId = :usuarioId AND propiedadId = :propiedadId LIMIT 1")
+    Long obtenerFechaGuardado(String usuarioId, String propiedadId);
+
+    @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId ORDER BY f.fechaGuardado DESC, f.propiedadId ASC")
     List<Propiedad> obtenerFavoritosDeUsuario(String usuarioId);
 
-    @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId")
+    @Query("SELECT p.* FROM propiedades p INNER JOIN favoritos f ON p.id = f.propiedadId WHERE f.usuarioId = :usuarioId ORDER BY f.fechaGuardado DESC, f.propiedadId ASC")
     LiveData<List<Propiedad>> obtenerFavoritosDeUsuarioLiveData(String usuarioId);
 
     @Query("SELECT propiedadId FROM favoritos WHERE usuarioId = :usuarioId")

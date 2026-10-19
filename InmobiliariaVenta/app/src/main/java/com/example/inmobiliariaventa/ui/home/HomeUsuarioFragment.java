@@ -107,7 +107,7 @@ public class HomeUsuarioFragment extends Fragment {
         }
 
         setupCategories();
-        setupFeaturedProperties();
+        setupFeaturedProperties(view);
 
         return view;
     }
@@ -129,8 +129,11 @@ public class HomeUsuarioFragment extends Fragment {
         categoriesRecyclerView.setAdapter(adapter);
     }
 
-    private void setupFeaturedProperties() {
+    private void setupFeaturedProperties(View rootView) {
         featuredAdapter = new PropiedadDestacadaAdapter(new ArrayList<>());
+        if (rootView != null) {
+            featuredAdapter.setCoordinatorLayout(rootView.findViewById(R.id.coordinator_home));
+        }
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         featuredRecyclerView.setHasFixedSize(true);
         featuredRecyclerView.setItemViewCacheSize(20);

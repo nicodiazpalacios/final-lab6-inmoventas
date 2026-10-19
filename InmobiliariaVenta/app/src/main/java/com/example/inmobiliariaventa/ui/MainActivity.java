@@ -26,6 +26,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<String[]> locationPermissionLauncher;
+    private boolean isUpdatingMenuFromNav = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,73 +68,42 @@ public class MainActivity extends AppCompatActivity {
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
             
-            // Vincular el BottomNavigationView con el NavController
-            NavigationUI.setupWithNavController(bottomNav, navController);
-            
-            // Interceptar clicks si el usuario no está registrado
+            // Interceptar clicks en la barra inferior con navegación consistente y controlada
             bottomNav.setOnItemSelectedListener(item -> {
+                if (isUpdatingMenuFromNav) {
+                    return true;
+                }
+
+                int itemId = item.getItemId();
                 android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
                 boolean isUserRegistered = prefs.getBoolean("is_user_logged_in", false);
-                int itemId = item.getItemId();
                 
                 if (!isUserRegistered && (itemId == R.id.nav_guardados || itemId == R.id.nav_perfil)) {
                     navController.navigate(R.id.nav_login);
-                    return false; // No marcamos la pestaña como seleccionada visualmente
+                    return false; // No marcamos la pestaña como seleccionada si requiere autenticación
                 }
                 
-                // Navegación explícita para los botones del menú de administrador
-                if (itemId == R.id.nav_admin_home || 
-                    itemId == R.id.nav_admin_propiedades || 
-                    itemId == R.id.nav_contratos || 
-                    itemId == R.id.nav_admin_perfil) {
-                    
-                    if (navController.getCurrentDestination() != null && 
-                        navController.getCurrentDestination().getId() != itemId) {
-                        try {
-                            navController.navigate(itemId);
-                        } catch (IllegalArgumentException e) {
-                        }
-                    }
-                    return true;
-                }
-
-                // Navegación explícita para volver a Inicio desde cualquier fragmento
-                if (itemId == R.id.nav_inicio) {
-                    if (navController.getCurrentDestination() != null && 
-                        navController.getCurrentDestination().getId() != R.id.nav_inicio) {
-                        if (!navController.popBackStack(R.id.nav_inicio, false)) {
-                            navController.navigate(R.id.nav_inicio);
-                        }
-                    }
-                    return true;
-                }
-
-                // Navegación explícita a Filtros / Buscar
-                if (itemId == R.id.nav_buscar) {
-                    if (navController.getCurrentDestination() != null && 
-                        navController.getCurrentDestination().getId() != R.id.nav_buscar) {
-                        navController.navigate(R.id.nav_buscar);
-                    }
-                    return true;
-                }
-                
-                return NavigationUI.onNavDestinationSelected(item, navController);
+                navegarADestinoMenu(navController, itemId);
+                return true;
             });
 
-            // Si el usuario toca "Inicio" cuando ya estaba seleccionado en la barra inferior
+            // Si el usuario toca una pestaña que ya estaba marcada como seleccionada en la barra
             bottomNav.setOnItemReselectedListener(item -> {
-                if (item.getItemId() == R.id.nav_inicio) {
-                    if (navController.getCurrentDestination() != null && 
-                        navController.getCurrentDestination().getId() != R.id.nav_inicio) {
-                        if (!navController.popBackStack(R.id.nav_inicio, false)) {
-                            navController.navigate(R.id.nav_inicio);
-                        }
-                    }
+                int itemId = item.getItemId();
+                if (navController.getCurrentDestination() != null && 
+                    navController.getCurrentDestination().getId() != itemId) {
+                    // El usuario tocó la pestaña pero la pantalla actual no coincide (ej. estaba en favoritos o en una subpantalla)
+                    navegarADestinoMenu(navController, itemId);
+                } else if (itemId == R.id.nav_inicio) {
+                    navController.popBackStack(R.id.nav_inicio, false);
+                } else if (itemId == R.id.nav_admin_home) {
+                    navController.popBackStack(R.id.nav_admin_home, false);
                 }
             });
 
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-                if (destination.getId() == R.id.nav_search_location || destination.getId() == R.id.nav_login || destination.getId() == R.id.nav_registro) {
+                int destId = destination.getId();
+                if (destId == R.id.nav_search_location || destId == R.id.nav_login || destId == R.id.nav_registro) {
                     bottomNav.setVisibility(View.GONE);
                 } else {
                     bottomNav.setVisibility(View.VISIBLE);
@@ -141,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
                 ViewCompat.requestApplyInsets(rootLayout);
 
                 // Sincronizar el color de la barra de estado y notch con el header de cada ventana
-                int destId = destination.getId();
                 int topBarColor;
                 if (destId == R.id.nav_inicio || destId == R.id.nav_admin_home || destId == R.id.nav_buscar) {
                     // Pantallas con header blanco (layout_header / toolbar blanco)
@@ -155,53 +124,54 @@ public class MainActivity extends AppCompatActivity {
                 rootLayout.setBackgroundColor(topBarColor);
                 getWindow().setStatusBarColor(topBarColor);
                 
-                // Cambiar al menú de administrador si estamos en un fragmento de admin
-                if (destination.getId() == R.id.nav_admin_perfil || destination.getId() == R.id.nav_admin_home || 
-                    destination.getId() == R.id.nav_admin_propiedades || destination.getId() == R.id.nav_admin_agregar_propiedad || 
-                    destination.getId() == R.id.nav_contratos || destination.getId() == R.id.nav_admin_agregar_contrato ||
-                    destination.getId() == R.id.nav_admin_configuracion ||
-                    destination.getId() == R.id.nav_admin_gestion_usuarios || destination.getId() == R.id.nav_admin_ventas ||
-                    destination.getId() == R.id.nav_admin_propiedades_vendidas || destination.getId() == R.id.nav_admin_notificaciones ||
-                    destination.getId() == R.id.nav_admin_mensajes) {
+                // Determinar si estamos en modo admin o usuario
+                boolean isAdminDest = (destId == R.id.nav_admin_perfil || destId == R.id.nav_admin_home || 
+                    destId == R.id.nav_admin_propiedades || destId == R.id.nav_admin_agregar_propiedad || 
+                    destId == R.id.nav_contratos || destId == R.id.nav_admin_agregar_contrato ||
+                    destId == R.id.nav_admin_configuracion ||
+                    destId == R.id.nav_admin_gestion_usuarios || destId == R.id.nav_admin_ventas ||
+                    destId == R.id.nav_admin_propiedades_vendidas || destId == R.id.nav_admin_notificaciones ||
+                    destId == R.id.nav_admin_mensajes);
+
+                if (isAdminDest) {
                     if (bottomNav.getMenu().findItem(R.id.nav_admin_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_admin);
                     }
                     
-                    // Forzar que se marque la pestaña correcta en base al destino actual
-                    int menuIdToSelect = destination.getId();
+                    int menuIdToSelect = destId;
                     if (menuIdToSelect == R.id.nav_admin_agregar_propiedad) {
                         menuIdToSelect = R.id.nav_admin_propiedades;
                     } else if (menuIdToSelect == R.id.nav_admin_agregar_contrato) {
                         menuIdToSelect = R.id.nav_contratos;
                     }
+
                     if (bottomNav.getMenu().findItem(menuIdToSelect) != null) {
-                        bottomNav.getMenu().findItem(menuIdToSelect).setChecked(true);
+                        if (bottomNav.getSelectedItemId() != menuIdToSelect) {
+                            isUpdatingMenuFromNav = true;
+                            bottomNav.setSelectedItemId(menuIdToSelect);
+                            isUpdatingMenuFromNav = false;
+                        }
                     }
-                } 
-                // Volver al menú de usuario si estamos en el perfil normal, inicio, filtros o resultados de búsqueda
-                else if (destination.getId() == R.id.nav_perfil || destination.getId() == R.id.nav_guardados || destination.getId() == R.id.nav_inicio || destination.getId() == R.id.nav_buscar || destination.getId() == R.id.nav_resultados_busqueda) {
+                } else {
                     if (bottomNav.getMenu().findItem(R.id.nav_perfil) == null) {
                         bottomNav.getMenu().clear();
                         bottomNav.inflateMenu(R.menu.menu_usuario);
                     }
-                    int menuIdToSelect = destination.getId();
+
+                    int menuIdToSelect = destId;
                     if (menuIdToSelect == R.id.nav_resultados_busqueda) {
                         menuIdToSelect = R.id.nav_buscar;
+                    } else if (menuIdToSelect == R.id.nav_detalle_propiedad) {
+                        menuIdToSelect = R.id.nav_inicio;
                     }
-                    if (bottomNav.getMenu().findItem(menuIdToSelect) != null) {
-                        bottomNav.getMenu().findItem(menuIdToSelect).setChecked(true);
-                    }
-                }
 
-                // Forzar selección visual del item de la barra inferior según la pantalla actual
-                if (destination.getId() == R.id.nav_detalle_propiedad) {
-                    if (bottomNav.getMenu().findItem(R.id.nav_inicio) != null) {
-                        bottomNav.getMenu().findItem(R.id.nav_inicio).setChecked(true);
-                    }
-                } else if (destination.getId() == R.id.nav_buscar || destination.getId() == R.id.nav_resultados_busqueda) {
-                    if (bottomNav.getMenu().findItem(R.id.nav_buscar) != null) {
-                        bottomNav.getMenu().findItem(R.id.nav_buscar).setChecked(true);
+                    if (bottomNav.getMenu().findItem(menuIdToSelect) != null) {
+                        if (bottomNav.getSelectedItemId() != menuIdToSelect) {
+                            isUpdatingMenuFromNav = true;
+                            bottomNav.setSelectedItemId(menuIdToSelect);
+                            isUpdatingMenuFromNav = false;
+                        }
                     }
                 }
             });
@@ -253,5 +223,36 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
+
+    private void navegarADestinoMenu(NavController navController, int itemId) {
+        if (navController.getCurrentDestination() != null && 
+            navController.getCurrentDestination().getId() == itemId) {
+            return;
+        }
+
+        // Si el destino es inicio o nav_admin_home, siempre hacer pop hasta la raíz correspondiente
+        if (itemId == R.id.nav_inicio) {
+            if (!navController.popBackStack(R.id.nav_inicio, false)) {
+                try {
+                    navController.navigate(R.id.nav_inicio);
+                } catch (Exception ignored) {}
+            }
+            return;
+        }
+        if (itemId == R.id.nav_admin_home) {
+            if (!navController.popBackStack(R.id.nav_admin_home, false)) {
+                try {
+                    navController.navigate(R.id.nav_admin_home);
+                } catch (Exception ignored) {}
+            }
+            return;
+        }
+
+        // Para las demás pestañas: intentar volver a ella si ya existe en la pila, o navegar a ella
+        if (!navController.popBackStack(itemId, false)) {
+            try {
+                navController.navigate(itemId);
+            } catch (Exception ignored) {}
+        }
+    }
 }
-// Testing BOM

@@ -3,6 +3,7 @@ package com.example.inmobiliariaventa.ui.home;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -27,6 +28,7 @@ import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -38,10 +40,42 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
     private List<Propiedad> propiedades;
     private final java.util.Set<String> favoritosUsuarioIds = new java.util.HashSet<>();
     private boolean favoritosInicializados = false;
+    private View coordinatorLayout;
 
     public PropiedadDestacadaAdapter(List<Propiedad> propiedades) {
         this.propiedades = propiedades != null ? propiedades : new ArrayList<>();
         setHasStableIds(true);
+    }
+
+    public void setCoordinatorLayout(View coordinatorLayout) {
+        this.coordinatorLayout = coordinatorLayout;
+    }
+
+    private View obtenerTargetCoordinator(View fallbackView) {
+        if (this.coordinatorLayout != null) {
+            return this.coordinatorLayout;
+        }
+        if (fallbackView != null) {
+            View root = fallbackView.getRootView();
+            if (root != null) {
+                View coordHome = root.findViewById(R.id.coordinator_home);
+                if (coordHome instanceof androidx.coordinatorlayout.widget.CoordinatorLayout) {
+                    return coordHome;
+                }
+                View coordFav = root.findViewById(R.id.coordinator_favoritos);
+                if (coordFav instanceof androidx.coordinatorlayout.widget.CoordinatorLayout) {
+                    return coordFav;
+                }
+            }
+            android.view.ViewParent parent = fallbackView.getParent();
+            while (parent != null) {
+                if (parent instanceof androidx.coordinatorlayout.widget.CoordinatorLayout) {
+                    return (View) parent;
+                }
+                parent = parent.getParent();
+            }
+        }
+        return fallbackView;
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
@@ -220,15 +254,82 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                     fav.fechaGuardado = System.currentTimeMillis();
                     fav.estadoSincronizacion = "SINCRONIZADO";
                     db.favoritoDao().insertar(fav);
-                } else {
-                    db.favoritoDao().eliminarPorIds(uId, prop.id);
-                }
 
-                holder.itemView.post(() -> {
-                    Toast.makeText(context,
-                            nuevoEstado ? "¡Propiedad guardada en Favoritos!" : "Propiedad eliminada de Favoritos",
-                            Toast.LENGTH_SHORT).show();
-                });
+                    holder.itemView.post(() -> {
+                        View targetView = obtenerTargetCoordinator(holder.itemView);
+
+                        Snackbar snackbar = Snackbar.make(targetView, "¡Propiedad guardada en Favoritos!", Snackbar.LENGTH_SHORT)
+                                .setTextColor(ContextCompat.getColor(context, R.color.white));
+
+                        View snackbarView = snackbar.getView();
+                        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+                        snackbarView.setBackgroundTintList(null);
+
+                        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+                        if (lp instanceof ViewGroup.MarginLayoutParams) {
+                            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+                            int marginH = (int) (16 * context.getResources().getDisplayMetrics().density);
+                            int marginB = (int) (8 * context.getResources().getDisplayMetrics().density);
+                            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+                            snackbarView.setLayoutParams(marginParams);
+                        }
+                        snackbarView.setElevation(8 * context.getResources().getDisplayMetrics().density);
+
+                        snackbar.show();
+                    });
+                } else {
+                    Favorito existente = db.favoritoDao().obtenerFavorito(uId, prop.id);
+                    final Favorito favRespaldo = new Favorito();
+                    favRespaldo.usuarioId = uId;
+                    favRespaldo.propiedadId = prop.id;
+                    favRespaldo.fechaGuardado = (existente != null && existente.fechaGuardado > 0)
+                            ? existente.fechaGuardado : System.currentTimeMillis();
+                    favRespaldo.estadoSincronizacion = (existente != null && existente.estadoSincronizacion != null)
+                            ? existente.estadoSincronizacion : "SINCRONIZADO";
+
+                    db.favoritoDao().eliminarPorIds(uId, prop.id);
+
+                    holder.itemView.post(() -> {
+                        View targetView = obtenerTargetCoordinator(holder.itemView);
+
+                        Snackbar snackbar = Snackbar.make(targetView, "Propiedad eliminada de Favoritos", Snackbar.LENGTH_LONG)
+                                .setAction("DESHACER", vUndo -> {
+                                    synchronized (favoritosUsuarioIds) {
+                                        if (prop.id != null) {
+                                            favoritosUsuarioIds.add(prop.id);
+                                        }
+                                    }
+                                    actualizarEstadoVisualFavorito(holder, true);
+
+                                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                                        db.favoritoDao().insertar(favRespaldo);
+                                    });
+                                })
+                                .setActionTextColor(ContextCompat.getColor(context, R.color.colorSnackbarAction))
+                                .setTextColor(ContextCompat.getColor(context, R.color.white));
+
+                        View snackbarView = snackbar.getView();
+                        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+                        snackbarView.setBackgroundTintList(null);
+
+                        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+                        if (lp instanceof ViewGroup.MarginLayoutParams) {
+                            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+                            int marginH = (int) (16 * context.getResources().getDisplayMetrics().density);
+                            int marginB = (int) (8 * context.getResources().getDisplayMetrics().density);
+                            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+                            snackbarView.setLayoutParams(marginParams);
+                        }
+                        snackbarView.setElevation(8 * context.getResources().getDisplayMetrics().density);
+
+                        TextView actionTextView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
+                        if (actionTextView != null) {
+                            actionTextView.setTypeface(Typeface.DEFAULT_BOLD);
+                        }
+
+                        snackbar.show();
+                    });
+                }
             });
         };
 

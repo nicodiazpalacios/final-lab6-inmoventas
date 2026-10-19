@@ -35,10 +35,12 @@ import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
 import com.example.inmobiliariaventa.domain.entity.Disposicion;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
+import android.graphics.Typeface;
 import com.example.inmobiliariaventa.utils.ImageLoader;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.NumberFormat;
@@ -201,7 +203,7 @@ public class PropiedadDetalleFragment extends Fragment {
         }
 
         // Cargar datos reales de la propiedad seleccionada
-        propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
+        propiedadViewModel = new ViewModelProvider(requireActivity()).get(PropiedadViewModel.class);
         String propiedadId = getArguments() != null ? getArguments().getString("propiedad_id") : null;
         if (propiedadId != null && !propiedadId.isEmpty()) {
             propiedadViewModel.getPropiedadPorId(propiedadId).observe(getViewLifecycleOwner(), propiedad -> {
@@ -814,16 +816,77 @@ public class PropiedadDetalleFragment extends Fragment {
                 fav.fechaGuardado = System.currentTimeMillis();
                 fav.estadoSincronizacion = "SINCRONIZADO";
                 db.favoritoDao().insertar(fav);
-            } else {
-                db.favoritoDao().eliminarPorIds(userId, currentPropiedad.id);
-            }
 
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(),
-                            nuevoEstado ? "¡Propiedad guardada en Favoritos!" : "Propiedad eliminada de Favoritos",
-                            Toast.LENGTH_SHORT).show();
-                });
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (getView() == null) return;
+                        Snackbar snackbar = Snackbar.make(getView(), "¡Propiedad guardada en Favoritos!", Snackbar.LENGTH_SHORT)
+                                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+                        View snackbarView = snackbar.getView();
+                        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+                        snackbarView.setBackgroundTintList(null);
+
+                        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+                        if (lp instanceof ViewGroup.MarginLayoutParams) {
+                            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+                            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+                            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+                            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+                            snackbarView.setLayoutParams(marginParams);
+                        }
+                        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+                        snackbar.show();
+                    });
+                }
+            } else {
+                Favorito existente = db.favoritoDao().obtenerFavorito(userId, currentPropiedad.id);
+                final Favorito favRespaldo = new Favorito();
+                favRespaldo.usuarioId = userId;
+                favRespaldo.propiedadId = currentPropiedad.id;
+                favRespaldo.fechaGuardado = (existente != null && existente.fechaGuardado > 0)
+                        ? existente.fechaGuardado : System.currentTimeMillis();
+                favRespaldo.estadoSincronizacion = (existente != null && existente.estadoSincronizacion != null)
+                        ? existente.estadoSincronizacion : "SINCRONIZADO";
+
+                db.favoritoDao().eliminarPorIds(userId, currentPropiedad.id);
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (getView() == null) return;
+                        Snackbar snackbar = Snackbar.make(getView(), "Propiedad eliminada de Favoritos", Snackbar.LENGTH_LONG)
+                                .setAction("DESHACER", vUndo -> {
+                                    actualizarIconoFavorito(true);
+                                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                                        db.favoritoDao().insertar(favRespaldo);
+                                    });
+                                })
+                                .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))
+                                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+                        View snackbarView = snackbar.getView();
+                        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+                        snackbarView.setBackgroundTintList(null);
+
+                        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+                        if (lp instanceof ViewGroup.MarginLayoutParams) {
+                            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+                            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+                            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+                            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+                            snackbarView.setLayoutParams(marginParams);
+                        }
+                        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+                        TextView actionTextView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
+                        if (actionTextView != null) {
+                            actionTextView.setTypeface(Typeface.DEFAULT_BOLD);
+                        }
+
+                        snackbar.show();
+                    });
+                }
             }
         });
     }
@@ -839,15 +902,13 @@ public class PropiedadDetalleFragment extends Fragment {
             return;
         }
 
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            boolean fav = AppDatabase.getInstance(requireContext()).favoritoDao().esFavorito(userId, prop.id);
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    isPropiedadFavorita = fav;
-                    actualizarIconoFavorito(fav);
+        AppDatabase.getInstance(requireContext())
+                .favoritoDao()
+                .esFavoritoLiveData(userId, prop.id)
+                .observe(getViewLifecycleOwner(), fav -> {
+                    isPropiedadFavorita = (fav != null && fav);
+                    actualizarIconoFavorito(isPropiedadFavorita);
                 });
-            }
-        });
     }
 
     private void actualizarIconoFavorito(boolean fav) {

@@ -30,4 +30,10 @@
     <color name="colorSecondaryFixed">#6FFBBE</color>
     <color name="colorOnSecondaryFixed">#002113</color>
     <color name="colorPrimaryFixedDim">#B6C4FF</color>
+    
+    <!-- Snackbar styling aligned with app visual architecture (Navy + Mint / Light Blue) -->
+    <color name="colorSnackbarBackground">#0B1B3D</color>
+    <color name="colorSnackbarStroke">#1E3A8A</color>
+    <color name="colorSnackbarAction">#6FFBBE</color>
+    <color name="colorSnackbarActionAlt">#90A8FF</color>
 </resources>

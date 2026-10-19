@@ -29,14 +29,20 @@ public interface PropiedadDao {
     @Query("DELETE FROM propiedades WHERE id = :id")
     void eliminarPorId(String id);
 
-    @Query("DELETE FROM propiedades WHERE estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR'")
-    void eliminarSincronizadas();
+    @Query("DELETE FROM propiedades WHERE id NOT IN (:idsServidor) AND (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
+    void eliminarNoEnServidor(List<String> idsServidor);
 
     @Transaction
     default void sincronizarConServidor(List<Propiedad> listaServidor) {
-        eliminarSincronizadas();
         if (listaServidor != null && !listaServidor.isEmpty()) {
             insertarTodas(listaServidor);
+            List<String> ids = new java.util.ArrayList<>();
+            for (Propiedad p : listaServidor) {
+                if (p.id != null) ids.add(p.id);
+            }
+            if (!ids.isEmpty()) {
+                eliminarNoEnServidor(ids);
+            }
         }
     }
 

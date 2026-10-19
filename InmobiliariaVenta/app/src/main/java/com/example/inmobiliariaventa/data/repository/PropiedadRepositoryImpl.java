@@ -20,13 +20,20 @@ public class PropiedadRepositoryImpl implements PropiedadRepository {
     private final PropiedadDao propiedadDao;
     private final LiveData<List<Propiedad>> allPropiedades;
 
+    private static long ultimaSincronizacion = 0;
+    private static final long INTERVALO_MIN_SYNC_MS = 60_000; // 1 minuto
+
     public PropiedadRepositoryImpl(Application application) {
         AppDatabase database = AppDatabase.getInstance(application);
         propiedadDao = database.propiedadDao();
         allPropiedades = propiedadDao.obtenerTodas();
 
-        // Sincronización automática silenciosa al iniciar el repositorio
-        sincronizarConNube(null);
+        // Sincronización automática silenciosa al iniciar el repositorio si no se sincronizó recientemente
+        long ahora = System.currentTimeMillis();
+        if (ahora - ultimaSincronizacion > INTERVALO_MIN_SYNC_MS) {
+            ultimaSincronizacion = ahora;
+            sincronizarConNube(null);
+        }
     }
 
     @Override

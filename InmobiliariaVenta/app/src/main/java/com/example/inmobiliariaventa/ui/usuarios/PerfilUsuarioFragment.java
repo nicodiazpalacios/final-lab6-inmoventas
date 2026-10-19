@@ -151,7 +151,13 @@ public class PerfilUsuarioFragment extends Fragment {
         // Navegar a Mis Favoritos
         View btnFavoritos = view.findViewById(R.id.btn_perfil_favoritos);
         if (btnFavoritos != null) {
-            btnFavoritos.setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.nav_guardados));
+            btnFavoritos.setOnClickListener(v -> {
+                try {
+                    Navigation.findNavController(v).navigate(R.id.action_nav_perfil_to_nav_guardados);
+                } catch (Exception e) {
+                    Navigation.findNavController(v).navigate(R.id.nav_guardados);
+                }
+            });
         }
 
         // Información Personal
