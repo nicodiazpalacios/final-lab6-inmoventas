@@ -253,7 +253,16 @@ public class PerfilUsuarioFragment extends Fragment {
                 SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
                 prefs.edit().clear().apply();
                 mostrarSnackbarElegante("Sesión cerrada correctamente");
-                Navigation.findNavController(rootView).navigate(R.id.nav_inicio);
+                try {
+                    androidx.navigation.NavController navController = Navigation.findNavController(rootView);
+                    navController.getGraph().setStartDestination(R.id.nav_inicio);
+                    androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                            .setPopUpTo(R.id.nav_inicio, false)
+                            .build();
+                    navController.navigate(R.id.nav_inicio, null, navOptions);
+                } catch (Exception e) {
+                    Navigation.findNavController(rootView).navigate(R.id.nav_inicio);
+                }
             });
         }
 

@@ -118,7 +118,18 @@
         android:id="@+id/nav_login"
         android:name="com.example.inmobiliariaventa.ui.usuarios.LoginFragment"
         android:label="Iniciar Sesión"
-        tools:layout="@layout/fragment_login" />
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_nav_login_to_nav_admin_home"
+            app:destination="@id/nav_admin_home"
+            app:popUpTo="@id/nav_inicio"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_nav_login_to_nav_inicio"
+            app:destination="@id/nav_inicio"
+            app:popUpTo="@id/nav_inicio"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_registro"
@@ -131,6 +142,9 @@
         android:name="com.example.inmobiliariaventa.ui.admin.AdminHomeFragment"
         android:label="Admin Dashboard"
         tools:layout="@layout/fragment_admin_home">
+        <action
+            android:id="@+id/action_nav_admin_home_to_nav_inicio"
+            app:destination="@id/nav_inicio" />
         <action
             android:id="@+id/action_nav_admin_home_to_nav_admin_propiedades"
             app:destination="@id/nav_admin_propiedades" />

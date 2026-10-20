@@ -14,6 +14,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.navigation.NavController;
+import androidx.navigation.NavGraph;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 import com.example.inmobiliariaventa.R;
@@ -68,6 +69,19 @@ public class MainActivity extends AppCompatActivity {
         
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
+
+            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            boolean isUserRegistered = prefs.getBoolean("is_user_logged_in", false);
+            String userRol = prefs.getString("user_rol", "");
+            boolean isAdmin = isUserRegistered && userRol != null && userRol.trim().toUpperCase().contains("ADMIN");
+
+            if (savedInstanceState == null && isAdmin) {
+                bottomNav.getMenu().clear();
+                bottomNav.inflateMenu(R.menu.menu_admin);
+                NavGraph graph = navController.getNavInflater().inflate(R.navigation.mobile_navigation);
+                graph.setStartDestination(R.id.nav_admin_home);
+                navController.setGraph(graph);
+            }
             
             // Interceptar clicks en la barra inferior con navegación consistente y controlada
             bottomNav.setOnItemSelectedListener(item -> {
@@ -76,10 +90,10 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 int itemId = item.getItemId();
-                android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-                boolean isUserRegistered = prefs.getBoolean("is_user_logged_in", false);
+                android.content.SharedPreferences navPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                boolean loggedIn = navPrefs.getBoolean("is_user_logged_in", false);
                 
-                if (!isUserRegistered && (itemId == R.id.nav_guardados || itemId == R.id.nav_perfil)) {
+                if (!loggedIn && (itemId == R.id.nav_guardados || itemId == R.id.nav_perfil)) {
                     navController.navigate(R.id.nav_login);
                     return false; // No marcamos la pestaña como seleccionada si requiere autenticación
                 }

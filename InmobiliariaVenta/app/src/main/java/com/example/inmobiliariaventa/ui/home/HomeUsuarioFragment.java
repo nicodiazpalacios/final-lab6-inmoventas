@@ -100,7 +100,7 @@ public class HomeUsuarioFragment extends Fragment {
                 boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
                 if (isLoggedIn) {
                     String userRol = prefs.getString("user_rol", "");
-                    if ("ADMIN".equalsIgnoreCase(userRol)) {
+                    if (userRol != null && userRol.trim().toUpperCase().contains("ADMIN")) {
                         Navigation.findNavController(v).navigate(R.id.nav_admin_notificaciones);
                     } else {
                         Toast.makeText(getContext(), "No tienes nuevas notificaciones por el momento", Toast.LENGTH_SHORT).show();
@@ -117,7 +117,7 @@ public class HomeUsuarioFragment extends Fragment {
             boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
             String userRol = prefs.getString("user_rol", "");
 
-            if (isLoggedIn && "ADMIN".equalsIgnoreCase(userRol)) {
+            if (isLoggedIn && userRol != null && userRol.trim().toUpperCase().contains("ADMIN")) {
                 btnAdminMode.setVisibility(View.VISIBLE);
                 btnAdminMode.setOnClickListener(v -> {
                     Navigation.findNavController(v).navigate(R.id.nav_admin_home);

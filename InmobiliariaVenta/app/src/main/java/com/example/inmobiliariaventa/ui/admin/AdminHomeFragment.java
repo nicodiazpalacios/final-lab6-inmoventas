@@ -8,12 +8,22 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.ui.home.PropiedadDestacadaAdapter;
+import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
 
 public class AdminHomeFragment extends Fragment {
+
+    private PropiedadDestacadaAdapter featuredAdapter;
+    private PropiedadViewModel propiedadViewModel;
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -30,25 +40,60 @@ public class AdminHomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
-        if (fabAddProperty != null) {
-            fabAddProperty.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
+        // 1. Banner Modo Sin Conexión
+        View cardModoOffline = view.findViewById(R.id.cardModoOffline);
+        if (cardModoOffline != null && getContext() != null) {
+            com.example.inmobiliariaventa.utils.NetworkUtils.getNetworkLiveData(requireContext())
+                    .observe(getViewLifecycleOwner(), isOnline -> {
+                        cardModoOffline.setVisibility(Boolean.TRUE.equals(isOnline) ? View.GONE : View.VISIBLE);
+                    });
+        }
+
+        // 2. Search Container (idéntico a Home Usuario)
+        View searchContainer = view.findViewById(R.id.searchContainer);
+        if (searchContainer != null) {
+            searchContainer.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_propiedades);
             });
         }
 
+        // 3. Botón Publicar Nueva Propiedad
+        View btnAdminNuevaPropiedad = view.findViewById(R.id.btnAdminNuevaPropiedad);
+        if (btnAdminNuevaPropiedad != null) {
+            btnAdminNuevaPropiedad.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
+            });
+        }
+
+        // 4. FAB Agregar Propiedad
+        FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
+        if (fabAddProperty != null) {
+            fabAddProperty.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
+            });
+        }
+
+        // 5. Botón Alternar Modo Usuario
         View btnSwitchUserMode = view.findViewById(R.id.btnSwitchUserMode);
         if (btnSwitchUserMode != null) {
             btnSwitchUserMode.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.nav_inicio);
+                Navigation.findNavController(view).navigate(R.id.nav_inicio);
             });
         }
-        
+
+        // 6. Módulos de Gestión (Tarjetas de 100dp con bg_icon_circle)
+        View cardPropiedades = view.findViewById(R.id.card_propiedades);
+        if (cardPropiedades != null) {
+            cardPropiedades.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_propiedades);
+            });
+        }
+
         View cardMensajes = view.findViewById(R.id.card_mensajes);
         android.widget.TextView tvMensajesSub = view.findViewById(R.id.tv_admin_mensajes_subtitulo);
         if (cardMensajes != null) {
             cardMensajes.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_mensajes);
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_mensajes);
             });
 
             if (tvMensajesSub != null && getContext() != null) {
@@ -59,48 +104,52 @@ public class AdminHomeFragment extends Fragment {
                         .getMensajesNoLeidosCount()
                         .observe(getViewLifecycleOwner(), unreadCount -> {
                             if (unreadCount != null && unreadCount > 0) {
-                                tvMensajesSub.setText(unreadCount + " nuevos mensajes");
+                                tvMensajesSub.setText(unreadCount + " nuevos");
                                 tvMensajesSub.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorPrimary));
                             } else {
-                                tvMensajesSub.setText("Bandeja al día");
-                                tvMensajesSub.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant));
+                                tvMensajesSub.setText("Mensajes");
+                                tvMensajesSub.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
                             }
                         });
             }
         }
 
-        View cardPropiedades = view.findViewById(R.id.card_propiedades);
-        if (cardPropiedades != null) {
-            cardPropiedades.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_propiedades);
-            });
-        }
-
         View cardVentas = view.findViewById(R.id.card_ventas);
         if (cardVentas != null) {
             cardVentas.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_ventas);
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_ventas);
             });
         }
 
         View cardAjustes = view.findViewById(R.id.card_ajustes);
         if (cardAjustes != null) {
             cardAjustes.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_configuracion);
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_configuracion);
             });
         }
 
-        View btnVerTodoActividad = view.findViewById(R.id.btn_ver_todo_actividad);
-        if (btnVerTodoActividad != null) {
-            btnVerTodoActividad.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
-            });
-        }
-
+        // 7. Cabecera Botón de Notificaciones
         View notificationsButton = view.findViewById(R.id.notificationsButton);
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
+            });
+        }
+
+        // 8. Carrusel / Lista de Propiedades en Portafolio (Idéntico a Home Usuario)
+        RecyclerView featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
+        if (featuredRecyclerView != null && getContext() != null) {
+            featuredAdapter = new PropiedadDestacadaAdapter(new ArrayList<>());
+            featuredAdapter.setCoordinatorLayout(view.findViewById(R.id.coordinator_admin_home));
+            featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+            featuredRecyclerView.setHasFixedSize(true);
+            featuredRecyclerView.setAdapter(featuredAdapter);
+
+            propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
+            propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
+                if (propiedades != null) {
+                    featuredAdapter.setPropiedades(propiedades);
+                }
             });
         }
     }

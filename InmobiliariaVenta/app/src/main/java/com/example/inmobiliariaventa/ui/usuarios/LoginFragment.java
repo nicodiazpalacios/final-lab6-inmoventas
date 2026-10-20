@@ -16,6 +16,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -146,6 +148,11 @@ public class LoginFragment extends Fragment {
                         return;
                     }
 
+                    boolean esAdmin = usuario.rol != null && usuario.rol.trim().toUpperCase().contains("ADMIN");
+                    if (esAdmin) {
+                        usuario.rol = "ADMIN";
+                    }
+
                     // Credenciales válidas: Procesar sesión y recordar
                     procesarRecordarme(email, password, isRememberChecked);
                     guardarSesion(usuario, password);
@@ -159,12 +166,29 @@ public class LoginFragment extends Fragment {
                     // Sincronizar favoritos del usuario
                     FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(usuario.id, null);
 
-                    if ("ADMIN".equalsIgnoreCase(usuario.rol)) {
+                    NavController navController = Navigation.findNavController(v);
+                    if (esAdmin) {
                         mostrarSnackbarElegante("Acceso concedido: Administrador", true);
-                        Navigation.findNavController(v).navigate(R.id.nav_admin_home);
+                        try {
+                            navController.getGraph().setStartDestination(R.id.nav_admin_home);
+                            NavOptions navOptions = new NavOptions.Builder()
+                                    .setPopUpTo(R.id.nav_inicio, true)
+                                    .build();
+                            navController.navigate(R.id.nav_admin_home, null, navOptions);
+                        } catch (Exception e) {
+                            navController.navigate(R.id.nav_admin_home);
+                        }
                     } else {
                         mostrarSnackbarElegante("Bienvenido " + usuario.nombre, true);
-                        Navigation.findNavController(v).navigate(R.id.nav_inicio);
+                        try {
+                            navController.getGraph().setStartDestination(R.id.nav_inicio);
+                            NavOptions navOptions = new NavOptions.Builder()
+                                    .setPopUpTo(R.id.nav_inicio, true)
+                                    .build();
+                            navController.navigate(R.id.nav_inicio, null, navOptions);
+                        } catch (Exception e) {
+                            navController.navigate(R.id.nav_inicio);
+                        }
                     }
                 }
 
@@ -200,6 +224,9 @@ public class LoginFragment extends Fragment {
     }
 
     private void guardarSesion(Usuario usuario, String password) {
+        boolean esAdmin = usuario.rol != null && usuario.rol.trim().toUpperCase().contains("ADMIN");
+        String rolFinal = esAdmin ? "ADMIN" : (usuario.rol != null ? usuario.rol : "CLIENTE");
+
         SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean("is_user_logged_in", true)
@@ -207,7 +234,7 @@ public class LoginFragment extends Fragment {
                 .putString("user_email", usuario.email)
                 .putString("user_nombre", usuario.nombre != null ? usuario.nombre : "Usuario")
                 .putString("user_telefono", usuario.telefono != null ? usuario.telefono : "")
-                .putString("user_rol", usuario.rol != null ? usuario.rol : "CLIENTE");
+                .putString("user_rol", rolFinal);
 
         if (password != null && !password.isEmpty()) {
             editor.putString("user_password", password);

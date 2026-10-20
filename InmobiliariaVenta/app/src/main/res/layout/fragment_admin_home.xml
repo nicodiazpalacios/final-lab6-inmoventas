@@ -3,19 +3,22 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator_admin_home"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorSurface"
     tools:context=".ui.admin.AdminHomeFragment">
 
+    <!-- Top App Bar Header unificado -->
     <include layout="@layout/layout_header" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/adminNestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:clipToPadding="false"
-        android:paddingBottom="24dp"
+        android:paddingBottom="96dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -24,299 +27,298 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- Welcome Section -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Banner Modo Sin Conexión idéntico a fragment_home_usuario -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardModoOffline"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Hola, Administrador"
-                android:textColor="@color/colorPrimary"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp"
-                android:text="Aquí tienes el resumen de tu portafolio hoy."
-                android:textColor="@color/colorOnSurfaceVariant"
-                android:textSize="16sp" />
+                android:visibility="gone"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1.5dp"
+                app:strokeColor="@color/colorOfflineBannerStroke"
+                app:cardBackgroundColor="@color/colorOfflineBannerBg">
 
-            <!-- Botón para alternar a vista de usuario -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSwitchUserMode"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginBottom="24dp"
-                android:text="Cambiar a Vista de Usuario"
-                app:icon="@drawable/ic_home"
-                app:iconGravity="textStart"
-                app:iconTint="@color/colorPrimary"
-                android:textColor="@color/colorPrimary"
-                app:strokeColor="@color/colorPrimary"
-                app:cornerRadius="12dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-            <!-- Metrics Summary Section -->
-            <HorizontalScrollView
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_cloud_off"
+                        app:tint="@color/colorOfflineBannerIcon" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Modo sin conexión"
+                            android:textColor="@color/colorOfflineBannerText"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Operando con datos almacenados localmente. Sincronización pausada."
+                            android:textColor="@color/colorOfflineBannerSubtext"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Hero Section idéntica a fragment_home_usuario -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:scrollbars="none"
-                android:layout_marginBottom="24dp">
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gestiona tu"
+                    android:textColor="@color/colorOnSurface"
+                    android:textSize="36sp"
+                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <!-- Card 1 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="160dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
-                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="@color/colorOutlineVariant"
-                        app:strokeWidth="1dp">
+                        android:text="portafolio "
+                        android:textColor="@color/colorOnSurface"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_inventory"
-                                app:tint="@color/colorPrimary" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="PROPIEDADES TOTALES"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="1,284"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card 2 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="160dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
-                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="@color/colorOutlineVariant"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_real_estate_agent"
-                                app:tint="#006C49" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="PUBLICACIONES ACTIVAS"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="856"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Card 3 -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="160dp"
-                        android:layout_height="wrap_content"
-                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="@color/colorOutlineVariant"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_schedule"
-                                app:tint="#F39461" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="VENTAS PENDIENTES"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="42"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
+                        android:text="inmobiliario"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="36sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
-            </HorizontalScrollView>
 
-            <!-- Admin Menu Grid -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="y ventas."
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="36sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="MENÚ DE GESTIÓN"
+                android:layout_marginTop="16dp"
+                android:text="Supervisa el inventario en tiempo real, atiende solicitudes de clientes y analiza métricas operativas."
                 android:textColor="@color/colorOnSurfaceVariant"
                 android:textSize="14sp"
+                android:gravity="center" />
+
+            <!-- Search and Action Buttons (Estructura espejo de fragment_home_usuario) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/searchContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/search_background"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        app:tint="@color/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@null"
+                        android:text="Buscar en propiedades, clientes o contratos"
+                        android:textSize="14sp"
+                        android:textColor="@color/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <!-- Botón de Acción Principal (Estilo idéntico a filterButton) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdminNuevaPropiedad"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Publicar Nueva Propiedad"
+                    app:icon="@drawable/ic_add"
+                    app:iconGravity="textStart"
+                    app:iconTint="@android:color/white"
+                    app:backgroundTint="@color/colorPrimary"
+                    android:textColor="@android:color/white"
+                    app:cornerRadius="12dp" />
+
+                <!-- Botón de Cambio de Rol (Estilo idéntico a btnAdminMode) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSwitchUserMode"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Cambiar a Vista de Usuario"
+                    app:icon="@drawable/ic_home"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/colorPrimary"
+                    android:textColor="@color/colorPrimary"
+                    app:strokeColor="@color/colorPrimary"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+
+            <!-- Módulos de Gestión (Estructura espejo de categorías en fragment_home_usuario) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="Módulos de Gestión"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="24dp">
+                android:layout_marginTop="16dp">
 
+                <!-- Row 1: Propiedades & Mensajes -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:baselineAligned="false"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="12dp">
 
                     <!-- Propiedades -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_propiedades"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="100dp"
                         android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
                         app:strokeColor="@color/colorOutlineVariant"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:padding="24dp">
+                            android:gravity="center"
+                            android:padding="8dp">
 
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_propiedades"
-                                app:tint="@color/colorPrimary" />
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_propiedades"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
+                                android:layout_marginTop="6dp"
                                 android:text="Propiedades"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="18sp"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Gestionar stock"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Mensajes de Clientes -->
+                    <!-- Mensajes -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_mensajes"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="100dp"
                         android:layout_weight="1"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
                         app:strokeColor="@color/colorOutlineVariant"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:padding="24dp">
+                            android:gravity="center"
+                            android:padding="8dp">
 
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_chat"
-                                app:tint="@color/colorPrimary" />
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_icon_circle">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
-                                android:text="Mensajes"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_chat"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
 
                             <TextView
                                 android:id="@+id/tv_admin_mensajes_subtitulo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Bandeja de clientes"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
+                                android:layout_marginTop="6dp"
+                                android:text="Mensajes"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
+                <!-- Row 2: Ventas & Ajustes -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -327,45 +329,46 @@
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_ventas"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="100dp"
                         android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
+                        android:layout_marginEnd="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
                         app:strokeColor="@color/colorOutlineVariant"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:padding="24dp">
+                            android:gravity="center"
+                            android:padding="8dp">
 
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_trending_up"
-                                app:tint="@color/colorPrimary" />
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_trending_up"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
+                                android:layout_marginTop="6dp"
                                 android:text="Ventas"
-                                android:textColor="@color/colorPrimary"
-                                android:textSize="18sp"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Analítica real"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
@@ -373,11 +376,78 @@
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/card_ajustes"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="100dp"
                         android:layout_weight="1"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="8dp">
+
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_settings_admin"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="Ajustes"
+                                android:textColor="@color/colorOnSurface"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Métricas Clave Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="36dp"
+                android:text="Métricas Clave"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:scrollbars="none"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Metric 1: Propiedades Totales -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="168dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
                         app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="2dp"
@@ -388,461 +458,204 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:padding="24dp">
+                            android:padding="16dp">
 
-                            <ImageView
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:src="@drawable/ic_settings_admin"
-                                app:tint="@color/colorPrimary" />
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_inventory"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="16dp"
-                                android:text="Ajustes"
+                                android:layout_marginTop="12dp"
+                                android:text="TOTALES"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="1,284"
                                 android:textColor="@color/colorPrimary"
-                                android:textSize="18sp"
+                                android:textSize="26sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Configuración"
+                                android:layout_marginTop="2dp"
+                                android:text="Inventario total"
                                 android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
+                                android:textSize="11sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Metric 2: Publicaciones Activas -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="168dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_real_estate_agent"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="ACTIVAS"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="856"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="26sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="En catálogo público"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Metric 3: Ventas Pendientes -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="168dp"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/colorOutlineVariant"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_circle">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_schedule"
+                                    app:tint="@color/colorPrimary" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="EN PROCESO"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="42"
+                                android:textColor="@color/colorPrimary"
+                                android:textSize="26sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Cierres pendientes"
+                                android:textColor="@color/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
                 </LinearLayout>
-            </LinearLayout>
+            </HorizontalScrollView>
 
-            <!-- Recent Activity Section -->
-            <LinearLayout
+            <!-- Properties Section Header & RecyclerView (Idéntico a fragment_home_usuario) -->
+            <TextView
+                android:id="@+id/tvTituloPropiedadesHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_marginTop="40dp"
+                android:text="Propiedades en Portafolio"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="ACTIVIDAD RECIENTE"
-                    android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btn_ver_todo_actividad"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VER TODO"
-                    android:textColor="@color/colorPrimary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/featuredRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Activity Item 1 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@color/colorSurfaceVariant"
-                            android:src="@drawable/ic_propiedades"
-                            android:padding="12dp"
-                            app:tint="@color/colorOnSurfaceVariant" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Apartamento Loft - Nueva Oferta"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 2 horas • $450,000"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginStart="16dp"
-                            android:src="@drawable/ic_check_circle"
-                            app:tint="#006C49" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Activity Item 2 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:cardBackgroundColor="@color/colorSurfaceVariant"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_person"
-                                app:tint="@color/colorPrimary" />
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Nuevo Lead: Carlos Ruiz"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 5 horas • Interesado en Villa Sol"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <Button
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:text="ATENDER"
-                            android:textSize="10sp"
-                            android:textColor="@color/colorOnPrimary"
-                            android:backgroundTint="@color/colorPrimary"
-                            app:cornerRadius="16dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Activity Item 3 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@color/colorSurfaceVariant"
-                            android:src="@drawable/ic_contratos"
-                            android:padding="12dp"
-                            app:tint="@color/colorPrimary" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Contrato Firmado: Juan Pérez"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 1 día • Residencia Horizon Vista"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginStart="16dp"
-                            android:src="@drawable/ic_check_circle"
-                            app:tint="#006C49" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Activity Item 4 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@color/colorSurfaceVariant"
-                            android:src="@drawable/ic_propiedades"
-                            android:padding="12dp"
-                            app:tint="#006C49" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Propiedad Publicada: Villa Los Laureles"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 1 día • Aprobación directa"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginStart="16dp"
-                            android:src="@drawable/ic_check_circle"
-                            app:tint="#006C49" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Activity Item 5 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@color/colorSurfaceVariant"
-                            android:src="@drawable/ic_trending_up"
-                            android:padding="12dp"
-                            app:tint="@color/colorPrimary" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Modificación de Precio: Torre Altagracia"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 2 días • $1,750,000"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginStart="16dp"
-                            android:src="@drawable/ic_info"
-                            app:tint="@color/colorPrimary" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Activity Item 6 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/colorOutlineVariant"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:cardBackgroundColor="@color/colorSurfaceVariant"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp">
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_person"
-                                app:tint="@color/colorPrimary" />
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Nuevo Lead: Sofía Morales"
-                                android:textColor="@color/colorOnSurface"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Hace 2 días • Consulta disponibilidad"
-                                android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <Button
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:text="ATENDER"
-                            android:textSize="10sp"
-                            android:textColor="@color/colorOnPrimary"
-                            android:backgroundTint="@color/colorPrimary"
-                            app:cornerRadius="16dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
+                android:layout_marginTop="16dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_propiedad_destacada" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- FAB Nueva Propiedad -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_property"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_margin="20dp"
         android:layout_gravity="bottom|end"
-        android:src="@android:drawable/ic_input_add"
+        android:src="@drawable/ic_add"
         app:backgroundTint="@color/colorPrimary"
-        app:tint="@color/colorOnPrimary" />
+        app:tint="@color/colorOnPrimary"
+        app:elevation="4dp"
+        android:contentDescription="Nueva Propiedad" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

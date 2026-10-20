@@ -25,6 +25,7 @@ import java.util.Locale;
 public class AdminConfiguracionFragment extends Fragment {
 
     private EmpresaRepository empresaRepository;
+    private TextInputEditText etNombreEmpresa;
     private TextInputEditText etTelefonoEmpresa;
     private TextInputEditText etEmailEmpresa;
     private TextInputEditText etDireccionEmpresa;
@@ -44,16 +45,24 @@ public class AdminConfiguracionFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         empresaRepository = new EmpresaRepository(requireContext());
+        etNombreEmpresa = view.findViewById(R.id.et_nombre_empresa);
         etTelefonoEmpresa = view.findViewById(R.id.et_telefono_empresa);
         etEmailEmpresa = view.findViewById(R.id.et_email_empresa);
         etDireccionEmpresa = view.findViewById(R.id.et_direccion_empresa);
 
-        // Cargar configuración guardada desde la base de datos
+        // Pre-llenar valores inmediatos
+        if (etNombreEmpresa != null) etNombreEmpresa.setText(empresaRepository.getNombreEmpresaInmediato());
+        if (etTelefonoEmpresa != null) etTelefonoEmpresa.setText(empresaRepository.getTelefonoWhatsappInmediato());
+        if (etEmailEmpresa != null) etEmailEmpresa.setText(empresaRepository.getEmailInmediato());
+        if (etDireccionEmpresa != null) etDireccionEmpresa.setText(empresaRepository.getDireccionInmediata());
+
+        // Cargar configuración guardada desde la nube o base de datos local
         empresaRepository.cargarConfiguracionAsync(config -> {
             if (config != null && isAdded()) {
-                if (etTelefonoEmpresa != null) etTelefonoEmpresa.setText(config.telefonoWhatsapp);
-                if (etEmailEmpresa != null) etEmailEmpresa.setText(config.email);
-                if (etDireccionEmpresa != null) etDireccionEmpresa.setText(config.direccion);
+                if (etNombreEmpresa != null && config.nombreEmpresa != null) etNombreEmpresa.setText(config.nombreEmpresa);
+                if (etTelefonoEmpresa != null && config.telefonoWhatsapp != null) etTelefonoEmpresa.setText(config.telefonoWhatsapp);
+                if (etEmailEmpresa != null && config.email != null) etEmailEmpresa.setText(config.email);
+                if (etDireccionEmpresa != null && config.direccion != null) etDireccionEmpresa.setText(config.direccion);
             }
         });
 
@@ -88,28 +97,30 @@ public class AdminConfiguracionFragment extends Fragment {
                 btnGuardar.setEnabled(false);
                 btnGuardar.setText("Guardando...");
 
+                String nombre = etNombreEmpresa != null && etNombreEmpresa.getText() != null ?
+                        etNombreEmpresa.getText().toString().trim() : "Inmobiliaria Venta";
                 String tel = etTelefonoEmpresa != null && etTelefonoEmpresa.getText() != null ?
                         etTelefonoEmpresa.getText().toString().trim() : "+54 9 11 5842-1102";
                 String email = etEmailEmpresa != null && etEmailEmpresa.getText() != null ?
-                        etEmailEmpresa.getText().toString().trim() : "contacto@homefinder.com";
+                        etEmailEmpresa.getText().toString().trim() : "contacto@inmoventas.com";
                 String dir = etDireccionEmpresa != null && etDireccionEmpresa.getText() != null ?
                         etDireccionEmpresa.getText().toString().trim() : "Av. del Libertador 2450, Buenos Aires";
 
-                // Guardar en la base de datos de Room
-                empresaRepository.guardarConfiguracion(tel, email, dir);
+                // Guardar en la base de datos de Room y Supabase
+                empresaRepository.guardarConfiguracion(nombre, tel, email, dir);
                 
-                // Simulación visual de confirmación
+                // Confirmación visual
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     if (getContext() != null) {
                         btnGuardar.setText("Guardado");
-                        Toast.makeText(getContext(), "Datos de la empresa guardados en la base de datos", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Datos de la empresa guardados correctamente", Toast.LENGTH_SHORT).show();
                         
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             btnGuardar.setText("Guardar Cambios");
                             btnGuardar.setEnabled(true);
                         }, 2000);
                     }
-                }, 800);
+                }, 600);
             });
         }
     }

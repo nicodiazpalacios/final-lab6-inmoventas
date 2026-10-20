@@ -427,6 +427,52 @@ public class SupabaseClient {
         });
     }
 
+    public static void actualizarConfiguracionEmpresa(ConfiguracionEmpresa config, SupabaseCallback<Boolean> callback) {
+        if (config == null) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("Config inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        if (config.nombreEmpresa != null) json.addProperty("nombreempresa", config.nombreEmpresa);
+        if (config.telefonoWhatsapp != null) json.addProperty("telefonowhatsapp", config.telefonoWhatsapp);
+        if (config.email != null) json.addProperty("email", config.email);
+        if (config.direccion != null) json.addProperty("direccion", config.direccion);
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        String isoDate = sdf.format(new java.util.Date());
+        json.addProperty("updated_at", isoDate);
+        config.updatedAt = isoDate;
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/configuracion_empresa?id=eq.empresa_principal")
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar configuracion de empresa: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Configuración de empresa actualizada en Supabase");
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    Log.w(TAG, "Aviso Supabase al actualizar configuracion empresa: " + response.code() + " - " + errorBody);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorBody)));
+                }
+            }
+        });
+    }
+
     // ==========================================
     // FAVORITOS
     // ==========================================

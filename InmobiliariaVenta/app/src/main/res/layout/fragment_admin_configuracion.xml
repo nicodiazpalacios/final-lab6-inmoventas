@@ -259,9 +259,25 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:hint="Teléfono de Contacto"
+                        android:hint="Nombre de la Inmobiliaria"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        app:startIconDrawable="@android:drawable/ic_menu_call">
+                        app:startIconDrawable="@drawable/ic_real_estate_agent">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_nombre_empresa"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords"
+                            android:text="Inmobiliaria Venta" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="Teléfono / WhatsApp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:startIconDrawable="@drawable/ic_whatsapp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_telefono_empresa"

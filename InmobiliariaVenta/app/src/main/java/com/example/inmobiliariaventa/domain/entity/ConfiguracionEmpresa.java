@@ -15,7 +15,7 @@ public class ConfiguracionEmpresa {
 
     @ColumnInfo(name = "nombreEmpresa")
     @SerializedName(value = "nombreempresa", alternate = {"nombreEmpresa"})
-    public String nombreEmpresa = "Home Finder";
+    public String nombreEmpresa = "Inmobiliaria Venta";
 
     @ColumnInfo(name = "telefonoWhatsapp")
     @SerializedName(value = "telefonowhatsapp", alternate = {"telefonoWhatsapp"})
@@ -23,11 +23,15 @@ public class ConfiguracionEmpresa {
 
     @ColumnInfo(name = "email")
     @SerializedName("email")
-    public String email = "contacto@homefinder.com";
+    public String email = "contacto@inmoventas.com";
 
     @ColumnInfo(name = "direccion")
     @SerializedName("direccion")
     public String direccion = "Av. del Libertador 2450, Buenos Aires";
+
+    @androidx.room.Ignore
+    @SerializedName(value = "updated_at", alternate = {"updatedAt"})
+    public String updatedAt;
 
     public ConfiguracionEmpresa() {
         this.id = "empresa_principal";
@@ -37,6 +41,15 @@ public class ConfiguracionEmpresa {
     public ConfiguracionEmpresa(String telefonoWhatsapp, String email, String direccion) {
         this.id = "empresa_principal";
         this.nombreEmpresa = "Inmobiliaria Venta";
+        this.telefonoWhatsapp = telefonoWhatsapp;
+        this.email = email;
+        this.direccion = direccion;
+    }
+
+    @androidx.room.Ignore
+    public ConfiguracionEmpresa(String nombreEmpresa, String telefonoWhatsapp, String email, String direccion) {
+        this.id = "empresa_principal";
+        this.nombreEmpresa = nombreEmpresa != null && !nombreEmpresa.trim().isEmpty() ? nombreEmpresa : "Inmobiliaria Venta";
         this.telefonoWhatsapp = telefonoWhatsapp;
         this.email = email;
         this.direccion = direccion;
