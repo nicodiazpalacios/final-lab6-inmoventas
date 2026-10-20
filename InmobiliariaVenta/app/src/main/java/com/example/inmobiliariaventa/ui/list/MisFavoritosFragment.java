@@ -46,6 +46,7 @@ public class MisFavoritosFragment extends Fragment {
     private MaterialButton btnLogin;
     private RecyclerView rvFavoritos;
     private View coordinatorLayout;
+    private com.google.android.material.card.MaterialCardView cardModoOfflineFavoritos;
 
     private FavoritosAdapter adapter;
     private final List<Propiedad> listaOriginal = new ArrayList<>();
@@ -118,6 +119,15 @@ public class MisFavoritosFragment extends Fragment {
         if (btnOrdenar != null) {
             btnOrdenar.setOnClickListener(v -> mostrarDialogoOrdenamiento());
         }
+
+        // Modo offline
+        cardModoOfflineFavoritos = view.findViewById(R.id.cardModoOfflineFavoritos);
+        com.example.inmobiliariaventa.utils.NetworkUtils.getNetworkLiveData(requireContext())
+                .observe(getViewLifecycleOwner(), isOnline -> {
+                    if (cardModoOfflineFavoritos != null) {
+                        cardModoOfflineFavoritos.setVisibility(Boolean.TRUE.equals(isOnline) ? View.GONE : View.VISIBLE);
+                    }
+                });
 
         // Cargar favoritos del usuario conectado
         cargarFavoritosUsuario();

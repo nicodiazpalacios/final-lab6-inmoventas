@@ -29,9 +29,9 @@ public class Usuario {
     @SerializedName("rol")
     public String rol; // "ADMIN" o "CLIENTE"
 
-    @ColumnInfo(name = "tokenSesion")
-    @SerializedName(value = "tokenSesion", alternate = {"tokensesion"})
-    public String tokenSesion;
+    @androidx.room.Ignore
+    @SerializedName(value = "password", alternate = {"tokensesion", "tokenSesion", "contrasena"})
+    public String password;
     
     @ColumnInfo(name = "estadoSincronizacion")
     public String estadoSincronizacion;

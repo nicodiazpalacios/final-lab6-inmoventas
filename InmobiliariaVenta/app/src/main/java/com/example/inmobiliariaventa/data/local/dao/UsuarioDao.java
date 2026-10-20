@@ -44,4 +44,7 @@ public interface UsuarioDao {
 
     @Query("UPDATE usuarios SET foto_perfil = :fotoPerfil WHERE id = :userId")
     void actualizarFotoPerfil(String userId, String fotoPerfil);
+
+    @Query("UPDATE usuarios SET nombre = :nombre, email = :email, telefono = :telefono WHERE id = :userId")
+    void actualizarDatosPersonales(String userId, String nombre, String email, String telefono);
 }

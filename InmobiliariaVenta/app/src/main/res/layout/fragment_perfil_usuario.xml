@@ -47,16 +47,14 @@
                         android:layout_height="100dp"
                         app:cardCornerRadius="50dp"
                         app:cardElevation="2dp"
-                        app:cardBackgroundColor="#ffffff">
+                        app:cardBackgroundColor="#e3e1e9">
 
                         <ImageView
                             android:id="@+id/iv_foto_perfil"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:src="@drawable/ic_person"
-                            android:scaleType="centerCrop"
-                            android:background="#e3e1e9"
-                            android:tint="#1a1b21"/>
+                            android:scaleType="centerCrop"/>
                     </androidx.cardview.widget.CardView>
 
                     <!-- Edit / Camera Badge -->

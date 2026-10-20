@@ -331,19 +331,93 @@ public class ResultadosBusquedaFragment extends Fragment {
 
         // ViewModel y carga de datos reales desde Room / Supabase
         propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
-        propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
-            if (propiedades == null || propiedades.isEmpty()) {
-                if (!hasSeededDefaults) {
-                    hasSeededDefaults = true;
-                    propiedadViewModel.sincronizarConNube(null);
-                }
-            } else {
-                masterList = new ArrayList<>(propiedades);
-                applyFiltersAndSort();
-            }
-        });
+        cardModoOfflineResultados = view.findViewById(R.id.cardModoOfflineResultados);
+
+        configurarObservadorRed();
 
         return view;
+    }
+
+    private com.google.android.material.card.MaterialCardView cardModoOfflineResultados;
+    private androidx.lifecycle.LiveData<List<Propiedad>> liveDataActualResultados;
+    private androidx.lifecycle.Observer<List<Propiedad>> observerActualResultados;
+    private Boolean ultimoEstadoConexion = null;
+
+    private void configurarObservadorRed() {
+        if (getContext() == null) return;
+        com.example.inmobiliariaventa.utils.NetworkUtils.getNetworkLiveData(requireContext())
+                .observe(getViewLifecycleOwner(), isOnline -> {
+                    boolean conexionActiva = Boolean.TRUE.equals(isOnline);
+                    actualizarModoConexion(conexionActiva);
+                });
+    }
+
+    private void actualizarModoConexion(boolean isOnline) {
+        if (getContext() == null) return;
+
+        if (liveDataActualResultados != null && observerActualResultados != null) {
+            liveDataActualResultados.removeObserver(observerActualResultados);
+        }
+
+        ultimoEstadoConexion = isOnline;
+
+        if (isOnline) {
+            if (cardModoOfflineResultados != null) cardModoOfflineResultados.setVisibility(View.GONE);
+
+            observerActualResultados = propiedades -> {
+                if (Boolean.TRUE.equals(ultimoEstadoConexion)) {
+                    if (propiedades == null || propiedades.isEmpty()) {
+                        if (!hasSeededDefaults) {
+                            hasSeededDefaults = true;
+                            propiedadViewModel.sincronizarConNube(null);
+                        }
+                    } else {
+                        masterList = new ArrayList<>(propiedades);
+                        applyFiltersAndSort();
+                    }
+                }
+            };
+
+            liveDataActualResultados = propiedadViewModel.getAllPropiedades();
+            liveDataActualResultados.observe(getViewLifecycleOwner(), observerActualResultados);
+        } else {
+            if (cardModoOfflineResultados != null) cardModoOfflineResultados.setVisibility(View.VISIBLE);
+
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+            boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+            String userId = prefs.getString("user_id", "");
+
+            if (!isLoggedIn || userId.isEmpty()) {
+                masterList = new ArrayList<>();
+                applyFiltersAndSort();
+            } else {
+                observerActualResultados = favoritos -> {
+                    if (Boolean.FALSE.equals(ultimoEstadoConexion)) {
+                        masterList = favoritos != null ? new ArrayList<>(favoritos) : new ArrayList<>();
+                        applyFiltersAndSort();
+                    }
+                };
+
+                liveDataActualResultados = com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
+                        .favoritoDao()
+                        .obtenerFavoritosDeUsuarioLiveData(userId);
+                liveDataActualResultados.observe(getViewLifecycleOwner(), observerActualResultados);
+            }
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adapter != null && getContext() != null) {
+            adapter.recargarFavoritos(getContext());
+        }
+        if (getContext() != null) {
+            boolean isOnline = com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(requireContext());
+            if (ultimoEstadoConexion == null || !ultimoEstadoConexion.equals(isOnline)) {
+                actualizarModoConexion(isOnline);
+            }
+        }
     }
 
     private void applyFiltersAndSort() {
@@ -478,13 +552,5 @@ public class ResultadosBusquedaFragment extends Fragment {
         List<Propiedad> lote = new ArrayList<>(listaFiltradaResultados.subList(limiteActualResultados, nuevoLimite));
         limiteActualResultados = nuevoLimite;
         adapter.agregarPropiedades(lote);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (adapter != null && getContext() != null) {
-            adapter.recargarFavoritos(getContext());
-        }
     }
 }

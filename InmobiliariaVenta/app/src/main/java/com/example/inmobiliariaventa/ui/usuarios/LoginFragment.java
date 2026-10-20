@@ -28,6 +28,8 @@ import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 
+import com.example.inmobiliariaventa.utils.SecurityUtils;
+
 public class LoginFragment extends Fragment {
 
     private boolean isPasswordVisible = false;
@@ -99,6 +101,11 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
+            if (!com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
+                mostrarSnackbarElegante("Se requiere conexión a internet para iniciar sesión y verificar tus credenciales.", false);
+                return;
+            }
+
             boolean isRememberChecked = cbRecordarme != null && cbRecordarme.isChecked();
 
             btnLogin.setEnabled(false);
@@ -109,70 +116,69 @@ public class LoginFragment extends Fragment {
                 public void onSuccess(Usuario usuario) {
                     if (!isAdded()) return;
 
-                    if (usuario != null) {
-                        // Procesar opción Recordarme
-                        procesarRecordarme(email, password, isRememberChecked);
+                    btnLogin.setText("Iniciar sesión");
+                    btnLogin.setEnabled(true);
 
-                        // Guardar sesión en SharedPreferences
-                        guardarSesion(usuario);
+                    if (usuario == null) {
+                        etEmail.setError("No existe una cuenta registrada con este correo");
+                        mostrarSnackbarElegante("No existe ninguna cuenta registrada con este correo. Puedes registrarte.", false);
+                        return;
+                    }
 
-                        // Guardar en base local Room y sincronizar sus favoritos
-                        AppDatabase.databaseWriteExecutor.execute(() -> {
-                            AppDatabase.getInstance(requireContext()).usuarioDao().insertar(usuario);
-                        });
-                        FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(usuario.id, null);
-
-                        btnLogin.setText("Iniciar sesión");
-                        btnLogin.setEnabled(true);
-
-                        if ("ADMIN".equalsIgnoreCase(usuario.rol)) {
-                            mostrarSnackbarElegante("Acceso concedido: Administrador", true);
-                            Navigation.findNavController(v).navigate(R.id.nav_admin_home);
-                        } else {
-                            mostrarSnackbarElegante("Bienvenido " + usuario.nombre, true);
-                            Navigation.findNavController(v).navigate(R.id.nav_inicio);
-                        }
+                    String inputHash = SecurityUtils.hashPassword(password);
+                    boolean passwordValida = false;
+                    if (usuario.password == null || usuario.password.trim().isEmpty()) {
+                        // Usuario preexistente sin clave registrada en la nube:
+                        // Asociamos automáticamente el hash de la clave ingresada
+                        passwordValida = true;
+                        SupabaseClient.actualizarPassword(usuario.id, inputHash, null);
                     } else {
-                        // Buscar en base local si no hay conexión o no existe en Supabase
-                        verificarLocal(email, password, isRememberChecked, v, btnLogin);
+                        String normActual = password.replaceAll("[\\s\\-_.]", "").toLowerCase();
+                        String normGuardada = usuario.password.replaceAll("[\\s\\-_.]", "").toLowerCase();
+                        passwordValida = inputHash.equalsIgnoreCase(usuario.password) 
+                                || password.equals(usuario.password)
+                                || normActual.equals(normGuardada);
+                    }
+
+                    if (!passwordValida) {
+                        etPassword.setError("Contraseña incorrecta");
+                        mostrarSnackbarElegante("La contraseña ingresada es incorrecta", false);
+                        return;
+                    }
+
+                    // Credenciales válidas: Procesar sesión y recordar
+                    procesarRecordarme(email, password, isRememberChecked);
+                    guardarSesion(usuario, password);
+
+                    // No almacenar contraseña en la base local Room
+                    usuario.password = null;
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        AppDatabase.getInstance(requireContext()).usuarioDao().insertar(usuario);
+                    });
+
+                    // Sincronizar favoritos del usuario
+                    FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(usuario.id, null);
+
+                    if ("ADMIN".equalsIgnoreCase(usuario.rol)) {
+                        mostrarSnackbarElegante("Acceso concedido: Administrador", true);
+                        Navigation.findNavController(v).navigate(R.id.nav_admin_home);
+                    } else {
+                        mostrarSnackbarElegante("Bienvenido " + usuario.nombre, true);
+                        Navigation.findNavController(v).navigate(R.id.nav_inicio);
                     }
                 }
 
                 @Override
                 public void onError(Exception error) {
                     if (!isAdded()) return;
-                    verificarLocal(email, password, isRememberChecked, v, btnLogin);
+                    btnLogin.setText("Iniciar sesión");
+                    btnLogin.setEnabled(true);
+                    mostrarSnackbarElegante("Error de conexión al verificar credenciales con la base de datos. Intente nuevamente.", false);
                 }
             });
         });
 
         return view;
-    }
-
-    private void verificarLocal(String email, String password, boolean isRememberChecked, View view, MaterialButton btnLogin) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            Usuario local = AppDatabase.getInstance(requireContext()).usuarioDao().obtenerPorEmail(email);
-            view.post(() -> {
-                if (!isAdded()) return;
-                btnLogin.setText("Iniciar sesión");
-                btnLogin.setEnabled(true);
-
-                if (local != null) {
-                    procesarRecordarme(email, password, isRememberChecked);
-                    guardarSesion(local);
-                    FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(local.id, null);
-                    if ("ADMIN".equalsIgnoreCase(local.rol)) {
-                        mostrarSnackbarElegante("Bienvenido Administrador (offline)", true);
-                        Navigation.findNavController(view).navigate(R.id.nav_admin_home);
-                    } else {
-                        mostrarSnackbarElegante("Bienvenido " + local.nombre, true);
-                        Navigation.findNavController(view).navigate(R.id.nav_inicio);
-                    }
-                } else {
-                    mostrarSnackbarElegante("No se encontró una cuenta con ese correo. Puedes registrarte.", false);
-                }
-            });
-        });
     }
 
     private void procesarRecordarme(String email, String password, boolean isRememberChecked) {
@@ -193,7 +199,7 @@ public class LoginFragment extends Fragment {
         }
     }
 
-    private void guardarSesion(Usuario usuario) {
+    private void guardarSesion(Usuario usuario, String password) {
         SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean("is_user_logged_in", true)
@@ -202,6 +208,10 @@ public class LoginFragment extends Fragment {
                 .putString("user_nombre", usuario.nombre != null ? usuario.nombre : "Usuario")
                 .putString("user_telefono", usuario.telefono != null ? usuario.telefono : "")
                 .putString("user_rol", usuario.rol != null ? usuario.rol : "CLIENTE");
+
+        if (password != null && !password.isEmpty()) {
+            editor.putString("user_password", password);
+        }
 
         if (usuario.fotoPerfil != null && !usuario.fotoPerfil.isEmpty()) {
             editor.putString("user_foto_perfil", usuario.fotoPerfil);

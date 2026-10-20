@@ -281,20 +281,45 @@ public class SearchLocationFragment extends Fragment {
             });
         }
 
-        // Cargar catálogo de propiedades para extraer ciudades y barrios reales
+        // Cargar catálogo de propiedades para extraer ciudades y barrios reales (respetando modo offline)
         propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
-        propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
-            if (propiedades != null) {
-                cachedProperties = new ArrayList<>(propiedades);
-                String currentText = searchEditText != null ? searchEditText.getText().toString().trim() : "";
-                if (currentText.isEmpty()) {
-                    renderPublishedLocations();
-                } else {
-                    performLiveLocationSearch(currentText);
+        boolean isOnline = com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext());
+        if (isOnline) {
+            propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
+                if (propiedades != null) {
+                    cachedProperties = new ArrayList<>(propiedades);
+                    String currentText = searchEditText != null ? searchEditText.getText().toString().trim() : "";
+                    if (currentText.isEmpty()) {
+                        renderPublishedLocations();
+                    } else {
+                        performLiveLocationSearch(currentText);
+                    }
                 }
+            });
+            propiedadViewModel.sincronizarConNube(null);
+        } else {
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+            String userId = prefs.getString("user_id", "");
+            if (!userId.isEmpty()) {
+                com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
+                        .favoritoDao()
+                        .obtenerFavoritosDeUsuarioLiveData(userId)
+                        .observe(getViewLifecycleOwner(), favoritos -> {
+                            if (favoritos != null) {
+                                cachedProperties = new ArrayList<>(favoritos);
+                                String currentText = searchEditText != null ? searchEditText.getText().toString().trim() : "";
+                                if (currentText.isEmpty()) {
+                                    renderPublishedLocations();
+                                } else {
+                                    performLiveLocationSearch(currentText);
+                                }
+                            }
+                        });
+            } else {
+                cachedProperties = new ArrayList<>();
+                renderPublishedLocations();
             }
-        });
-        propiedadViewModel.sincronizarConNube(null);
+        }
 
         // Solicitar o detectar ubicación
         if (hasLocationPermission()) {

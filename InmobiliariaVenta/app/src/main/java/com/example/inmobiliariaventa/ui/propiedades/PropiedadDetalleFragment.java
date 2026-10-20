@@ -915,10 +915,15 @@ public class PropiedadDetalleFragment extends Fragment {
 
         if (!isLoggedIn || userId.isEmpty()) {
             actualizarIconoFavorito(false);
+            if (!com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
+                mostrarDialogoPropiedadNoDisponibleOffline();
+            }
             return;
         }
 
-        FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(userId, null);
+        if (com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
+            FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(userId, null);
+        }
 
         AppDatabase.getInstance(requireContext())
                 .favoritoDao()
@@ -926,7 +931,31 @@ public class PropiedadDetalleFragment extends Fragment {
                 .observe(getViewLifecycleOwner(), fav -> {
                     isPropiedadFavorita = (fav != null && fav);
                     actualizarIconoFavorito(isPropiedadFavorita);
+
+                    // Restricción offline: En modo sin conexión ÚNICAMENTE se permite ver favoritos guardados
+                    if (!com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
+                        if (!isPropiedadFavorita) {
+                            mostrarDialogoPropiedadNoDisponibleOffline();
+                        }
+                    }
                 });
+    }
+
+    private void mostrarDialogoPropiedadNoDisponibleOffline() {
+        if (getContext() == null || !isAdded()) return;
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setIcon(R.drawable.ic_cloud_off)
+                .setTitle("Propiedad no disponible sin conexión")
+                .setMessage("Estás en modo sin conexión. Únicamente puedes visualizar las propiedades que tengas guardadas en tus favoritos hasta que restablezcas la conexión a internet.")
+                .setCancelable(false)
+                .setPositiveButton("Volver", (dialog, which) -> {
+                    dialog.dismiss();
+                    if (getView() != null) {
+                        Navigation.findNavController(getView()).navigateUp();
+                    }
+                })
+                .show();
     }
 
     private void actualizarIconoFavorito(boolean fav) {

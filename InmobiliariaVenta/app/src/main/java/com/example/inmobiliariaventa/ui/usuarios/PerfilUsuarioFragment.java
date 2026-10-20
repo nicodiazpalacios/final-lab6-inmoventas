@@ -10,12 +10,24 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import com.example.inmobiliariaventa.utils.SecurityUtils;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Patterns;
+import java.util.regex.Pattern;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -26,10 +38,12 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.canhub.cropper.CropImageContract;
 import com.canhub.cropper.CropImageContractOptions;
 import com.canhub.cropper.CropImageOptions;
@@ -174,23 +188,13 @@ public class PerfilUsuarioFragment extends Fragment {
         // Información Personal
         View btnInfoPersonal = view.findViewById(R.id.btn_perfil_info_personal);
         if (btnInfoPersonal != null) {
-            btnInfoPersonal.setOnClickListener(v -> {
-                String uNombre = prefs.getString("user_nombre", "Usuario");
-                String uEmail = prefs.getString("user_email", "Sin correo");
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Información Personal")
-                        .setMessage("Nombre: " + uNombre + "\nCorreo: " + uEmail + "\nRol: Cliente")
-                        .setPositiveButton("Aceptar", null)
-                        .show();
-            });
+            btnInfoPersonal.setOnClickListener(v -> mostrarDialogoEditarInformacionPersonal());
         }
 
         // Seguridad
         View btnSeguridad = view.findViewById(R.id.btn_perfil_seguridad);
         if (btnSeguridad != null) {
-            btnSeguridad.setOnClickListener(v -> {
-                mostrarSnackbarElegante("Tu cuenta se encuentra protegida con contraseña.");
-            });
+            btnSeguridad.setOnClickListener(v -> mostrarDialogoCambiarContrasena());
         }
 
         // Notificaciones
@@ -297,7 +301,10 @@ public class PerfilUsuarioFragment extends Fragment {
         cropOptions.guidelines = CropImageView.Guidelines.ON;
         cropOptions.aspectRatioX = 1;
         cropOptions.aspectRatioY = 1;
-        cropOptions.fixAspectRatio = false; // Permite recortar libremente o ajustar según el gusto del cliente
+        cropOptions.fixAspectRatio = true; // Proporción circular 1:1 estricta para evitar deformaciones o bordes negros
+        cropOptions.outputRequestWidth = 512;
+        cropOptions.outputRequestHeight = 512;
+        cropOptions.outputCompressFormat = Bitmap.CompressFormat.JPEG;
         cropOptions.activityTitle = "Recortar foto de perfil";
         cropOptions.cropMenuCropButtonTitle = "Guardar";
 
@@ -398,8 +405,12 @@ public class PerfilUsuarioFragment extends Fragment {
                     String base64Data = pathOrData.contains(",") ? pathOrData.substring(pathOrData.indexOf(",") + 1) : pathOrData;
                     byte[] imageBytes = Base64.decode(base64Data, Base64.DEFAULT);
                     ivFotoPerfil.setImageTintList(null);
+                    ivFotoPerfil.clearColorFilter();
+                    ivFotoPerfil.setColorFilter(null);
                     Glide.with(this)
                             .load(imageBytes)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .skipMemoryCache(true)
                             .circleCrop()
                             .into(ivFotoPerfil);
                     tieneFotoPersonalizada = true;
@@ -409,8 +420,12 @@ public class PerfilUsuarioFragment extends Fragment {
             File file = new File(pathOrData);
             if (file.exists()) {
                 ivFotoPerfil.setImageTintList(null);
+                ivFotoPerfil.clearColorFilter();
+                ivFotoPerfil.setColorFilter(null);
                 Glide.with(this)
                         .load(file)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
                         .circleCrop()
                         .into(ivFotoPerfil);
                 tieneFotoPersonalizada = true;
@@ -419,6 +434,7 @@ public class PerfilUsuarioFragment extends Fragment {
         }
         tieneFotoPersonalizada = false;
         Glide.with(this).clear(ivFotoPerfil);
+        ivFotoPerfil.clearColorFilter();
         ivFotoPerfil.setImageResource(R.drawable.ic_person);
         ivFotoPerfil.setImageTintList(ColorStateList.valueOf(0xFF1A1B21));
     }
@@ -558,8 +574,11 @@ public class PerfilUsuarioFragment extends Fragment {
             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
             int marginB = (int) (12 * getResources().getDisplayMetrics().density);
-            marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+            marginParams.setMargins(marginH, 0, marginH, marginB);
             snackbarView.setLayoutParams(marginParams);
+        }
+        if (lp instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         }
         snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
 
@@ -569,5 +588,434 @@ public class PerfilUsuarioFragment extends Fragment {
         }
 
         snackbar.show();
+    }
+
+    private void mostrarDialogoEditarInformacionPersonal() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        String userId = prefs.getString("user_id", "");
+        String currentNombre = prefs.getString("user_nombre", "");
+        String currentEmail = prefs.getString("user_email", "");
+        String currentTelefono = prefs.getString("user_telefono", "");
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_editar_informacion_personal, null);
+        EditText etNombre = dialogView.findViewById(R.id.et_dialog_info_nombre);
+        EditText etEmail = dialogView.findViewById(R.id.et_dialog_info_email);
+        EditText etTelefono = dialogView.findViewById(R.id.et_dialog_info_telefono);
+        TextView tvError = dialogView.findViewById(R.id.tv_dialog_info_error);
+        View btnCerrar = dialogView.findViewById(R.id.dialog_info_btn_cerrar);
+        View btnCancelar = dialogView.findViewById(R.id.dialog_info_btn_cancelar);
+        MaterialButton btnGuardar = dialogView.findViewById(R.id.dialog_info_btn_guardar);
+
+        etNombre.setText(currentNombre);
+        etEmail.setText(currentEmail);
+        etTelefono.setText(currentTelefono);
+
+        // Pre-cargar datos si existen en Room y los de prefs estuvieran incompletos
+        if (!userId.isEmpty()) {
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                Usuario u = AppDatabase.getInstance(requireContext()).usuarioDao().obtenerUsuarioDirectoPorId(userId);
+                if (u != null && getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (etNombre.getText().toString().trim().isEmpty() && u.nombre != null) {
+                            etNombre.setText(u.nombre);
+                        }
+                        if (etEmail.getText().toString().trim().isEmpty() && u.email != null) {
+                            etEmail.setText(u.email);
+                        }
+                        if (etTelefono.getText().toString().trim().isEmpty() && u.telefono != null) {
+                            etTelefono.setText(u.telefono);
+                        }
+                    });
+                }
+            });
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        View.OnClickListener dismissWithKeyboard = v -> {
+            View focus = dialog.getCurrentFocus();
+            if (focus != null && getContext() != null) {
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+            }
+            dialog.dismiss();
+        };
+
+        if (btnCerrar != null) btnCerrar.setOnClickListener(dismissWithKeyboard);
+        if (btnCancelar != null) btnCancelar.setOnClickListener(dismissWithKeyboard);
+
+        if (btnGuardar != null) {
+            btnGuardar.setOnClickListener(v -> {
+                String nuevoNombre = etNombre.getText().toString().trim();
+                String nuevoEmail = etEmail.getText().toString().trim();
+                String nuevoTelefono = etTelefono.getText().toString().trim();
+
+                if (nuevoNombre.isEmpty()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa tu nombre y apellido");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etNombre.requestFocus();
+                    return;
+                }
+
+                if (nuevoEmail.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(nuevoEmail).matches()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa un correo electrónico válido");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etEmail.requestFocus();
+                    return;
+                }
+
+                if (tvError != null) tvError.setVisibility(View.GONE);
+                btnGuardar.setEnabled(false);
+                btnGuardar.setText("Guardando...");
+
+                // 1. Guardar en SharedPreferences
+                prefs.edit()
+                        .putString("user_nombre", nuevoNombre)
+                        .putString("user_email", nuevoEmail)
+                        .putString("user_telefono", nuevoTelefono)
+                        .apply();
+
+                try {
+                    SharedPreferences loginPrefs = requireContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+                    if (loginPrefs.getBoolean("remember_me", false)) {
+                        loginPrefs.edit().putString("saved_email", nuevoEmail).apply();
+                    }
+                } catch (Exception ignored) {}
+
+                // 2. Actualizar vistas en la pantalla del Perfil
+                if (getView() != null) {
+                    TextView tvNombre = getView().findViewById(R.id.tv_nombre_usuario_perfil);
+                    TextView tvEmail = getView().findViewById(R.id.tv_email_usuario_perfil);
+                    if (tvNombre != null) tvNombre.setText(nuevoNombre);
+                    if (tvEmail != null) tvEmail.setText(nuevoEmail);
+                }
+
+                // 3. Guardar en Base de Datos Local Room
+                if (!userId.isEmpty()) {
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        try {
+                            AppDatabase.getInstance(requireContext())
+                                    .usuarioDao().actualizarDatosPersonales(userId, nuevoNombre, nuevoEmail, nuevoTelefono);
+                        } catch (Exception e) {
+                            Log.e("PerfilUsuarioFragment", "Error al actualizar en Room: " + e.getMessage());
+                        }
+                    });
+                }
+
+                // 4. Sincronizar en Supabase
+                if (!userId.isEmpty() && !"local_user".equals(userId)) {
+                    SupabaseClient.actualizarDatosUsuario(userId, nuevoNombre, nuevoEmail, nuevoTelefono, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            Log.d("PerfilUsuarioFragment", "Información de usuario actualizada en Supabase");
+                        }
+
+                        @Override
+                        public void onError(Exception error) {
+                            Log.w("PerfilUsuarioFragment", "Aviso al sincronizar con Supabase: " + error.getMessage());
+                        }
+                    });
+                }
+
+                // Ocultar teclado virtual antes de descartar el diálogo
+                View focus = dialog.getCurrentFocus();
+                if (focus != null && getContext() != null) {
+                    InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+                }
+
+                dialog.dismiss();
+
+                // Mostrar el snackbar flotante con retardo para permitir que el teclado se cierre
+                // y el bottom_navigation recupere su posición real en la parte inferior
+                if (getView() != null) {
+                    getView().postDelayed(() -> {
+                        if (isAdded()) {
+                            mostrarSnackbarElegante("Información personal actualizada correctamente");
+                        }
+                    }, 250);
+                } else {
+                    mostrarSnackbarElegante("Información personal actualizada correctamente");
+                }
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void mostrarDialogoCambiarContrasena() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_cambiar_contrasena, null);
+
+        EditText etActual = dialogView.findViewById(R.id.et_dialog_pass_actual);
+        EditText etNueva = dialogView.findViewById(R.id.et_dialog_pass_nueva);
+        EditText etConfirmar = dialogView.findViewById(R.id.et_dialog_pass_confirmar);
+
+        ImageView btnToggleActual = dialogView.findViewById(R.id.btn_toggle_pass_actual);
+        ImageView btnToggleNueva = dialogView.findViewById(R.id.btn_toggle_pass_nueva);
+        ImageView btnToggleConfirmar = dialogView.findViewById(R.id.btn_toggle_pass_confirmar);
+
+        ImageView ivReqLength = dialogView.findViewById(R.id.iv_pass_req_length);
+        TextView tvReqLength = dialogView.findViewById(R.id.tv_pass_req_length);
+        ImageView ivReqUpper = dialogView.findViewById(R.id.iv_pass_req_uppercase);
+        TextView tvReqUpper = dialogView.findViewById(R.id.tv_pass_req_uppercase);
+        ImageView ivReqNumber = dialogView.findViewById(R.id.iv_pass_req_number);
+        TextView tvReqNumber = dialogView.findViewById(R.id.tv_pass_req_number);
+        ImageView ivReqMatch = dialogView.findViewById(R.id.iv_pass_req_match);
+        TextView tvReqMatch = dialogView.findViewById(R.id.tv_pass_req_match);
+
+        TextView tvError = dialogView.findViewById(R.id.tv_dialog_pass_error);
+        View btnCerrar = dialogView.findViewById(R.id.dialog_pass_btn_cerrar);
+        View btnCancelar = dialogView.findViewById(R.id.dialog_pass_btn_cancelar);
+        MaterialButton btnGuardar = dialogView.findViewById(R.id.dialog_pass_btn_guardar);
+
+        setupPasswordToggle(etActual, btnToggleActual);
+        setupPasswordToggle(etNueva, btnToggleNueva);
+        setupPasswordToggle(etConfirmar, btnToggleConfirmar);
+
+        TextWatcher passWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String pass = etNueva.getText() != null ? etNueva.getText().toString() : "";
+                String confirm = etConfirmar.getText() != null ? etConfirmar.getText().toString() : "";
+                actualizarRequisitosContrasena(pass, confirm, ivReqLength, tvReqLength, ivReqUpper, tvReqUpper, ivReqNumber, tvReqNumber, ivReqMatch, tvReqMatch);
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        };
+        etNueva.addTextChangedListener(passWatcher);
+        etConfirmar.addTextChangedListener(passWatcher);
+
+        // Estado inicial de las condiciones
+        actualizarRequisitosContrasena("", "", ivReqLength, tvReqLength, ivReqUpper, tvReqUpper, ivReqNumber, tvReqNumber, ivReqMatch, tvReqMatch);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        View.OnClickListener dismissWithKeyboard = v -> {
+            View focus = dialog.getCurrentFocus();
+            if (focus != null && getContext() != null) {
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+            }
+            dialog.dismiss();
+        };
+
+        if (btnCerrar != null) btnCerrar.setOnClickListener(dismissWithKeyboard);
+        if (btnCancelar != null) btnCancelar.setOnClickListener(dismissWithKeyboard);
+
+        if (btnGuardar != null) {
+            btnGuardar.setOnClickListener(v -> {
+                String passActual = etActual.getText() != null ? etActual.getText().toString().trim() : "";
+                String passNueva = etNueva.getText() != null ? etNueva.getText().toString().trim() : "";
+                String passConfirmar = etConfirmar.getText() != null ? etConfirmar.getText().toString().trim() : "";
+
+                if (passActual.isEmpty()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa tu contraseña actual");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etActual.requestFocus();
+                    return;
+                }
+
+                String actualHash = SecurityUtils.hashPassword(passActual);
+                String savedPass = prefs.getString("user_password", "");
+                if (savedPass.isEmpty()) {
+                    String savedEmail = loginPrefs.getString("saved_email", "");
+                    String currentEmail = prefs.getString("user_email", "");
+                    if (savedEmail.equalsIgnoreCase(currentEmail) || savedEmail.isEmpty()) {
+                        savedPass = loginPrefs.getString("saved_password", "");
+                    }
+                }
+
+                if (!savedPass.isEmpty()) {
+                    String normActual = passActual.replaceAll("[\\s\\-_.]", "").toLowerCase();
+                    String normSaved = savedPass.replaceAll("[\\s\\-_.]", "").toLowerCase();
+                    boolean coincide = passActual.equals(savedPass) 
+                            || normActual.equals(normSaved)
+                            || actualHash.equalsIgnoreCase(savedPass);
+                    boolean tieneClaveEstricta = prefs.contains("user_password");
+                    if (!coincide && tieneClaveEstricta) {
+                        if (tvError != null) {
+                            tvError.setText("La contraseña actual no es correcta");
+                            tvError.setVisibility(View.VISIBLE);
+                        }
+                        etActual.requestFocus();
+                        return;
+                    }
+                }
+
+                if (passNueva.length() < 6) {
+                    if (tvError != null) {
+                        tvError.setText("La nueva contraseña debe tener al menos 6 caracteres");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etNueva.requestFocus();
+                    return;
+                }
+
+                if (!Pattern.compile("[A-Z]").matcher(passNueva).find()) {
+                    if (tvError != null) {
+                        tvError.setText("La nueva contraseña debe incluir al menos una letra mayúscula");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etNueva.requestFocus();
+                    return;
+                }
+
+                if (!Pattern.compile("[0-9]").matcher(passNueva).find()) {
+                    if (tvError != null) {
+                        tvError.setText("La nueva contraseña debe incluir al menos un número");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etNueva.requestFocus();
+                    return;
+                }
+
+                if (!passNueva.equals(passConfirmar)) {
+                    if (tvError != null) {
+                        tvError.setText("Las contraseñas no coinciden");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etConfirmar.requestFocus();
+                    return;
+                }
+
+                if (passNueva.equals(passActual)) {
+                    if (tvError != null) {
+                        tvError.setText("La nueva contraseña no puede ser igual a la actual");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    etNueva.requestFocus();
+                    return;
+                }
+
+                if (tvError != null) tvError.setVisibility(View.GONE);
+                btnGuardar.setEnabled(false);
+                btnGuardar.setText("Guardando...");
+
+                // 1. Guardar nueva contraseña en preferencias
+                prefs.edit().putString("user_password", passNueva).apply();
+                loginPrefs.edit().putString("saved_password", passNueva).apply();
+
+                String newPassHash = SecurityUtils.hashPassword(passNueva);
+                String userId = prefs.getString("user_id", "local_user");
+
+                // Sincronizar en la base de datos Supabase
+                if (!userId.isEmpty() && !"local_user".equals(userId)) {
+                    SupabaseClient.actualizarPassword(userId, newPassHash, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            Log.d("PerfilUsuario", "Contraseña sincronizada en Supabase con éxito.");
+                        }
+
+                        @Override
+                        public void onError(Exception error) {
+                            Log.w("PerfilUsuario", "Aviso al guardar contraseña en Supabase: " + error.getMessage());
+                        }
+                    });
+                }
+
+                // 2. Cerrar teclado virtual
+                View focus = dialog.getCurrentFocus();
+                if (focus != null && getContext() != null) {
+                    InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+                }
+
+                dialog.dismiss();
+
+                // 3. Mostrar snackbar flotante con retardo estético
+                if (getView() != null) {
+                    getView().postDelayed(() -> {
+                        if (isAdded()) {
+                            mostrarSnackbarElegante("Contraseña actualizada correctamente");
+                        }
+                    }, 250);
+                } else {
+                    mostrarSnackbarElegante("Contraseña actualizada correctamente");
+                }
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void setupPasswordToggle(EditText et, ImageView btnToggle) {
+        if (et == null || btnToggle == null) return;
+        final boolean[] isVisible = {false};
+        btnToggle.setOnClickListener(v -> {
+            isVisible[0] = !isVisible[0];
+            if (isVisible[0]) {
+                et.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                btnToggle.setImageResource(R.drawable.ic_visibility);
+                if (getContext() != null) {
+                    btnToggle.setColorFilter(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
+                }
+            } else {
+                et.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                btnToggle.setImageResource(R.drawable.ic_visibility_off);
+                if (getContext() != null) {
+                    btnToggle.setColorFilter(ContextCompat.getColor(requireContext(), R.color.colorOutline));
+                }
+            }
+            if (et.getText() != null) {
+                et.setSelection(et.getText().length());
+            }
+        });
+    }
+
+    private void actualizarRequisitosContrasena(String password, String confirmPassword,
+                                                ImageView ivLength, TextView tvLength,
+                                                ImageView ivUpper, TextView tvUpper,
+                                                ImageView ivNumber, TextView tvNumber,
+                                                ImageView ivMatch, TextView tvMatch) {
+        if (!isAdded() || getContext() == null) return;
+
+        boolean hasMinLength = password.length() >= 6;
+        boolean hasUppercase = Pattern.compile("[A-Z]").matcher(password).find();
+        boolean hasNumber = Pattern.compile("[0-9]").matcher(password).find();
+        boolean hasMatch = !password.isEmpty() && password.equals(confirmPassword);
+
+        int colorOk = ContextCompat.getColor(requireContext(), R.color.colorSecondary);
+        int colorPending = ContextCompat.getColor(requireContext(), R.color.colorOutline);
+
+        setRequirementState(ivLength, tvLength, hasMinLength, colorOk, colorPending);
+        setRequirementState(ivUpper, tvUpper, hasUppercase, colorOk, colorPending);
+        setRequirementState(ivNumber, tvNumber, hasNumber, colorOk, colorPending);
+        setRequirementState(ivMatch, tvMatch, hasMatch, colorOk, colorPending);
+    }
+
+    private void setRequirementState(ImageView iv, TextView tv, boolean fulfilled, int colorOk, int colorPending) {
+        if (iv != null) {
+            iv.setImageResource(fulfilled ? R.drawable.ic_check_circle : R.drawable.ic_circle_outline);
+            iv.setColorFilter(fulfilled ? colorOk : colorPending);
+        }
+        if (tv != null) {
+            tv.setTextColor(fulfilled ? colorOk : colorPending);
+        }
     }
 }

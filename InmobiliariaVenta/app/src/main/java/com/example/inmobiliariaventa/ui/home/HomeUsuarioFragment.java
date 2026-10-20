@@ -23,8 +23,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import androidx.lifecycle.LiveData;
+import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
@@ -45,6 +48,17 @@ public class HomeUsuarioFragment extends Fragment {
     private int limiteActualHome = 20;
     private static final int BATCH_SIZE = 20;
 
+    private MaterialCardView cardModoOffline;
+    private LinearLayout layoutOfflineVacio;
+    private TextView tvOfflineVacioTitulo;
+    private TextView tvOfflineVacioMensaje;
+    private TextView tvTituloPropiedadesHome;
+
+    private PropiedadViewModel viewModel;
+    private LiveData<List<Propiedad>> liveDataPropiedadesActual;
+    private androidx.lifecycle.Observer<List<Propiedad>> observerPropiedades;
+    private Boolean ultimoEstadoConexion = null;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -53,8 +67,15 @@ public class HomeUsuarioFragment extends Fragment {
         homeNestedScrollView = view.findViewById(R.id.homeNestedScrollView);
         categoriesRecyclerView = view.findViewById(R.id.categoriesRecyclerView);
         featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
-
         searchContainer = view.findViewById(R.id.searchContainer);
+
+        cardModoOffline = view.findViewById(R.id.cardModoOffline);
+        layoutOfflineVacio = view.findViewById(R.id.layoutOfflineVacio);
+        tvOfflineVacioTitulo = view.findViewById(R.id.tvOfflineVacioTitulo);
+        tvOfflineVacioMensaje = view.findViewById(R.id.tvOfflineVacioMensaje);
+        tvTituloPropiedadesHome = view.findViewById(R.id.tvTituloPropiedadesHome);
+
+        viewModel = new androidx.lifecycle.ViewModelProvider(this).get(PropiedadViewModel.class);
 
         searchContainer.setOnClickListener(v -> {
             Navigation.findNavController(v).navigate(R.id.action_nav_inicio_to_nav_search_location);
@@ -92,7 +113,7 @@ public class HomeUsuarioFragment extends Fragment {
 
         MaterialButton btnAdminMode = view.findViewById(R.id.btnAdminMode);
         if (btnAdminMode != null) {
-            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+            SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
             boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
             String userRol = prefs.getString("user_rol", "");
 
@@ -108,6 +129,7 @@ public class HomeUsuarioFragment extends Fragment {
 
         setupCategories();
         setupFeaturedProperties(view);
+        configurarObservadorRed(view);
 
         return view;
     }
@@ -139,7 +161,7 @@ public class HomeUsuarioFragment extends Fragment {
         featuredRecyclerView.setItemViewCacheSize(20);
         featuredRecyclerView.setAdapter(featuredAdapter);
 
-        // Desplazamiento automático fluido sin botones: al acercarse al final del scroll, se cargan más elementos
+        // Desplazamiento automático fluido sin botones
         if (homeNestedScrollView != null) {
             homeNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
                 if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
@@ -147,16 +169,113 @@ public class HomeUsuarioFragment extends Fragment {
                 }
             });
         }
+    }
 
-        com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel viewModel =
-                new androidx.lifecycle.ViewModelProvider(this).get(com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel.class);
-        viewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
-            if (propiedades != null) {
-                listaCompletaHome = propiedades;
-                limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
-                featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
+    private void configurarObservadorRed(View rootView) {
+        if (getContext() == null) return;
+
+        com.example.inmobiliariaventa.utils.NetworkUtils.getNetworkLiveData(requireContext())
+                .observe(getViewLifecycleOwner(), isOnline -> {
+                    boolean conexionActiva = Boolean.TRUE.equals(isOnline);
+                    actualizarModoConexion(conexionActiva, rootView);
+                });
+    }
+
+    private void actualizarModoConexion(boolean isOnline, View rootView) {
+        if (getContext() == null) return;
+
+        // Limpiar observador anterior para evitar fugas o listas cruzadas
+        if (liveDataPropiedadesActual != null && observerPropiedades != null) {
+            liveDataPropiedadesActual.removeObserver(observerPropiedades);
+        }
+
+        // Si se restablece la conexión tras estar desconectado, notificar al usuario
+        if (ultimoEstadoConexion != null && !ultimoEstadoConexion && isOnline) {
+            mostrarSnackbarReconexion(rootView);
+            if (viewModel != null) {
+                viewModel.sincronizarConNube(null);
             }
-        });
+        }
+        ultimoEstadoConexion = isOnline;
+
+        if (isOnline) {
+            // ==================== MODO ONLINE ====================
+            if (cardModoOffline != null) cardModoOffline.setVisibility(View.GONE);
+            if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
+            if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
+            if (tvTituloPropiedadesHome != null) tvTituloPropiedadesHome.setText("Propiedades");
+
+            observerPropiedades = propiedades -> {
+                if (Boolean.TRUE.equals(ultimoEstadoConexion)) {
+                    if (propiedades != null) {
+                        listaCompletaHome = propiedades;
+                        limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
+                        featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
+                    }
+                }
+            };
+
+            liveDataPropiedadesActual = viewModel.getAllPropiedades();
+            liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
+
+        } else {
+            // ==================== MODO OFFLINE (SOLO FAVORITOS) ====================
+            if (cardModoOffline != null) cardModoOffline.setVisibility(View.VISIBLE);
+            if (tvTituloPropiedadesHome != null) tvTituloPropiedadesHome.setText("Tus Favoritos (Modo sin conexión)");
+
+            SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+            boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
+            String userId = prefs.getString("user_id", "");
+
+            if (!isLoggedIn || userId.isEmpty()) {
+                // Sin sesión activa
+                if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
+                if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
+                if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Inicia sesión para ver favoritos");
+                if (tvOfflineVacioMensaje != null) tvOfflineVacioMensaje.setText("En modo sin conexión únicamente puedes ver las propiedades guardadas en favoritos. Inicia sesión para acceder a las tuyas.");
+                listaCompletaHome = new ArrayList<>();
+                featuredAdapter.setPropiedades(new ArrayList<>());
+            } else {
+                // Observar en Room únicamente las propiedades guardadas en favoritos por este usuario
+                observerPropiedades = favoritos -> {
+                    if (Boolean.FALSE.equals(ultimoEstadoConexion)) {
+                        if (favoritos == null || favoritos.isEmpty()) {
+                            if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
+                            if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
+                            if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Sin favoritos guardados");
+                            if (tvOfflineVacioMensaje != null) tvOfflineVacioMensaje.setText("En modo sin conexión únicamente puedes visualizar las propiedades que tengas guardadas en favoritos. Guarda tus propiedades preferidas para verlas sin internet.");
+                            listaCompletaHome = new ArrayList<>();
+                            featuredAdapter.setPropiedades(new ArrayList<>());
+                        } else {
+                            if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
+                            if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
+                            listaCompletaHome = favoritos;
+                            limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
+                            featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
+                        }
+                    }
+                };
+
+                liveDataPropiedadesActual = com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
+                        .favoritoDao()
+                        .obtenerFavoritosDeUsuarioLiveData(userId);
+                liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
+            }
+        }
+    }
+
+    private void mostrarSnackbarReconexion(View rootView) {
+        if (rootView == null || getContext() == null) return;
+        try {
+            View target = rootView.findViewById(R.id.coordinator_home);
+            if (target == null) target = rootView;
+            com.google.android.material.snackbar.Snackbar snack =
+                    com.google.android.material.snackbar.Snackbar.make(target, "Conexión restablecida • Mostrando catálogo completo", com.google.android.material.snackbar.Snackbar.LENGTH_LONG);
+            View sView = snack.getView();
+            sView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+            snack.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction));
+            snack.show();
+        } catch (Exception ignored) {}
     }
 
     private void cargarMasPropiedadesHome() {
@@ -172,6 +291,12 @@ public class HomeUsuarioFragment extends Fragment {
         super.onResume();
         if (featuredAdapter != null && getContext() != null) {
             featuredAdapter.recargarFavoritos(getContext());
+        }
+        if (getView() != null && getContext() != null) {
+            boolean isOnline = com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(requireContext());
+            if (ultimoEstadoConexion == null || !ultimoEstadoConexion.equals(isOnline)) {
+                actualizarModoConexion(isOnline, getView());
+            }
         }
     }
 

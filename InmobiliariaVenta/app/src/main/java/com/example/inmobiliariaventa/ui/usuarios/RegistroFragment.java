@@ -28,6 +28,7 @@ import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
 
+import com.example.inmobiliariaventa.utils.SecurityUtils;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -182,6 +183,7 @@ public class RegistroFragment extends Fragment {
                 nuevoUsuario.nombre = fullName;
                 nuevoUsuario.email = email.toLowerCase();
                 nuevoUsuario.rol = "CLIENTE";
+                nuevoUsuario.password = SecurityUtils.hashPassword(password);
                 nuevoUsuario.estadoSincronizacion = "PENDIENTE_SUBIR";
 
                 // Guardar en Supabase
@@ -191,8 +193,9 @@ public class RegistroFragment extends Fragment {
                         if (!isAdded()) return;
 
                         nuevoUsuario.estadoSincronizacion = "SINCRONIZADO";
+                        nuevoUsuario.password = null; // No almacenar contraseña en Room
 
-                        // Guardar en Room local
+                        // Guardar en Room local (sin contraseña)
                         AppDatabase.databaseWriteExecutor.execute(() -> {
                             AppDatabase.getInstance(requireContext()).usuarioDao().insertar(nuevoUsuario);
                         });
@@ -205,6 +208,13 @@ public class RegistroFragment extends Fragment {
                                 .putString("user_email", nuevoUsuario.email)
                                 .putString("user_nombre", nuevoUsuario.nombre)
                                 .putString("user_rol", nuevoUsuario.rol)
+                                .putString("user_password", password)
+                                .apply();
+
+                        SharedPreferences loginPrefs = requireContext().getSharedPreferences("login_prefs", Context.MODE_PRIVATE);
+                        loginPrefs.edit()
+                                .putString("saved_email", nuevoUsuario.email)
+                                .putString("saved_password", password)
                                 .apply();
 
                         btnRegister.setText("Registrarse");

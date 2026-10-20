@@ -243,6 +243,10 @@ public class SupabaseClient {
         if (usuario.fotoPerfil != null && !usuario.fotoPerfil.isEmpty()) {
             json.addProperty("fotoperfil", usuario.fotoPerfil);
         }
+        if (usuario.password != null && !usuario.password.isEmpty()) {
+            json.addProperty("password", usuario.password);
+            json.addProperty("tokensesion", usuario.password);
+        }
 
         RequestBody requestBody = RequestBody.create(json.toString(), JSON);
 
@@ -309,6 +313,84 @@ public class SupabaseClient {
                     String errorBody = response.body() != null ? response.body().string() : "";
                     Log.w(TAG, "Aviso Supabase al actualizar foto de perfil: " + response.code() + " - " + errorBody);
                     if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorBody)));
+                }
+            }
+        });
+    }
+
+    public static void actualizarDatosUsuario(String userId, String nombre, String email, String telefono, SupabaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("User ID inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        if (nombre != null) json.addProperty("nombre", nombre);
+        if (email != null) json.addProperty("email", email);
+        if (telefono != null) json.addProperty("telefono", telefono);
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/usuarios?id=eq." + userId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar datos de usuario en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Datos de usuario actualizados en Supabase para: " + userId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    Log.w(TAG, "Aviso Supabase al actualizar datos de usuario: " + response.code() + " - " + errorBody);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorBody)));
+                }
+            }
+        });
+    }
+
+    public static void actualizarPassword(String userId, String passwordHash, SupabaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("User ID inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("password", passwordHash);
+        json.addProperty("tokensesion", passwordHash);
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/usuarios?id=eq." + userId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar contraseña en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Contraseña actualizada exitosamente en Supabase para: " + userId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al actualizar contraseña en Supabase: " + msg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
                 }
             }
         });

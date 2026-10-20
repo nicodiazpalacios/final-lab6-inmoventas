@@ -36,4 +36,10 @@
     <color name="colorSnackbarStroke">#1E3A8A</color>
     <color name="colorSnackbarAction">#6FFBBE</color>
     <color name="colorSnackbarActionAlt">#90A8FF</color>
+
+    <!-- Offline mode styling -->
+    <color name="colorOfflineBannerBg">#FFF8E1</color>
+    <color name="colorOfflineBannerStroke">#FFA726</color>
+    <color name="colorOfflineBannerText">#E65100</color>
+    <color name="colorOfflineBannerSubtext">#BF360C</color>
 </resources>
