@@ -218,13 +218,24 @@
                 android:visibility="gone"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Botones de Acción -->
+            <!-- Botones de Acción: Cancelar a la izquierda, Guardar a la derecha (Material Design) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="end"
                 android:layout_marginTop="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/dialog_info_btn_cancelar"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="Cancelar"
+                    android:textColor="@color/colorOutline"
+                    android:textSize="14sp"
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/dialog_info_btn_guardar"
@@ -237,17 +248,6 @@
                     app:backgroundTint="@color/colorPrimary"
                     app:cornerRadius="12dp"
                     app:elevation="2dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/dialog_info_btn_cancelar"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="8dp"
-                    android:text="Cancelar"
-                    android:textColor="@color/colorOutline"
-                    android:textSize="14sp"
-                    android:textAllCaps="false" />
             </LinearLayout>
 
         </LinearLayout>

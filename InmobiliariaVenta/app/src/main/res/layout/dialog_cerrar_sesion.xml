@@ -54,7 +54,7 @@
             android:lineSpacingExtra="3dp"
             android:layout_marginBottom="24dp" />
 
-        <!-- Botones: Sí a la izquierda, No a la derecha -->
+        <!-- Botones: No (cancelar) a la izquierda, Sí (confirmar) a la derecha (Material Design) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,29 +62,13 @@
             android:gravity="center_vertical"
             android:weightSum="2">
 
-            <!-- Botón Sí (Izquierda) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_dialog_logout_si"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="46dp"
-                android:layout_marginEnd="8dp"
-                android:text="Sí, cerrar"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                app:cornerRadius="12dp"
-                app:backgroundTint="@color/colorError"
-                android:textColor="@color/white" />
-
-            <!-- Botón No (Derecha) -->
+            <!-- Botón No / Cancelar (Izquierda) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_dialog_logout_no"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="46dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
                 android:text="No, volver"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -94,6 +78,22 @@
                 app:backgroundTint="@color/colorSurfaceContainerHigh"
                 android:textColor="@color/colorOnSurface"
                 style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+
+            <!-- Botón Sí / Confirmar (Derecha) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_logout_si"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginStart="8dp"
+                android:text="Sí, cerrar"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="12dp"
+                app:backgroundTint="@color/colorError"
+                android:textColor="@color/white" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

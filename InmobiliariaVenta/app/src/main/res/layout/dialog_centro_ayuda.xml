@@ -139,7 +139,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Botones de Acción: Llamar (izquierda), WhatsApp (medio), Cancelar (derecha) -->
+        <!-- Botones de Acción: Cancelar (izquierda), Llamar (medio), WhatsApp (derecha) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -147,13 +147,31 @@
             android:gravity="center_vertical"
             android:weightSum="3">
 
-            <!-- 1. Llamar (Izquierda) -->
+            <!-- 1. Cancelar (Izquierda) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dialog_ayuda_btn_cancelar"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="44dp"
+                android:layout_marginEnd="4dp"
+                android:text="Cancelar"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="2dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="10dp"
+                app:backgroundTint="@color/colorSurfaceContainerHigh"
+                android:textColor="@color/colorOnSurfaceVariant"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+
+            <!-- 2. Llamar (En el medio) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/dialog_ayuda_btn_llamar"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="44dp"
-                android:layout_marginEnd="4dp"
+                android:layout_marginHorizontal="4dp"
                 android:text="Llamar"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -169,13 +187,13 @@
                 android:textColor="@color/colorOnPrimary"
                 app:iconTint="@color/colorOnPrimary" />
 
-            <!-- 2. WhatsApp (En el medio) -->
+            <!-- 3. WhatsApp (A la derecha) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/dialog_ayuda_btn_whatsapp"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="44dp"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginStart="4dp"
                 android:text="WhatsApp"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -190,24 +208,6 @@
                 app:backgroundTint="#25D366"
                 android:textColor="#FFFFFF"
                 app:iconTint="#FFFFFF" />
-
-            <!-- 3. Cancelar (A la derecha) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/dialog_ayuda_btn_cancelar"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="44dp"
-                android:layout_marginStart="4dp"
-                android:text="Cancelar"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:paddingHorizontal="2dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                app:cornerRadius="10dp"
-                app:backgroundTint="@color/colorSurfaceContainerHigh"
-                android:textColor="@color/colorOnSurfaceVariant"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
         </LinearLayout>
 
     </LinearLayout>

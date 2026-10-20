@@ -55,7 +55,7 @@
             android:lineSpacingExtra="3dp"
             android:layout_marginBottom="24dp" />
 
-        <!-- Botones: Iniciar Sesión (izquierda), Registrarme (centro), Cancelar (derecha) -->
+        <!-- Botones: Cancelar (izquierda), Registrarme (centro), Iniciar Sesión (derecha) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -64,20 +64,21 @@
             android:weightSum="3">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_dialog_login"
+                android:id="@+id/btn_dialog_cancelar"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="44dp"
                 android:layout_marginEnd="4dp"
-                android:text="Iniciar Sesión"
+                android:text="Cancelar"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:paddingHorizontal="2dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="10dp"
-                app:backgroundTint="@color/colorPrimary"
-                android:textColor="@color/colorOnPrimary" />
+                app:backgroundTint="@color/colorSurfaceContainerHigh"
+                android:textColor="@color/colorOnSurfaceVariant"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_dialog_registro"
@@ -99,21 +100,20 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_dialog_cancelar"
+                android:id="@+id/btn_dialog_login"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="44dp"
                 android:layout_marginStart="4dp"
-                android:text="Cancelar"
+                android:text="Iniciar Sesión"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:paddingHorizontal="2dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="10dp"
-                app:backgroundTint="@color/colorSurfaceContainerHigh"
-                android:textColor="@color/colorOnSurfaceVariant"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+                app:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/colorOnPrimary" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
