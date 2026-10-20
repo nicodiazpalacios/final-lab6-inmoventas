@@ -817,6 +817,18 @@ public class PropiedadDetalleFragment extends Fragment {
                 fav.fechaGuardado = System.currentTimeMillis();
                 FavoritoRepositoryImpl.getInstance(requireContext()).agregarFavorito(fav);
 
+                // Precargar todas las imágenes de la propiedad en la caché local de disco
+                if (currentPropiedad != null && currentPropiedad.imagenes != null) {
+                    for (String url : currentPropiedad.imagenes) {
+                        if (url != null && !url.trim().isEmpty()) {
+                            com.bumptech.glide.Glide.with(requireContext().getApplicationContext())
+                                    .load(url.trim())
+                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                    .preload();
+                        }
+                    }
+                }
+
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         mostrarSnackbarElegante("¡Propiedad guardada en Favoritos!", Snackbar.LENGTH_SHORT);
@@ -852,7 +864,7 @@ public class PropiedadDetalleFragment extends Fragment {
                         if (lp instanceof ViewGroup.MarginLayoutParams) {
                             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
                             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-                            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+                            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
                             marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
                             snackbarView.setLayoutParams(marginParams);
                         }
@@ -893,7 +905,7 @@ public class PropiedadDetalleFragment extends Fragment {
         if (lp instanceof ViewGroup.MarginLayoutParams) {
             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
             marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
             snackbarView.setLayoutParams(marginParams);
         }
@@ -915,9 +927,6 @@ public class PropiedadDetalleFragment extends Fragment {
 
         if (!isLoggedIn || userId.isEmpty()) {
             actualizarIconoFavorito(false);
-            if (!com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
-                mostrarDialogoPropiedadNoDisponibleOffline();
-            }
             return;
         }
 
@@ -931,31 +940,7 @@ public class PropiedadDetalleFragment extends Fragment {
                 .observe(getViewLifecycleOwner(), fav -> {
                     isPropiedadFavorita = (fav != null && fav);
                     actualizarIconoFavorito(isPropiedadFavorita);
-
-                    // Restricción offline: En modo sin conexión ÚNICAMENTE se permite ver favoritos guardados
-                    if (!com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(getContext())) {
-                        if (!isPropiedadFavorita) {
-                            mostrarDialogoPropiedadNoDisponibleOffline();
-                        }
-                    }
                 });
-    }
-
-    private void mostrarDialogoPropiedadNoDisponibleOffline() {
-        if (getContext() == null || !isAdded()) return;
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setIcon(R.drawable.ic_cloud_off)
-                .setTitle("Propiedad no disponible sin conexión")
-                .setMessage("Estás en modo sin conexión. Únicamente puedes visualizar las propiedades que tengas guardadas en tus favoritos hasta que restablezcas la conexión a internet.")
-                .setCancelable(false)
-                .setPositiveButton("Volver", (dialog, which) -> {
-                    dialog.dismiss();
-                    if (getView() != null) {
-                        Navigation.findNavController(getView()).navigateUp();
-                    }
-                })
-                .show();
     }
 
     private void actualizarIconoFavorito(boolean fav) {

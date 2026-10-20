@@ -186,7 +186,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_cloud_off"
-                        app:tint="@color/colorOfflineBannerText" />
+                        app:tint="@color/colorOfflineBannerIcon" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -207,7 +207,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Mostrando únicamente las propiedades guardadas en tus favoritos."
+                            android:text="Mostrando catálogo guardado en este dispositivo."
                             android:textColor="@color/colorOfflineBannerSubtext"
                             android:textSize="12sp" />
                     </LinearLayout>

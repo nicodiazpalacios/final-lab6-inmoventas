@@ -271,6 +271,18 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                     fav.fechaGuardado = System.currentTimeMillis();
                     FavoritoRepositoryImpl.getInstance(context).agregarFavorito(fav);
 
+                    // Precargar imágenes en la caché local de disco para visualización sin conexión
+                    if (prop.imagenes != null && !prop.imagenes.isEmpty()) {
+                        for (String url : prop.imagenes) {
+                            if (url != null && !url.trim().isEmpty()) {
+                                com.bumptech.glide.Glide.with(context.getApplicationContext())
+                                        .load(url.trim())
+                                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                        .preload();
+                            }
+                        }
+                    }
+
                     holder.itemView.post(() -> {
                         View targetView = obtenerTargetCoordinator(holder.itemView);
 

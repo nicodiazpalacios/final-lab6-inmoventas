@@ -49,7 +49,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:src="@drawable/ic_cloud_off"
-                        app:tint="@color/colorOfflineBannerText" />
+                        app:tint="@color/colorOfflineBannerIcon" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -70,7 +70,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Estás desconectado. Únicamente puedes visualizar las propiedades guardadas en tus favoritos hasta que restablezcas la conexión."
+                            android:text="Mostrando catálogo guardado en este dispositivo."
                             android:textColor="@color/colorOfflineBannerSubtext"
                             android:textSize="13sp" />
                     </LinearLayout>

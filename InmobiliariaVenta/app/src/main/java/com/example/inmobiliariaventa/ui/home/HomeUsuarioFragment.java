@@ -219,48 +219,31 @@ public class HomeUsuarioFragment extends Fragment {
             liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
 
         } else {
-            // ==================== MODO OFFLINE (SOLO FAVORITOS) ====================
+            // ==================== MODO OFFLINE (CATÁLOGO COMPLETO ROOM) ====================
             if (cardModoOffline != null) cardModoOffline.setVisibility(View.VISIBLE);
-            if (tvTituloPropiedadesHome != null) tvTituloPropiedadesHome.setText("Tus Favoritos (Modo sin conexión)");
+            if (tvTituloPropiedadesHome != null) tvTituloPropiedadesHome.setText("Propiedades guardadas (Modo sin conexión)");
 
-            SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
-            boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
-            String userId = prefs.getString("user_id", "");
-
-            if (!isLoggedIn || userId.isEmpty()) {
-                // Sin sesión activa
-                if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
-                if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
-                if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Inicia sesión para ver favoritos");
-                if (tvOfflineVacioMensaje != null) tvOfflineVacioMensaje.setText("En modo sin conexión únicamente puedes ver las propiedades guardadas en favoritos. Inicia sesión para acceder a las tuyas.");
-                listaCompletaHome = new ArrayList<>();
-                featuredAdapter.setPropiedades(new ArrayList<>());
-            } else {
-                // Observar en Room únicamente las propiedades guardadas en favoritos por este usuario
-                observerPropiedades = favoritos -> {
-                    if (Boolean.FALSE.equals(ultimoEstadoConexion)) {
-                        if (favoritos == null || favoritos.isEmpty()) {
-                            if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
-                            if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
-                            if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Sin favoritos guardados");
-                            if (tvOfflineVacioMensaje != null) tvOfflineVacioMensaje.setText("En modo sin conexión únicamente puedes visualizar las propiedades que tengas guardadas en favoritos. Guarda tus propiedades preferidas para verlas sin internet.");
-                            listaCompletaHome = new ArrayList<>();
-                            featuredAdapter.setPropiedades(new ArrayList<>());
-                        } else {
-                            if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
-                            if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
-                            listaCompletaHome = favoritos;
-                            limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
-                            featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
-                        }
+            observerPropiedades = propiedades -> {
+                if (Boolean.FALSE.equals(ultimoEstadoConexion)) {
+                    if (propiedades == null || propiedades.isEmpty()) {
+                        if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
+                        if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
+                        if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Sin propiedades guardadas");
+                        if (tvOfflineVacioMensaje != null) tvOfflineVacioMensaje.setText("Aún no hay propiedades almacenadas en este dispositivo. Conéctate a internet para sincronizar el catálogo.");
+                        listaCompletaHome = new ArrayList<>();
+                        featuredAdapter.setPropiedades(new ArrayList<>());
+                    } else {
+                        if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
+                        if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
+                        listaCompletaHome = propiedades;
+                        limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
+                        featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
                     }
-                };
+                }
+            };
 
-                liveDataPropiedadesActual = com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(requireContext())
-                        .favoritoDao()
-                        .obtenerFavoritosDeUsuarioLiveData(userId);
-                liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
-            }
+            liveDataPropiedadesActual = viewModel.getAllPropiedades();
+            liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
         }
     }
 
@@ -273,7 +256,19 @@ public class HomeUsuarioFragment extends Fragment {
                     com.google.android.material.snackbar.Snackbar.make(target, "Conexión restablecida • Mostrando catálogo completo", com.google.android.material.snackbar.Snackbar.LENGTH_LONG);
             View sView = snack.getView();
             sView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
-            snack.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction));
+            sView.setBackgroundTintList(null);
+            snack.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white));
+
+            android.view.ViewGroup.LayoutParams lp = sView.getLayoutParams();
+            if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
+                android.view.ViewGroup.MarginLayoutParams marginParams = (android.view.ViewGroup.MarginLayoutParams) lp;
+                int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+                int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+                marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
+                sView.setLayoutParams(marginParams);
+            }
+            sView.setElevation(8 * getResources().getDisplayMetrics().density);
+
             snack.show();
         } catch (Exception ignored) {}
     }

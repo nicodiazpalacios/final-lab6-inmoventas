@@ -132,26 +132,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:singleSelection="true"
-                app:selectionRequired="true"
-                app:checkedButton="@id/btnTipoTodas">
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnTipoTodas"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:text="Todas"
-                    android:textSize="13sp"
-                    android:paddingHorizontal="4dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                app:selectionRequired="false">
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCasa"
                     android:layout_width="0dp"
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:text="Casa"
-                    android:textSize="13sp"
+                    android:textSize="14sp"
                     android:paddingHorizontal="4dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
@@ -162,7 +150,7 @@
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:text="Departamento"
-                    android:textSize="13sp"
+                    android:textSize="14sp"
                     android:paddingHorizontal="4dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"

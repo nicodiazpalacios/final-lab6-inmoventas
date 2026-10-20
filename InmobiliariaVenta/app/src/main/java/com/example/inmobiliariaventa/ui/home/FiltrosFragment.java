@@ -117,31 +117,25 @@ public class FiltrosFragment extends Fragment {
             Navigation.findNavController(v).navigate(R.id.nav_search_location, bundle);
         });
 
-        // Toggle tipo de propiedad
-        tipoPropiedadGroup.setSelectionRequired(true);
+        // Toggle tipo de propiedad (opcional: ninguno, Casa o Departamento)
+        tipoPropiedadGroup.setSelectionRequired(false);
         tipoPropiedadGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                if (checkedId == R.id.btnCasa) {
-                    caracteristicasCasaContainer.setVisibility(View.VISIBLE);
-                    caracteristicasDeptoContainer.setVisibility(View.GONE);
-                } else if (checkedId == R.id.btnDepartamento) {
-                    caracteristicasCasaContainer.setVisibility(View.GONE);
-                    caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
-                } else {
-                    // btnTipoTodas
-                    caracteristicasCasaContainer.setVisibility(View.GONE);
-                    caracteristicasDeptoContainer.setVisibility(View.GONE);
-                }
+            int selectedId = group.getCheckedButtonId();
+            if (selectedId == R.id.btnCasa) {
+                caracteristicasCasaContainer.setVisibility(View.VISIBLE);
+                caracteristicasDeptoContainer.setVisibility(View.GONE);
+            } else if (selectedId == R.id.btnDepartamento) {
+                caracteristicasCasaContainer.setVisibility(View.GONE);
+                caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
             } else {
-                // Siempre debe haber uno seleccionado: si se desmarcó, se restaura
-                if (group.getCheckedButtonId() == View.NO_ID) {
-                    group.check(checkedId);
-                }
+                // Ninguno seleccionado: ambas características ocultas
+                caracteristicasCasaContainer.setVisibility(View.GONE);
+                caracteristicasDeptoContainer.setVisibility(View.GONE);
             }
             updateMatchingCountAndButton();
         });
 
-        // Configuración inicial de Tipo de Propiedad: Todas por default
+        // Configuración inicial de Tipo de Propiedad: por defecto ninguno seleccionado
         String initialTipo = (getArguments() != null) ? getArguments().getString("tipo", "") : "";
         if ("Casa".equalsIgnoreCase(initialTipo)) {
             tipoPropiedadGroup.check(R.id.btnCasa);
@@ -152,7 +146,7 @@ public class FiltrosFragment extends Fragment {
             caracteristicasCasaContainer.setVisibility(View.GONE);
             caracteristicasDeptoContainer.setVisibility(View.VISIBLE);
         } else {
-            tipoPropiedadGroup.check(R.id.btnTipoTodas);
+            tipoPropiedadGroup.clearChecked();
             caracteristicasCasaContainer.setVisibility(View.GONE);
             caracteristicasDeptoContainer.setVisibility(View.GONE);
         }
@@ -205,7 +199,7 @@ public class FiltrosFragment extends Fragment {
             }
 
             if (tipoPropiedadGroup != null) {
-                tipoPropiedadGroup.check(R.id.btnTipoTodas);
+                tipoPropiedadGroup.clearChecked();
                 caracteristicasCasaContainer.setVisibility(View.GONE);
                 caracteristicasDeptoContainer.setVisibility(View.GONE);
             }
@@ -386,7 +380,7 @@ public class FiltrosFragment extends Fragment {
         List<Propiedad> result = new ArrayList<>();
         if (cachedProperties == null) return result;
 
-        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : R.id.btnTipoTodas;
+        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : View.NO_ID;
         String tipo = "";
         if (checkedTipoId == R.id.btnCasa) {
             tipo = "Casa";
@@ -512,7 +506,7 @@ public class FiltrosFragment extends Fragment {
             bundle.putString("filtro_ubicacion", "");
         }
 
-        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : R.id.btnTipoTodas;
+        int checkedTipoId = tipoPropiedadGroup != null ? tipoPropiedadGroup.getCheckedButtonId() : View.NO_ID;
         String tipo = "Todas";
         if (checkedTipoId == R.id.btnCasa) {
             tipo = "Casa";

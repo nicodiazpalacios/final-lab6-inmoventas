@@ -57,20 +57,43 @@ public class AdminPerfilFragment extends Fragment {
         // Logout con confirmación y snackbar elegante
         View btnLogout = view.findViewById(R.id.btn_logout);
         if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Cerrar Sesión")
-                        .setMessage("¿Estás seguro de que deseas cerrar sesión?")
-                        .setPositiveButton("Sí", (dialog, which) -> {
-                            SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
-                            prefs.edit().clear().apply();
-                            mostrarSnackbarElegante("Sesión cerrada correctamente");
-                            Navigation.findNavController(view).navigate(R.id.nav_inicio);
-                        })
-                        .setNegativeButton("No", null)
-                        .show();
+            btnLogout.setOnClickListener(v -> mostrarDialogoCerrarSesion(view));
+        }
+    }
+
+    private void mostrarDialogoCerrarSesion(View rootView) {
+        if (getContext() == null) return;
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View dialogView = inflater.inflate(R.layout.dialog_cerrar_sesion, null);
+
+        com.google.android.material.button.MaterialButton btnSi = dialogView.findViewById(R.id.btn_dialog_logout_si);
+        com.google.android.material.button.MaterialButton btnNo = dialogView.findViewById(R.id.btn_dialog_logout_no);
+
+        AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        if (btnSi != null) {
+            btnSi.setOnClickListener(v -> {
+                dialog.dismiss();
+                SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+                prefs.edit().clear().apply();
+                mostrarSnackbarElegante("Sesión cerrada correctamente");
+                Navigation.findNavController(rootView).navigate(R.id.nav_inicio);
             });
         }
+
+        if (btnNo != null) {
+            btnNo.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     private void mostrarSnackbarElegante(String mensaje) {
@@ -100,7 +123,7 @@ public class AdminPerfilFragment extends Fragment {
         if (lp instanceof ViewGroup.MarginLayoutParams) {
             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
             marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
             snackbarView.setLayoutParams(marginParams);
         }

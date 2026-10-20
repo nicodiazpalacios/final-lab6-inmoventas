@@ -299,7 +299,7 @@ public class RegistroFragment extends Fragment {
         if (lp instanceof ViewGroup.MarginLayoutParams) {
             ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
             int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-            int marginB = (int) (12 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
             marginParams.setMargins(marginH, marginParams.topMargin, marginH, marginB);
             snackbarView.setLayoutParams(marginParams);
         }
