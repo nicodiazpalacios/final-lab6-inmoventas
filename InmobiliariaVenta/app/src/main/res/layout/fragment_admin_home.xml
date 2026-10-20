@@ -622,25 +622,61 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- Properties Section Header & RecyclerView (Idéntico a fragment_home_usuario) -->
-            <TextView
-                android:id="@+id/tvTituloPropiedadesHome"
+            <!-- Sección Actividad Reciente -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
-                android:text="Propiedades en Portafolio"
-                android:textColor="@color/colorOnSurface"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="36dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTituloActividadReciente"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Actividad Reciente"
+                        android:textColor="@color/colorOnSurface"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Novedades y cambios de estado en inventario"
+                        android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnVerTodasNotificaciones"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ver todas"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:background="?attr/selectableItemBackground" />
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/featuredRecyclerView"
+                android:id="@+id/rvActividadReciente"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                tools:listitem="@layout/item_propiedad_destacada" />
+                tools:listitem="@layout/item_actividad_reciente" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

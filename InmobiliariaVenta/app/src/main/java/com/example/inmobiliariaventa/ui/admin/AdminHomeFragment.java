@@ -8,22 +8,19 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
-import com.example.inmobiliariaventa.ui.home.PropiedadDestacadaAdapter;
-import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class AdminHomeFragment extends Fragment {
 
-    private PropiedadDestacadaAdapter featuredAdapter;
-    private PropiedadViewModel propiedadViewModel;
+    private ActividadRecienteAdapter actividadAdapter;
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -136,21 +133,95 @@ public class AdminHomeFragment extends Fragment {
             });
         }
 
-        // 8. Carrusel / Lista de Propiedades en Portafolio (Idéntico a Home Usuario)
-        RecyclerView featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
-        if (featuredRecyclerView != null && getContext() != null) {
-            featuredAdapter = new PropiedadDestacadaAdapter(new ArrayList<>());
-            featuredAdapter.setCoordinatorLayout(view.findViewById(R.id.coordinator_admin_home));
-            featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-            featuredRecyclerView.setHasFixedSize(true);
-            featuredRecyclerView.setAdapter(featuredAdapter);
-
-            propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
-            propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
-                if (propiedades != null) {
-                    featuredAdapter.setPropiedades(propiedades);
-                }
+        // 8. Botón Ver Todas las Notificaciones
+        View btnVerTodas = view.findViewById(R.id.btnVerTodasNotificaciones);
+        if (btnVerTodas != null) {
+            btnVerTodas.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
             });
         }
+
+        // 9. Lista de Actividad Reciente (Novedades de inventario)
+        RecyclerView rvActividadReciente = view.findViewById(R.id.rvActividadReciente);
+        if (rvActividadReciente != null && getContext() != null) {
+            rvActividadReciente.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+            rvActividadReciente.setHasFixedSize(true);
+            rvActividadReciente.setNestedScrollingEnabled(false);
+
+            List<ActividadAdmin> actividades = obtenerActividadesIniciales();
+            actividadAdapter = new ActividadRecienteAdapter(actividades, actividad -> {
+                // Al tocar una actividad, navegar al centro de notificaciones de admin
+                try {
+                    Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
+                } catch (Exception ignored) {}
+            });
+            rvActividadReciente.setAdapter(actividadAdapter);
+        }
+    }
+
+    private List<ActividadAdmin> obtenerActividadesIniciales() {
+        List<ActividadAdmin> lista = new ArrayList<>();
+
+        // 1. Cambio de precio
+        lista.add(new ActividadAdmin(
+                "act_1",
+                "Apartamento Loft Skywalk",
+                ActividadAdmin.TipoActividad.CAMBIO_PRECIO,
+                "Hace 15 min",
+                "$450,000 USD",
+                "• Antes $485,000 USD (-7.2%)"
+        ));
+
+        // 2. Nueva propiedad subida
+        lista.add(new ActividadAdmin(
+                "act_2",
+                "Residencia Los Olivos - San Benito",
+                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
+                "Hoy, 14:20 hs",
+                "$420,000 USD",
+                "• Publicación ingresada al catálogo"
+        ));
+
+        // 3. Propiedad dada de baja
+        lista.add(new ActividadAdmin(
+                "act_3",
+                "Penthouse Torre Altagracia",
+                ActividadAdmin.TipoActividad.DADA_DE_BAJA,
+                "Ayer, 18:30 hs",
+                "$1,750,000 USD",
+                "• Retirada de catálogo (Pausada)"
+        ));
+
+        // 4. Cambio de precio
+        lista.add(new ActividadAdmin(
+                "act_4",
+                "Villa Los Laureles - Santa Elena",
+                ActividadAdmin.TipoActividad.CAMBIO_PRECIO,
+                "19 Oct, 11:10 hs",
+                "$850,000 USD",
+                "• Antes $890,000 USD (Ajuste comercial)"
+        ));
+
+        // 5. Nueva propiedad subida
+        lista.add(new ActividadAdmin(
+                "act_5",
+                "Casa Moderna Santa Elena",
+                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
+                "18 Oct, 16:45 hs",
+                "$620,000 USD",
+                "• Publicación activa para visitas"
+        ));
+
+        // 6. Propiedad dada de baja
+        lista.add(new ActividadAdmin(
+                "act_6",
+                "Terreno Campestre San José",
+                ActividadAdmin.TipoActividad.DADA_DE_BAJA,
+                "17 Oct, 10:15 hs",
+                "$310,000 USD",
+                "• Baja por contrato finalizado"
+        ));
+
+        return lista;
     }
 }
