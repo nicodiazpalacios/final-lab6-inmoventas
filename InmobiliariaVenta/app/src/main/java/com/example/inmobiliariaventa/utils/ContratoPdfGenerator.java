@@ -71,6 +71,19 @@ public class ContratoPdfGenerator {
             return;
         }
 
+        String cliente = contrato.getNombreCompletoCliente();
+        String prop = contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "";
+        mostrarVisorArchivoPdf(
+                context,
+                pdfFile,
+                "Detalle de Contrato - " + prop,
+                "Hola " + cliente + ", te compartimos el documento PDF con los detalles del contrato inmobiliario de \"" + prop + "\"."
+        );
+    }
+
+    public static void mostrarVisorArchivoPdf(Context context, File pdfFile, String shareSubject, String shareText) {
+        if (context == null || pdfFile == null || !pdfFile.exists()) return;
+
         Dialog viewerDialog = new Dialog(context, android.R.style.Theme_Material_Light_NoActionBar);
         viewerDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_visor_pdf_contrato, null);
@@ -151,11 +164,11 @@ public class ContratoPdfGenerator {
         }
 
         if (btnImprimir != null) {
-            btnImprimir.setOnClickListener(v -> imprimirPdf(context, pdfFile, contrato));
+            btnImprimir.setOnClickListener(v -> imprimirPdf(context, pdfFile, null));
         }
 
         if (btnCompartir != null) {
-            btnCompartir.setOnClickListener(v -> compartirPdf(context, pdfFile, contrato));
+            btnCompartir.setOnClickListener(v -> compartirArchivo(context, pdfFile, "application/pdf", shareSubject, shareText));
         }
 
         viewerDialog.show();
@@ -626,29 +639,272 @@ public class ContratoPdfGenerator {
     }
 
     public static void compartirPdf(Context context, File pdfFile, Contrato contrato) {
-        if (context == null || pdfFile == null || !pdfFile.exists()) return;
+        String cliente = contrato != null ? contrato.getNombreCompletoCliente() : "";
+        String prop = contrato != null && contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "";
+        compartirArchivo(
+                context,
+                pdfFile,
+                "application/pdf",
+                "Detalle de Contrato - " + prop,
+                "Hola " + cliente + ", te compartimos el documento PDF con los detalles del contrato inmobiliario de \"" + prop + "\"."
+        );
+    }
+
+    public static void compartirArchivo(Context context, File file, String mimeType, String subject, String text) {
+        if (context == null || file == null || !file.exists()) return;
         try {
             Uri uri = FileProvider.getUriForFile(
                     context,
                     context.getPackageName() + ".fileprovider",
-                    pdfFile
+                    file
             );
 
-            String cliente = contrato != null ? contrato.getNombreCompletoCliente() : "";
-            String prop = contrato != null && contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "";
-
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("application/pdf");
+            shareIntent.setType(mimeType != null ? mimeType : "application/pdf");
             shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Detalle de Contrato - " + prop);
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Hola " + cliente + ", te compartimos el documento PDF con los detalles del contrato inmobiliario de \"" + prop + "\".");
+            if (subject != null) shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+            if (text != null) shareIntent.putExtra(Intent.EXTRA_TEXT, text);
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            Intent chooser = Intent.createChooser(shareIntent, "Compartir PDF del contrato");
+            Intent chooser = Intent.createChooser(shareIntent, "Compartir documento");
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(chooser);
         } catch (Exception e) {
-            Toast.makeText(context, "No se pudo abrir el menú para compartir el PDF", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "No se pudo abrir el menú para compartir", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public static void mostrarReporteVentasPdf(Context context, String periodoLabel, java.util.List<Contrato> contratos,
+                                               double totalVentas, int totalVendidas, int totalClientes) {
+        if (context == null) return;
+        File pdfFile = generarReporteVentasPdf(context, periodoLabel, contratos, totalVentas, totalVendidas, totalClientes);
+        if (pdfFile == null || !pdfFile.exists()) {
+            Toast.makeText(context, "No se pudo generar el reporte PDF de ventas", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mostrarVisorArchivoPdf(
+                context,
+                pdfFile,
+                "Reporte Consolidado de Ventas - " + periodoLabel,
+                "Adjuntamos el Reporte Consolidado de Ventas del período: " + periodoLabel + "."
+        );
+    }
+
+    private static File generarReporteVentasPdf(Context context, String periodoLabel, java.util.List<Contrato> contratos,
+                                                double totalVentas, int totalVendidas, int totalClientes) {
+        EmpresaRepository empresaRepo = new EmpresaRepository(context);
+        String nombreEmpresa = empresaRepo.getNombreEmpresaInmediato();
+        String telefonoEmpresa = empresaRepo.getTelefonoWhatsappInmediato();
+        String emailEmpresa = empresaRepo.getEmailInmediato();
+        String direccionEmpresa = empresaRepo.getDireccionInmediata();
+
+        NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.US);
+        currencyFormat.setMaximumFractionDigits(0);
+
+        PdfDocument pdfDocument = new PdfDocument();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        int contentWidth = PAGE_WIDTH - (MARGIN * 2);
+        float y = MARGIN;
+
+        // 1. Header Banner
+        paint.setColor(Color.parseColor("#00164E"));
+        RectF headerRect = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 84);
+        canvas.drawRoundRect(headerRect, 12f, 12f, paint);
+
+        paint.setColor(Color.WHITE);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextSize(18f);
+        canvas.drawText(nombreEmpresa != null ? nombreEmpresa.toUpperCase(Locale.ROOT) : "INMOBILIARIA VENTA", MARGIN + 20, y + 32, paint);
+
+        paint.setColor(Color.parseColor("#B6C4FF"));
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        paint.setTextSize(10.5f);
+        canvas.drawText("REPORTE CONSOLIDADO DE VENTAS Y OPERACIONES", MARGIN + 20, y + 50, paint);
+
+        String contactoEmpresa = (direccionEmpresa != null ? direccionEmpresa : "")
+                + (telefonoEmpresa != null && !telefonoEmpresa.isEmpty() ? "  |  Tel: " + telefonoEmpresa : "")
+                + (emailEmpresa != null && !emailEmpresa.isEmpty() ? "  |  " + emailEmpresa : "");
+        paint.setTextSize(9f);
+        paint.setColor(Color.parseColor("#DCE1FF"));
+        canvas.drawText(contactoEmpresa, MARGIN + 20, y + 68, paint);
+
+        y += 104;
+
+        // 2. Meta Bar: Período y Fecha de Emisión
+        String fechaEmision = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date());
+        paint.setColor(Color.parseColor("#F3F4F9"));
+        RectF metaRect = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 34);
+        canvas.drawRoundRect(metaRect, 8f, 8f, paint);
+
+        paint.setColor(Color.parseColor("#1A1B21"));
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextSize(10f);
+        canvas.drawText("PERÍODO: " + (periodoLabel != null ? periodoLabel.toUpperCase(Locale.ROOT) : "GENERAL")
+                + "   •   EMISIÓN: " + fechaEmision, MARGIN + 14, y + 21, paint);
+
+        y += 50;
+
+        // 3. Resumen Ejecutivo (3 KPIs)
+        y = drawSectionHeader(canvas, paint, "1. RESUMEN EJECUTIVO DEL PERÍODO", y);
+
+        paint.setColor(Color.parseColor("#F8F9FF"));
+        RectF kpiBox = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 64);
+        canvas.drawRoundRect(kpiBox, 8f, 8f, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1f);
+        paint.setColor(Color.parseColor("#C4C9D6"));
+        canvas.drawRoundRect(kpiBox, 8f, 8f, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        int col1 = MARGIN + 16;
+        int col2 = MARGIN + (contentWidth / 3) + 12;
+        int col3 = MARGIN + ((contentWidth * 2) / 3) + 12;
+
+        drawLabelValueHighlight(canvas, paint, "Volumen Total de Ventas:", "$ " + currencyFormat.format(totalVentas), col1, y + 24);
+        drawLabelValueHighlight(canvas, paint, "Propiedades Vendidas:", String.valueOf(totalVendidas), col2, y + 24);
+        drawLabelValueHighlight(canvas, paint, "Clientes con Contrato:", String.valueOf(totalClientes), col3, y + 24);
+
+        y += 84;
+
+        // 4. Tabla de Operaciones
+        y = drawSectionHeader(canvas, paint, "2. DETALLE DE OPERACIONES INMOBILIARIAS", y);
+
+        // Table Header
+        paint.setColor(Color.parseColor("#00164E"));
+        RectF thRect = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 26);
+        canvas.drawRoundRect(thRect, 6f, 6f, paint);
+
+        paint.setColor(Color.WHITE);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextSize(9f);
+        canvas.drawText("FECHA", MARGIN + 10, y + 16, paint);
+        canvas.drawText("PROPIEDAD / UNIDAD", MARGIN + 72, y + 16, paint);
+        canvas.drawText("COMPRADOR", MARGIN + 240, y + 16, paint);
+        canvas.drawText("MODALIDAD", MARGIN + 355, y + 16, paint);
+        canvas.drawText("MONTO", PAGE_WIDTH - MARGIN - 75, y + 16, paint);
+
+        y += 30;
+
+        if (contratos == null || contratos.isEmpty()) {
+            paint.setColor(Color.parseColor("#74777F"));
+            paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+            paint.setTextSize(10f);
+            canvas.drawText("No se registran operaciones en el período seleccionado.", MARGIN + 12, y + 24, paint);
+        } else {
+            int maxRows = Math.min(contratos.size(), 15);
+            for (int i = 0; i < maxRows; i++) {
+                Contrato c = contratos.get(i);
+                if (i % 2 == 1) {
+                    paint.setColor(Color.parseColor("#F8F9FC"));
+                    canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 26, paint);
+                }
+
+                String fecha = c.fechaInicio != null && !c.fechaInicio.isEmpty() ? c.fechaInicio : "-";
+                String prop = c.propiedadTitulo != null && !c.propiedadTitulo.isEmpty() ? c.propiedadTitulo : c.propiedadId;
+                String cliente = c.getNombreCompletoCliente();
+                String metodo = c.metodoPago != null ? c.metodoPago : "Efectivo";
+                if ("Crédito".equalsIgnoreCase(metodo) && c.cuotas != null && c.cuotas > 1) {
+                    metodo = c.cuotas + " cuotas";
+                }
+                double m = c.montoTotal != null ? c.montoTotal : 0.0;
+
+                paint.setColor(Color.parseColor("#1A1B21"));
+                paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+                paint.setTextSize(9f);
+                canvas.drawText(truncateText(paint, fecha, 56f), MARGIN + 10, y + 17, paint);
+                canvas.drawText(truncateText(paint, prop, 160f), MARGIN + 72, y + 17, paint);
+                canvas.drawText(truncateText(paint, cliente, 108f), MARGIN + 240, y + 17, paint);
+                canvas.drawText(truncateText(paint, metodo, 68f), MARGIN + 355, y + 17, paint);
+
+                paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+                paint.setColor(Color.parseColor("#00164E"));
+                canvas.drawText("$ " + currencyFormat.format(m), PAGE_WIDTH - MARGIN - 75, y + 17, paint);
+
+                paint.setColor(Color.parseColor("#E6E8EE"));
+                canvas.drawLine(MARGIN, y + 26, PAGE_WIDTH - MARGIN, y + 26, paint);
+                y += 26;
+            }
+        }
+
+        // Footer
+        paint.setTextSize(8.5f);
+        paint.setColor(Color.parseColor("#8E9199"));
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("Reporte generado desde el sistema de gestión " + (nombreEmpresa != null ? nombreEmpresa : "Inmobiliaria Venta") + ".", PAGE_WIDTH / 2f, PAGE_HEIGHT - 24, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        pdfDocument.finishPage(page);
+
+        try {
+            File pdfDir = new File(context.getCacheDir(), "contratos_pdf");
+            if (!pdfDir.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                pdfDir.mkdirs();
+            }
+            File outFile = new File(pdfDir, "Reporte_Ventas.pdf");
+            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                pdfDocument.writeTo(fos);
+            }
+            pdfDocument.close();
+            return outFile;
+        } catch (Exception e) {
+            pdfDocument.close();
+            return null;
+        }
+    }
+
+    public static void exportarReporteVentasCsv(Context context, String periodoLabel, java.util.List<Contrato> contratos) {
+        if (context == null) return;
+        try {
+            File dir = new File(context.getCacheDir(), "contratos_pdf");
+            if (!dir.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                dir.mkdirs();
+            }
+            File csvFile = new File(dir, "Reporte_Ventas.csv");
+            StringBuilder sb = new StringBuilder();
+            // UTF-8 BOM para que Excel en Windows abra los acentos perfectamente
+            sb.append('\uFEFF');
+            sb.append("Fecha,Propiedad,Cliente,DNI,Telefono,Email,Metodo de Pago,Cuotas,Monto Total,Senia,Estado\n");
+            if (contratos != null) {
+                for (Contrato c : contratos) {
+                    sb.append(escapeCsv(c.fechaInicio)).append(',')
+                      .append(escapeCsv(c.propiedadTitulo != null && !c.propiedadTitulo.isEmpty() ? c.propiedadTitulo : c.propiedadId)).append(',')
+                      .append(escapeCsv(c.getNombreCompletoCliente())).append(',')
+                      .append(escapeCsv(c.clienteDni)).append(',')
+                      .append(escapeCsv(c.clienteTelefono)).append(',')
+                      .append(escapeCsv(c.clienteEmail)).append(',')
+                      .append(escapeCsv(c.metodoPago)).append(',')
+                      .append(c.cuotas != null ? c.cuotas : 1).append(',')
+                      .append(c.montoTotal != null ? c.montoTotal.longValue() : 0).append(',')
+                      .append(c.seniaMonto != null ? c.seniaMonto.longValue() : 0).append(',')
+                      .append(escapeCsv(c.estado)).append('\n');
+                }
+            }
+            try (FileOutputStream fos = new FileOutputStream(csvFile)) {
+                fos.write(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            guardarEnDescargas(context, csvFile);
+            Toast.makeText(context, "Guardado en Descargas: Reporte_Ventas.csv", Toast.LENGTH_SHORT).show();
+            compartirArchivo(
+                    context,
+                    csvFile,
+                    "text/csv",
+                    "Reporte de Ventas Excel (CSV) - " + periodoLabel,
+                    "Adjuntamos la planilla CSV compatible con Excel de las ventas del período: " + periodoLabel
+            );
+        } catch (Exception e) {
+            Toast.makeText(context, "No se pudo exportar el archivo CSV", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static String escapeCsv(String val) {
+        if (val == null) return "\"\"";
+        return "\"" + val.replace("\"", "\"\"") + "\"";
     }
 }
