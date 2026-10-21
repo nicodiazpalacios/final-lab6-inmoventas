@@ -508,7 +508,6 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="14dp"
                         android:hint="Descripción Adicional"
                         app:boxCornerRadiusBottomEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
@@ -524,22 +523,6 @@
                             android:lines="4"
                             android:minLines="3" />
                     </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- Adjuntar PDF del Contrato -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_adjuntar_pdf"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:text="Adjuntar PDF del contrato (opcional)"
-                        android:textAllCaps="false"
-                        android:textColor="@color/colorPrimary"
-                        android:textSize="13sp"
-                        app:cornerRadius="12dp"
-                        app:icon="@drawable/ic_contratos"
-                        app:iconGravity="textStart"
-                        app:iconTint="@color/colorPrimary"
-                        app:strokeColor="@color/colorOutlineVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -691,34 +674,6 @@
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Notice Banner -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:background="@drawable/bg_rounded_corner"
-                        android:backgroundTint="#26FFFFFF"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="12dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_info"
-                            app:tint="@color/colorSecondaryFixedDim" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:layout_weight="1"
-                            android:lineSpacingExtra="2dp"
-                            android:text="Una vez guardado, el contrato se enviará automáticamente para la firma electrónica del cliente."
-                            android:textColor="#E3E1E9"
-                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

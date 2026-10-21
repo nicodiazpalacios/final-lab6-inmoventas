@@ -22,6 +22,7 @@ import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.google.android.material.button.MaterialButton;
@@ -148,6 +149,60 @@ public class AdminContratosFragment extends Fragment {
             }
             renderContractsList();
         });
+        sincronizarContratosConSupabase();
+    }
+
+    private void sincronizarContratosConSupabase() {
+        if (getActivity() == null) return;
+        android.app.Application appContext = requireActivity().getApplication();
+        AppDatabase db = AppDatabase.getInstance(appContext);
+
+        // 1. Subir todos los contratos locales a Supabase (upsert) para asegurar que ninguno quede solo local
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<Contrato> locales = db.contratoDao().obtenerTodosSync();
+            if (locales != null) {
+                for (Contrato local : locales) {
+                    SupabaseClient.guardarContrato(local, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            AppDatabase.databaseWriteExecutor.execute(() -> {
+                                local.estadoSincronizacion = "SINCRONIZADO";
+                                db.contratoDao().insertar(local);
+                            });
+                        }
+
+                        @Override
+                        public void onError(Exception e) { }
+                    });
+                }
+            }
+        });
+
+        // 2. Descargar contratos desde Supabase y actualizar Room
+        SupabaseClient.obtenerContratos(new SupabaseClient.SupabaseCallback<List<Contrato>>() {
+            @Override
+            public void onSuccess(List<Contrato> remotos) {
+                if (remotos == null || remotos.isEmpty()) return;
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    List<com.example.inmobiliariaventa.domain.entity.Propiedad> todasProps = db.propiedadDao().obtenerTodasSync();
+                    for (Contrato c : remotos) {
+                        if ((c.propiedadTitulo == null || c.propiedadTitulo.isEmpty())
+                                && c.propiedadId != null && todasProps != null) {
+                            for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todasProps) {
+                                if (c.propiedadId.equals(p.id) && p.titulo != null) {
+                                    c.propiedadTitulo = p.titulo;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    db.contratoDao().insertarTodos(remotos);
+                });
+            }
+
+            @Override
+            public void onError(Exception e) { }
+        });
     }
 
     private void sincronizarPropiedadesPausadasPorContratos(List<Contrato> contratos) {
@@ -268,6 +323,7 @@ public class AdminContratosFragment extends Fragment {
             TextView tvLabelVencimiento = cardView.findViewById(R.id.tv_label_vencimiento);
             TextView tvVencimiento = cardView.findViewById(R.id.tv_vencimiento);
             TextView tvPlan = cardView.findViewById(R.id.tv_plan);
+            MaterialButton btnPdf = cardView.findViewById(R.id.btn_pdf);
             MaterialButton btnModificar = cardView.findViewById(R.id.btn_modificar);
             MaterialButton btnBaja = cardView.findViewById(R.id.btn_baja);
 
@@ -306,6 +362,12 @@ public class AdminContratosFragment extends Fragment {
             final String finalClienteName = clienteFullName;
             final String finalPropiedadName = propiedadName;
             final String finalMonto = montoFormatted;
+
+            if (btnPdf != null) {
+                btnPdf.setOnClickListener(v ->
+                        com.example.inmobiliariaventa.utils.ContratoPdfGenerator.mostrarDialogoExportarPdf(requireContext(), contrato)
+                );
+            }
 
             btnModificar.setOnClickListener(v -> {
                 Bundle args = new Bundle();
@@ -383,11 +445,27 @@ public class AdminContratosFragment extends Fragment {
 
     private void darDeBajaContrato(Contrato contrato) {
         contrato.estado = "Cancelado";
+        contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
         if (getActivity() == null) return;
         android.app.Application appContext = requireActivity().getApplication();
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(appContext);
             db.contratoDao().actualizar(contrato);
+
+            SupabaseClient.guardarContrato(contrato, new SupabaseClient.SupabaseCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        contrato.estadoSincronizacion = "SINCRONIZADO";
+                        db.contratoDao().actualizar(contrato);
+                    });
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    SupabaseClient.actualizarEstadoContrato(contrato.id, "Cancelado", null);
+                }
+            });
 
             List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
             List<Contrato> todosContratos = db.contratoDao().obtenerTodosSync();

@@ -28,6 +28,7 @@ import androidx.navigation.Navigation;
 import com.bumptech.glide.Glide;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
@@ -64,7 +65,6 @@ public class AdminAgregarContratoFragment extends Fragment {
     private AutoCompleteTextView etProperty, actvPaymentMethod, actvStatus;
     private TextInputEditText etAmount, etInstallments, etDownPayment, etStartDate, etEndDate, etDescription;
     private View layoutFinanciacion;
-    private MaterialButton btnAdjuntarPdf;
 
     // Preview
     private TextView tvPreviewAmount, tvPreviewProp, tvPreviewMethod, tvPreviewInstallments, tvReferencePropertyTitle;
@@ -83,17 +83,6 @@ public class AdminAgregarContratoFragment extends Fragment {
     private String editingContratoId = null;
     private Contrato contratoEnEdicion = null;
     private boolean isPopulatingEditData = false;
-
-    private final ActivityResultLauncher<String> pdfPickerLauncher =
-            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
-                if (uri != null) {
-                    attachedPdfUriStr = uri.toString();
-                    String fileName = obtenerNombreArchivo(uri);
-                    if (btnAdjuntarPdf != null) {
-                        btnAdjuntarPdf.setText("PDF adjunto: " + fileName);
-                    }
-                }
-            });
 
     public AdminAgregarContratoFragment() {
         // Required empty public constructor
@@ -158,7 +147,6 @@ public class AdminAgregarContratoFragment extends Fragment {
         actvStatus = view.findViewById(R.id.actv_status);
         tilDescription = view.findViewById(R.id.til_description);
         etDescription = view.findViewById(R.id.et_description);
-        btnAdjuntarPdf = view.findViewById(R.id.btn_adjuntar_pdf);
 
         // Live preview
         tvPreviewAmount = view.findViewById(R.id.tv_preview_amount);
@@ -409,9 +397,6 @@ public class AdminAgregarContratoFragment extends Fragment {
 
         if (c.rutaLocalPdf != null && !c.rutaLocalPdf.isEmpty()) {
             attachedPdfUriStr = c.rutaLocalPdf;
-            if (btnAdjuntarPdf != null) {
-                btnAdjuntarPdf.setText("PDF adjunto vinculado");
-            }
         }
 
         isPopulatingEditData = false;
@@ -632,31 +617,9 @@ public class AdminAgregarContratoFragment extends Fragment {
         if (btnCancelar != null) {
             btnCancelar.setOnClickListener(goBackListener);
         }
-        if (btnAdjuntarPdf != null) {
-            btnAdjuntarPdf.setOnClickListener(v -> pdfPickerLauncher.launch("application/pdf"));
-        }
         if (btnGuardarContrato != null) {
             btnGuardarContrato.setOnClickListener(v -> handleGuardarContrato(root));
         }
-    }
-
-    private String obtenerNombreArchivo(Uri uri) {
-        if (getContext() == null) return "contrato.pdf";
-        String result = null;
-        if ("content".equals(uri.getScheme())) {
-            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    if (idx >= 0) {
-                        result = cursor.getString(idx);
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-        if (result == null) {
-            result = uri.getLastPathSegment();
-        }
-        return result != null ? result : "contrato.pdf";
     }
 
     private void handleGuardarContrato(View root) {
@@ -830,10 +793,25 @@ public class AdminAgregarContratoFragment extends Fragment {
 
         android.app.Application appContext = requireActivity().getApplication();
 
-        // Guardar en Room Database y sincronizar estado de la propiedad anterior (si cambió) y la actual
+        // Guardar en Room Database y sincronizar con Supabase y con el estado de la propiedad
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(appContext);
             db.contratoDao().insertar(contratoGuardado);
+
+            SupabaseClient.guardarContrato(contratoGuardado, new SupabaseClient.SupabaseCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        contratoGuardado.estadoSincronizacion = "SINCRONIZADO";
+                        db.contratoDao().insertar(contratoGuardado);
+                    });
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    // Queda como PENDIENTE_SUBIR en Room para sincronizar automáticamente después
+                }
+            });
 
             List<Propiedad> todasProps = db.propiedadDao().obtenerTodasSync();
             List<Contrato> todosContratos = db.contratoDao().obtenerTodosSync();

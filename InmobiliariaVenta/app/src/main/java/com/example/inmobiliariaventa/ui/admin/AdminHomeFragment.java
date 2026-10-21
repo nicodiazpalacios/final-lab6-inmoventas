@@ -129,6 +129,19 @@ public class AdminHomeFragment extends Fragment {
             cardContratos.setOnClickListener(v -> {
                 Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_contratos);
             });
+            if (getContext() != null) {
+                android.content.Context appCtx = requireContext().getApplicationContext();
+                com.example.inmobiliariaventa.data.local.AppDatabase.databaseWriteExecutor.execute(() -> {
+                    com.example.inmobiliariaventa.data.local.AppDatabase db =
+                            com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(appCtx);
+                    List<com.example.inmobiliariaventa.domain.entity.Contrato> locales = db.contratoDao().obtenerTodosSync();
+                    if (locales != null) {
+                        for (com.example.inmobiliariaventa.domain.entity.Contrato local : locales) {
+                            com.example.inmobiliariaventa.data.remote.SupabaseClient.guardarContrato(local, null);
+                        }
+                    }
+                });
+            }
         }
 
         // 7. Cabecera Botón de Notificaciones

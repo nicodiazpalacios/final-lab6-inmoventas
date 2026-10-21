@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
+import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
@@ -794,6 +795,174 @@ public class SupabaseClient {
                 } else {
                     String msg = "HTTP " + response.code();
                     if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    // ==========================================
+    // CONTRATOS
+    // ==========================================
+
+    public static void obtenerContratos(SupabaseCallback<List<Contrato>> callback) {
+        Request request = buildBaseRequest("/rest/v1/contratos?select=*&order=created_at.desc").build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al obtener contratos desde Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String errorMsg = "HTTP Error " + response.code() + ": " + (response.body() != null ? response.body().string() : "");
+                    Log.e(TAG, "Error al obtener contratos de Supabase: " + errorMsg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorMsg)));
+                    return;
+                }
+                try {
+                    String body = response.body() != null ? response.body().string() : "[]";
+                    Type listType = new TypeToken<List<Contrato>>() {}.getType();
+                    List<Contrato> lista = gson.fromJson(body, listType);
+                    if (lista != null) {
+                        for (Contrato c : lista) {
+                            c.normalizarDesdeSupabase();
+                        }
+                    }
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(lista));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al deserializar contratos de Supabase: " + e.getMessage(), e);
+                    if (callback != null) mainHandler.post(() -> callback.onError(e));
+                }
+            }
+        });
+    }
+
+    private static JsonObject buildContratoPayload(Contrato contrato, boolean includePropiedadId) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", contrato.id != null && !contrato.id.isEmpty() ? contrato.id : UUID.randomUUID().toString());
+
+        boolean propIdPareceValido = includePropiedadId
+                && contrato.propiedadId != null
+                && !contrato.propiedadId.trim().isEmpty()
+                && (contrato.propiedadTitulo == null || !contrato.propiedadId.trim().equalsIgnoreCase(contrato.propiedadTitulo.trim()));
+
+        if (propIdPareceValido) {
+            json.addProperty("propiedadid", contrato.propiedadId.trim());
+        } else {
+            json.add("propiedadid", com.google.gson.JsonNull.INSTANCE);
+        }
+
+        // clienteid tiene FK a usuarios(id); enviamos null para clientes ingresados en el contrato
+        json.add("clienteid", com.google.gson.JsonNull.INSTANCE);
+
+        json.addProperty("clientenombre", contrato.clienteNombre != null ? contrato.clienteNombre : "");
+        json.addProperty("clienteapellido", contrato.clienteApellido != null ? contrato.clienteApellido : "");
+        json.addProperty("clientedni", contrato.clienteDni != null ? contrato.clienteDni : "");
+        json.addProperty("clienteemail", contrato.clienteEmail != null ? contrato.clienteEmail : "");
+        json.addProperty("montototal", contrato.montoTotal != null ? contrato.montoTotal : 0.0);
+        json.addProperty("metodopago", contrato.metodoPago != null ? contrato.metodoPago : "Efectivo");
+        json.addProperty("cuotas", contrato.cuotas != null ? contrato.cuotas : 1);
+        json.addProperty("fechainicio", contrato.fechaInicio != null ? contrato.fechaInicio : "");
+        json.addProperty("fechaventa", contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
+                ? contrato.fechaVencimiento
+                : (contrato.fechaInicio != null ? contrato.fechaInicio : ""));
+        json.addProperty("estado", contrato.estado != null ? contrato.estado : "Activo");
+        json.addProperty("descripcion", contrato.descripcion != null ? contrato.descripcion : "");
+        if (contrato.rutaLocalPdf != null && !contrato.rutaLocalPdf.isEmpty()) {
+            json.addProperty("rutalocalpdf", contrato.rutaLocalPdf);
+        } else {
+            json.add("rutalocalpdf", com.google.gson.JsonNull.INSTANCE);
+        }
+
+        // Empaquetar campos adicionales (teléfono, seña, título de propiedad y vencimiento) en urlnubepdf
+        JsonObject meta = new JsonObject();
+        meta.addProperty("telefono", contrato.clienteTelefono != null ? contrato.clienteTelefono : "");
+        meta.addProperty("seniaMonto", contrato.seniaMonto != null ? contrato.seniaMonto : 0.0);
+        meta.addProperty("propiedadTitulo", contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "");
+        meta.addProperty("fechaVencimiento", contrato.fechaVencimiento != null ? contrato.fechaVencimiento : "");
+        meta.addProperty("timestamp", contrato.timestamp > 0 ? contrato.timestamp : System.currentTimeMillis());
+        json.addProperty("urlnubepdf", meta.toString());
+
+        return json;
+    }
+
+    public static void guardarContrato(Contrato contrato, SupabaseCallback<Boolean> callback) {
+        if (contrato == null) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("Contrato nulo")));
+            return;
+        }
+        enviarContratoInterno(contrato, true, callback);
+    }
+
+    private static void enviarContratoInterno(Contrato contrato, boolean includePropiedadId, SupabaseCallback<Boolean> callback) {
+        JsonObject json = buildContratoPayload(contrato, includePropiedadId);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        // Usamos resolution=merge-duplicates para que sirva tanto al crear como al modificar un contrato
+        Request request = buildBaseRequest("/rest/v1/contratos")
+                .header("Prefer", "resolution=merge-duplicates,return=minimal")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al guardar contrato en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Contrato guardado/actualizado en Supabase exitosamente: " + contrato.id);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    if (includePropiedadId && errorBody.contains("23503")) {
+                        // Si la propiedad era solo local y no existe en la tabla remota propiedades, reintentar con propiedadid = null
+                        enviarContratoInterno(contrato, false, callback);
+                        return;
+                    }
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al guardar contrato en Supabase: " + msg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    public static void actualizarEstadoContrato(String contratoId, String nuevoEstado, SupabaseCallback<Boolean> callback) {
+        if (contratoId == null || contratoId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("ID inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("estado", nuevoEstado);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/contratos?id=eq." + contratoId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar estado de contrato en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Estado de contrato actualizado en Supabase: " + contratoId + " -> " + nuevoEstado);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code())));
                 }
             }
         });
