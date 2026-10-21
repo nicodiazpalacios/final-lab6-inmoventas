@@ -98,17 +98,8 @@ public class AdminPropiedadAdapter extends RecyclerView.Adapter<AdminPropiedadAd
             holder.ivFoto.setImageResource(android.R.drawable.ic_menu_gallery);
         }
 
-        // Estado y Slide Switch
-        boolean isPausado = false;
-        boolean isFinalizado = false;
-        if (prop.estado != null) {
-            String est = prop.estado.trim();
-            if (est.equalsIgnoreCase("Pausado") || est.equalsIgnoreCase("PAUSADO") || est.equalsIgnoreCase("PAUSADA") || est.equalsIgnoreCase("NO_VISIBLE") || est.equalsIgnoreCase("Inactivo")) {
-                isPausado = true;
-            } else if (est.equalsIgnoreCase("Finalizado") || est.equalsIgnoreCase("VENDIDA") || est.equalsIgnoreCase("Vendido") || est.equalsIgnoreCase("FINALIZADO")) {
-                isFinalizado = true;
-            }
-        }
+        // Estado y Slide Switch (Publicado o Pausado)
+        boolean isPausado = prop.isPausada();
 
         // Evitar disparo indeseado del listener durante el reciclaje
         holder.switchVisibilidad.setOnCheckedChangeListener(null);
@@ -117,10 +108,6 @@ public class AdminPropiedadAdapter extends RecyclerView.Adapter<AdminPropiedadAd
             holder.switchVisibilidad.setChecked(false);
             holder.cardBadge.setCardBackgroundColor(Color.parseColor("#BA1A1A"));
             holder.tvBadge.setText("Pausado");
-        } else if (isFinalizado) {
-            holder.switchVisibilidad.setChecked(false);
-            holder.cardBadge.setCardBackgroundColor(Color.parseColor("#49454F"));
-            holder.tvBadge.setText("Finalizado");
         } else {
             holder.switchVisibilidad.setChecked(true);
             holder.cardBadge.setCardBackgroundColor(Color.parseColor("#006C49"));

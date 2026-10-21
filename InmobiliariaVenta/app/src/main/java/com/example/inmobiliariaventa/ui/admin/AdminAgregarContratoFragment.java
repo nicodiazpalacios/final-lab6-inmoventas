@@ -77,6 +77,7 @@ public class AdminAgregarContratoFragment extends Fragment {
 
     // Estado interno
     private final Map<String, Propiedad> mapaPropiedades = new HashMap<>();
+    private final List<Contrato> listaContratosExistentes = new ArrayList<>();
     private Long selectedStartDateMillis = null;
     private String attachedPdfUriStr = null;
     private String editingContratoId = null;
@@ -255,7 +256,18 @@ public class AdminAgregarContratoFragment extends Fragment {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(requireContext());
             List<Propiedad> propiedades = db.propiedadDao().obtenerTodasSync();
-            List<String> titulos = new ArrayList<>();
+            List<Contrato> contratos = db.contratoDao().obtenerTodosSync();
+
+            listaContratosExistentes.clear();
+            if (contratos != null) {
+                listaContratosExistentes.addAll(contratos);
+            }
+
+            if (editingContratoId != null && !editingContratoId.isEmpty()) {
+                contratoEnEdicion = db.contratoDao().obtenerPorIdSync(editingContratoId);
+            }
+
+            List<String> titulosDisponibles = new ArrayList<>();
             mapaPropiedades.clear();
 
             if (propiedades != null) {
@@ -263,15 +275,14 @@ public class AdminAgregarContratoFragment extends Fragment {
                     if (p.titulo != null && !p.titulo.trim().isEmpty()) {
                         String t = p.titulo.trim();
                         if (!mapaPropiedades.containsKey(t)) {
-                            titulos.add(t);
                             mapaPropiedades.put(t, p);
+                            Contrato ocupadoPorOtro = buscarOtroContratoVigente(p, editingContratoId);
+                            if (ocupadoPorOtro == null) {
+                                titulosDisponibles.add(t);
+                            }
                         }
                     }
                 }
-            }
-
-            if (editingContratoId != null && !editingContratoId.isEmpty()) {
-                contratoEnEdicion = db.contratoDao().obtenerPorIdSync(editingContratoId);
             }
 
             if (getActivity() != null) {
@@ -280,11 +291,13 @@ public class AdminAgregarContratoFragment extends Fragment {
                     ArrayAdapter<String> propAdapter = new ArrayAdapter<>(
                             requireContext(),
                             android.R.layout.simple_dropdown_item_1line,
-                            titulos
+                            titulosDisponibles
                     );
                     etProperty.setAdapter(propAdapter);
+                    etProperty.setOnClickListener(v -> etProperty.showDropDown());
                     etProperty.setOnItemClickListener((parent, view, position, id) -> {
                         String seleccion = (String) parent.getItemAtPosition(position);
+                        tilProperty.setError(null);
                         aplicarPropiedadSeleccionada(seleccion, true);
                     });
 
@@ -294,6 +307,41 @@ public class AdminAgregarContratoFragment extends Fragment {
                 });
             }
         });
+    }
+
+    private Propiedad buscarPropiedadEnCatalogo(String texto) {
+        if (texto == null || texto.trim().isEmpty()) return null;
+        String buscado = texto.trim();
+        if (mapaPropiedades.containsKey(buscado)) {
+            return mapaPropiedades.get(buscado);
+        }
+        for (Map.Entry<String, Propiedad> entry : mapaPropiedades.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(buscado)) {
+                return entry.getValue();
+            }
+            if (entry.getValue().id != null && entry.getValue().id.equals(buscado)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private Contrato buscarOtroContratoVigente(Propiedad prop, String excludeContratoId) {
+        if (prop == null) return null;
+        for (Contrato c : listaContratosExistentes) {
+            if (excludeContratoId != null && excludeContratoId.equals(c.id)) {
+                continue;
+            }
+            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(prop.id);
+                boolean matchTitulo = c.propiedadTitulo != null && prop.titulo != null
+                        && c.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
+                if (matchId || matchTitulo) {
+                    return c;
+                }
+            }
+        }
+        return null;
     }
 
     private void poblarDatosContrato(Contrato c) {
@@ -369,8 +417,23 @@ public class AdminAgregarContratoFragment extends Fragment {
         isPopulatingEditData = false;
     }
 
+    private boolean tieneContratoVigenteEnLista(Propiedad prop, List<Contrato> lista) {
+        if (prop == null || lista == null) return false;
+        for (Contrato c : lista) {
+            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(prop.id);
+                boolean matchTitulo = c.propiedadTitulo != null && prop.titulo != null
+                        && c.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
+                if (matchId || matchTitulo) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void aplicarPropiedadSeleccionada(String titulo, boolean actualizarMonto) {
-        Propiedad prop = mapaPropiedades.get(titulo);
+        Propiedad prop = buscarPropiedadEnCatalogo(titulo);
         if (prop != null) {
             if (actualizarMonto && prop.precio > 0 && etAmount != null) {
                 if (prop.precio == (long) prop.precio) {
@@ -698,6 +761,30 @@ public class AdminAgregarContratoFragment extends Fragment {
             endDate = startDate;
         }
 
+        String situacion = actvStatus != null && actvStatus.getText() != null && !actvStatus.getText().toString().isEmpty()
+                ? actvStatus.getText().toString().trim()
+                : "Activo";
+
+        boolean esEdicion = (contratoEnEdicion != null);
+        String contratoId = esEdicion ? contratoEnEdicion.id : UUID.randomUUID().toString();
+        long timestamp = esEdicion ? contratoEnEdicion.timestamp : System.currentTimeMillis();
+
+        // Validar que la propiedad exista en el catálogo y no tenga ya otro contrato Activo/Pendiente
+        Propiedad propSeleccionada = buscarPropiedadEnCatalogo(property);
+        if (!TextUtils.isEmpty(property)) {
+            if (propSeleccionada == null) {
+                tilProperty.setError("Seleccione una propiedad existente del catálogo");
+                hasError = true;
+            } else if ("Activo".equalsIgnoreCase(situacion) || "Pendiente".equalsIgnoreCase(situacion)) {
+                Contrato otroVigente = buscarOtroContratoVigente(propSeleccionada, contratoId);
+                if (otroVigente != null) {
+                    tilProperty.setError("Esta propiedad ya posee un contrato " + otroVigente.estado
+                            + " a nombre de " + otroVigente.getNombreCompletoCliente());
+                    hasError = true;
+                }
+            }
+        }
+
         if (hasError) {
             Toast.makeText(requireContext(), "Por favor, complete correctamente los campos obligatorios", Toast.LENGTH_SHORT).show();
             return;
@@ -710,13 +797,12 @@ public class AdminAgregarContratoFragment extends Fragment {
             } catch (NumberFormatException ignored) {}
         }
 
-        String situacion = actvStatus != null && actvStatus.getText() != null && !actvStatus.getText().toString().isEmpty()
-                ? actvStatus.getText().toString().trim()
-                : "Activo";
+        String tituloOficialPropiedad = propSeleccionada != null && propSeleccionada.titulo != null
+                ? propSeleccionada.titulo.trim()
+                : property;
 
-        boolean esEdicion = (contratoEnEdicion != null);
-        String contratoId = esEdicion ? contratoEnEdicion.id : UUID.randomUUID().toString();
-        long timestamp = esEdicion ? contratoEnEdicion.timestamp : System.currentTimeMillis();
+        final String oldPropId = esEdicion ? contratoEnEdicion.propiedadId : null;
+        final String oldPropTitulo = esEdicion ? contratoEnEdicion.propiedadTitulo : null;
 
         Contrato contratoGuardado = new Contrato(
                 contratoId,
@@ -725,7 +811,7 @@ public class AdminAgregarContratoFragment extends Fragment {
                 dni,
                 phone,
                 email,
-                property,
+                tituloOficialPropiedad,
                 montoTotal,
                 senia,
                 paymentMethod,
@@ -738,31 +824,48 @@ public class AdminAgregarContratoFragment extends Fragment {
                 timestamp
         );
 
-        Propiedad propSeleccionada = mapaPropiedades.get(property);
         if (propSeleccionada != null && propSeleccionada.id != null) {
             contratoGuardado.propiedadId = propSeleccionada.id;
         }
 
         android.app.Application appContext = requireActivity().getApplication();
 
-        // Guardar en Room Database y actualizar estado de la propiedad afectada según el estado del contrato
+        // Guardar en Room Database y sincronizar estado de la propiedad anterior (si cambió) y la actual
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(appContext);
             db.contratoDao().insertar(contratoGuardado);
 
-            Propiedad propAfectada = null;
-            if (contratoGuardado.propiedadId != null && !contratoGuardado.propiedadId.isEmpty()) {
-                propAfectada = db.propiedadDao().obtenerPorIdSync(contratoGuardado.propiedadId);
-            }
-            if (propAfectada == null) {
-                List<Propiedad> todas = db.propiedadDao().obtenerTodasSync();
-                if (todas != null) {
-                    for (Propiedad p : todas) {
-                        if (p.titulo != null && p.titulo.trim().equalsIgnoreCase(property)) {
-                            propAfectada = p;
-                            break;
+            List<Propiedad> todasProps = db.propiedadDao().obtenerTodasSync();
+            List<Contrato> todosContratos = db.contratoDao().obtenerTodosSync();
+            if (todasProps == null) return;
+
+            PropiedadRepositoryImpl repo = new PropiedadRepositoryImpl(appContext);
+
+            // 1. Si era una edición y se cambió de propiedad, liberar la propiedad anterior si no tiene otro contrato vigente
+            if (esEdicion && (oldPropId != null || oldPropTitulo != null)) {
+                boolean cambioPropiedad = (propSeleccionada == null)
+                        || (oldPropId != null && !oldPropId.equals(propSeleccionada.id)
+                            && (oldPropTitulo == null || !oldPropTitulo.trim().equalsIgnoreCase(tituloOficialPropiedad)));
+                if (cambioPropiedad) {
+                    for (Propiedad p : todasProps) {
+                        boolean eraLaAnterior = (oldPropId != null && oldPropId.equals(p.id))
+                                || (oldPropTitulo != null && p.titulo != null && oldPropTitulo.trim().equalsIgnoreCase(p.titulo.trim()));
+                        if (eraLaAnterior && p.isPausada() && !tieneContratoVigenteEnLista(p, todosContratos)) {
+                            p.estado = "Publicado";
+                            repo.update(p);
                         }
                     }
+                }
+            }
+
+            // 2. Actualizar la propiedad afectada por el contrato actual
+            Propiedad propAfectada = null;
+            for (Propiedad p : todasProps) {
+                boolean matchId = contratoGuardado.propiedadId != null && contratoGuardado.propiedadId.equals(p.id);
+                boolean matchTitulo = p.titulo != null && p.titulo.trim().equalsIgnoreCase(tituloOficialPropiedad);
+                if (matchId || matchTitulo) {
+                    propAfectada = p;
+                    break;
                 }
             }
 
@@ -770,12 +873,12 @@ public class AdminAgregarContratoFragment extends Fragment {
                 if ("Activo".equalsIgnoreCase(situacion) || "Pendiente".equalsIgnoreCase(situacion)) {
                     if (!propAfectada.isPausada()) {
                         propAfectada.estado = "Pausado";
-                        new PropiedadRepositoryImpl(appContext).update(propAfectada);
+                        repo.update(propAfectada);
                     }
                 } else if ("Cancelado".equalsIgnoreCase(situacion)) {
-                    if (propAfectada.isPausada()) {
+                    if (propAfectada.isPausada() && !tieneContratoVigenteEnLista(propAfectada, todosContratos)) {
                         propAfectada.estado = "Publicado";
-                        new PropiedadRepositoryImpl(appContext).update(propAfectada);
+                        repo.update(propAfectada);
                     }
                 }
             }

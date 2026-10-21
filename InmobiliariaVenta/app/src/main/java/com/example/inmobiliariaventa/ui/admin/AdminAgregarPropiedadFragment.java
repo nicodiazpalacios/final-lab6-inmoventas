@@ -321,6 +321,23 @@ public class AdminAgregarPropiedadFragment extends Fragment {
 
             propiedadViewModel.update(p);
 
+            // Sincronizar el nuevo título en cualquier contrato histórico vinculado a esta propiedad
+            if (getContext() != null) {
+                android.content.Context ctx = requireContext().getApplicationContext();
+                com.example.inmobiliariaventa.data.local.AppDatabase.databaseWriteExecutor.execute(() -> {
+                    com.example.inmobiliariaventa.data.local.AppDatabase db = com.example.inmobiliariaventa.data.local.AppDatabase.getInstance(ctx);
+                    List<com.example.inmobiliariaventa.domain.entity.Contrato> contratos = db.contratoDao().obtenerTodosSync();
+                    if (contratos != null) {
+                        for (com.example.inmobiliariaventa.domain.entity.Contrato c : contratos) {
+                            if (propiedadIdAEditar.equals(c.propiedadId) && !titulo.equals(c.propiedadTitulo)) {
+                                c.propiedadTitulo = titulo;
+                                db.contratoDao().actualizar(c);
+                            }
+                        }
+                    }
+                });
+            }
+
             // Registrar en actividad reciente si cambió de precio
             if (precioAnterior > 0 && Math.abs(precioAnterior - precio) > 0.01 && getContext() != null) {
                 ActividadRepository.getInstance(requireContext())

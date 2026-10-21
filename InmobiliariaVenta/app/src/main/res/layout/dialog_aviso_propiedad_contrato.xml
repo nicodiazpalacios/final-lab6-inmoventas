@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="20dp"
+    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Ícono decorativo de aviso / contrato -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardBackgroundColor="#FFDAD6"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_contratos"
+                app:tint="@color/colorError" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Título -->
+        <TextView
+            android:id="@+id/tv_dialog_aviso_contrato_titulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Propiedad con contrato vigente"
+            android:textColor="@color/colorOnSurface"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Mensaje -->
+        <TextView
+            android:id="@+id/tv_dialog_aviso_contrato_mensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Esta propiedad se encuentra pausada porque tiene un contrato en estado Activo o Pendiente. Para volver a publicarla en el catálogo, primero debés dar de baja el contrato."
+            android:textColor="@color/colorOnSurfaceVariant"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:weightSum="2">
+
+            <!-- Botón Cerrar (Izquierda) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_aviso_cerrar"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginEnd="8dp"
+                android:text="Entendido"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="12dp"
+                app:backgroundTint="@color/colorSurfaceContainerHigh"
+                android:textColor="@color/colorOnSurface"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton" />
+
+            <!-- Botón Ir a Contratos (Derecha) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dialog_aviso_ver_contratos"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="46dp"
+                android:layout_marginStart="8dp"
+                android:text="Ir a Contratos"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="12dp"
+                app:backgroundTint="@color/colorPrimary"
+                android:textColor="@color/colorOnPrimary" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

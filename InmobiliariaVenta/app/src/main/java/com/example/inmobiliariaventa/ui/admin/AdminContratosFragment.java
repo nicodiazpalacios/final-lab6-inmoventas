@@ -1,6 +1,8 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -13,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
@@ -23,6 +26,7 @@ import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -309,12 +313,17 @@ public class AdminContratosFragment extends Fragment {
                 Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato, args);
             });
 
-            btnBaja.setOnClickListener(v -> {
-                darDeBajaContrato(contrato);
-                ActividadRepository.getInstance(requireContext())
-                        .registrarModificacionContrato(finalClienteName, finalPropiedadName, finalMonto, "Cancelado (Baja)");
-                Toast.makeText(requireContext(), "Contrato de " + finalClienteName + " cancelado", Toast.LENGTH_SHORT).show();
-            });
+            if ("Cancelado".equalsIgnoreCase(estadoActual)) {
+                btnBaja.setEnabled(false);
+                btnBaja.setAlpha(0.55f);
+                btnBaja.setText("Cancelado");
+                btnBaja.setOnClickListener(null);
+            } else {
+                btnBaja.setEnabled(true);
+                btnBaja.setAlpha(1.0f);
+                btnBaja.setText("Dar de baja");
+                btnBaja.setOnClickListener(v -> mostrarDialogoConfirmarBaja(contrato, finalClienteName, finalPropiedadName, finalMonto));
+            }
 
             layoutContractsContainer.addView(cardView);
         }
@@ -323,6 +332,53 @@ public class AdminContratosFragment extends Fragment {
             layoutPagination.setVisibility(maxPages > 1 ? View.VISIBLE : View.GONE);
         }
         renderPagination(false);
+    }
+
+    private void mostrarDialogoConfirmarBaja(Contrato contrato, String clienteName, String propiedadName, String monto) {
+        if (getContext() == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_aviso_propiedad_contrato, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_aviso_contrato_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_aviso_contrato_mensaje);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_dialog_aviso_cerrar);
+        MaterialButton btnConfirmar = dialogView.findViewById(R.id.btn_dialog_aviso_ver_contratos);
+
+        if (tvTitulo != null) {
+            tvTitulo.setText("¿Dar de baja el contrato?");
+        }
+        if (tvMensaje != null) {
+            tvMensaje.setText("¿Estás seguro de que deseas dar de baja el contrato de " + clienteName
+                    + " para \"" + propiedadName + "\"?\n\nEl contrato pasará a estado Cancelado y la propiedad volverá a publicarse en el catálogo.");
+        }
+        if (btnCancelar != null) {
+            btnCancelar.setText("No, volver");
+            btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        }
+        if (btnConfirmar != null) {
+            btnConfirmar.setText("Sí, dar de baja");
+            btnConfirmar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#BA1A1A")));
+            btnConfirmar.setTextColor(Color.WHITE);
+            btnConfirmar.setOnClickListener(v -> {
+                dialog.dismiss();
+                darDeBajaContrato(contrato);
+                ActividadRepository.getInstance(requireContext())
+                        .registrarModificacionContrato(clienteName, propiedadName, monto, "Cancelado (Baja)");
+                Toast.makeText(requireContext(), "Contrato de " + clienteName + " cancelado", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        dialog.show();
     }
 
     private void darDeBajaContrato(Contrato contrato) {
@@ -334,13 +390,30 @@ public class AdminContratosFragment extends Fragment {
             db.contratoDao().actualizar(contrato);
 
             List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+            List<Contrato> todosContratos = db.contratoDao().obtenerTodosSync();
             if (todas != null) {
                 for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
                     boolean matchId = contrato.propiedadId != null && !contrato.propiedadId.isEmpty() && contrato.propiedadId.equals(p.id);
                     boolean matchTitulo = contrato.propiedadTitulo != null && p.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
                     if ((matchId || matchTitulo) && p.isPausada()) {
-                        p.estado = "Publicado";
-                        new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext).update(p);
+                        boolean otroVigente = false;
+                        if (todosContratos != null) {
+                            for (Contrato c : todosContratos) {
+                                if (!c.id.equals(contrato.id) && c.estado != null
+                                        && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                                    boolean mId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
+                                    boolean mTit = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
+                                    if (mId || mTit) {
+                                        otroVigente = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!otroVigente) {
+                            p.estado = "Publicado";
+                            new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext).update(p);
+                        }
                     }
                 }
             }

@@ -27,6 +27,9 @@ public interface ContratoDao {
     @Query("SELECT * FROM contratos ORDER BY timestamp DESC")
     LiveData<List<Contrato>> obtenerTodosLiveData();
 
+    @Query("SELECT * FROM contratos ORDER BY timestamp DESC")
+    List<Contrato> obtenerTodosSync();
+
     @Query("SELECT COUNT(*) FROM contratos")
     int countSync();
 

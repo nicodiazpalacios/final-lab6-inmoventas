@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,10 +10,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,6 +24,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.google.android.material.button.MaterialButton;
@@ -36,6 +42,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
     private final List<Propiedad> allProperties = new ArrayList<>();
     private final List<Propiedad> filteredProperties = new ArrayList<>();
+    private final List<Contrato> allContracts = new ArrayList<>();
 
     // Elementos de la interfaz
     private MaterialButton btnFiltros;
@@ -93,14 +100,13 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
             rvPropiedades.setAdapter(adapter);
         }
 
-        // Botón Filtros: Todos, Publicados, Pausados, Finalizados
+        // Botón Filtros: Todos, Publicados, Pausados
         if (btnFiltros != null) {
             btnFiltros.setOnClickListener(v -> {
                 PopupMenu popup = new PopupMenu(requireContext(), btnFiltros);
                 popup.getMenu().add("Todos");
                 popup.getMenu().add("Publicados");
                 popup.getMenu().add("Pausados");
-                popup.getMenu().add("Finalizados");
 
                 popup.setOnMenuItemClickListener(item -> {
                     selectedFilter = item.getTitle().toString();
@@ -162,6 +168,15 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
             }
             aplicarFiltrosYOrden();
         });
+
+        // Observar contratos para impedir reactivar propiedades con contrato Activo o Pendiente
+        AppDatabase.getInstance(requireContext()).contratoDao().obtenerTodosLiveData()
+                .observe(getViewLifecycleOwner(), contratos -> {
+                    allContracts.clear();
+                    if (contratos != null) {
+                        allContracts.addAll(contratos);
+                    }
+                });
     }
 
     private void aplicarFiltrosYOrden() {
@@ -182,26 +197,15 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                 matchesSearch = tit.contains(q) || dom.contains(q) || ciu.contains(q);
             }
 
-            // Determinar estado de la propiedad
-            boolean isPausado = false;
-            boolean isFinalizado = false;
-            if (prop.estado != null) {
-                String est = prop.estado.trim();
-                if (est.equalsIgnoreCase("Pausado") || est.equalsIgnoreCase("PAUSADO") || est.equalsIgnoreCase("PAUSADA") || est.equalsIgnoreCase("NO_VISIBLE") || est.equalsIgnoreCase("Inactivo")) {
-                    isPausado = true;
-                } else if (est.equalsIgnoreCase("Finalizado") || est.equalsIgnoreCase("VENDIDA") || est.equalsIgnoreCase("Vendido") || est.equalsIgnoreCase("FINALIZADO")) {
-                    isFinalizado = true;
-                }
-            }
+            // Determinar estado de la propiedad (Publicado o Pausado)
+            boolean isPausado = prop.isPausada();
 
-            // Filtro por Estado: Todos, Publicados, Pausados, Finalizados
+            // Filtro por Estado: Todos, Publicados, Pausados
             boolean matchesFilter = true;
             if ("Publicados".equalsIgnoreCase(selectedFilter)) {
-                matchesFilter = !isPausado && !isFinalizado;
+                matchesFilter = !isPausado;
             } else if ("Pausados".equalsIgnoreCase(selectedFilter)) {
                 matchesFilter = isPausado;
-            } else if ("Finalizados".equalsIgnoreCase(selectedFilter)) {
-                matchesFilter = isFinalizado;
             }
 
             if (matchesSearch && matchesFilter) {
@@ -245,6 +249,20 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
     @Override
     public void onSwitchVisibilidad(Propiedad propiedad, boolean isChecked) {
         if (propiedad == null) return;
+
+        // Si intenta activar la propiedad, verificar que no tenga un contrato Activo o Pendiente
+        if (isChecked) {
+            Contrato contratoVigente = buscarContratoActivoOPendiente(propiedad);
+            if (contratoVigente != null) {
+                // Revertir el switch inmediatamente en la vista
+                if (adapter != null) {
+                    adapter.notifyDataSetChanged();
+                }
+                mostrarDialogoAvisoContrato(propiedad, contratoVigente, "activar");
+                return;
+            }
+        }
+
         // Cambiar el estado rápidamente en base de datos Room y sincronización con Supabase
         propiedad.estado = isChecked ? "Publicado" : "Pausado";
         propiedadViewModel.update(propiedad);
@@ -265,9 +283,82 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
         }
     }
 
+    private Contrato buscarContratoActivoOPendiente(Propiedad propiedad) {
+        for (Contrato c : allContracts) {
+            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(propiedad.id);
+                boolean matchTitulo = c.propiedadTitulo != null && propiedad.titulo != null
+                        && c.propiedadTitulo.trim().equalsIgnoreCase(propiedad.titulo.trim());
+                if (matchId || matchTitulo) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void mostrarDialogoAvisoContrato(Propiedad propiedad, Contrato contrato, String accion) {
+        if (getContext() == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_aviso_propiedad_contrato, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_aviso_contrato_mensaje);
+        MaterialButton btnCerrar = dialogView.findViewById(R.id.btn_dialog_aviso_cerrar);
+        MaterialButton btnVerContratos = dialogView.findViewById(R.id.btn_dialog_aviso_ver_contratos);
+
+        if (tvMensaje != null) {
+            String cliente = contrato.getNombreCompletoCliente();
+            String estadoContrato = contrato.estado != null ? contrato.estado : "Activo";
+            String instruccion;
+            if ("eliminar".equalsIgnoreCase(accion)) {
+                instruccion = "Para poder eliminarla del sistema, primero debés dar de baja el contrato.";
+            } else if ("modificar".equalsIgnoreCase(accion)) {
+                instruccion = "Para poder modificar sus datos o su precio, primero debés dar de baja el contrato.";
+            } else {
+                instruccion = "Para volver a publicarla en el catálogo, primero debés dar de baja el contrato.";
+            }
+            tvMensaje.setText("No es posible " + accion + " \"" + (propiedad.titulo != null ? propiedad.titulo : "esta propiedad")
+                    + "\" porque posee un contrato en estado " + estadoContrato + " a nombre de " + cliente
+                    + ".\n\n" + instruccion);
+        }
+
+        if (btnCerrar != null) {
+            btnCerrar.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnVerContratos != null) {
+            btnVerContratos.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (getView() != null) {
+                    Navigation.findNavController(getView()).navigate(R.id.nav_contratos);
+                }
+            });
+        }
+
+        dialog.show();
+    }
+
     @Override
     public void onModificar(Propiedad propiedad) {
         if (propiedad == null || getView() == null) return;
+
+        // No permitir modificar una propiedad si tiene un contrato Activo o Pendiente
+        Contrato contratoVigente = buscarContratoActivoOPendiente(propiedad);
+        if (contratoVigente != null) {
+            mostrarDialogoAvisoContrato(propiedad, contratoVigente, "modificar");
+            return;
+        }
+
         Bundle args = new Bundle();
         args.putString("propiedad_id", propiedad.id);
         Navigation.findNavController(getView()).navigate(R.id.nav_admin_agregar_propiedad, args);
@@ -276,21 +367,59 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
     @Override
     public void onBorrar(Propiedad propiedad) {
         if (propiedad == null || getContext() == null) return;
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Eliminar propiedad")
-                .setMessage("¿Estás seguro de que deseas eliminar \"" + (propiedad.titulo != null ? propiedad.titulo : "esta propiedad") + "\"? Esta acción no se puede deshacer.")
-                .setPositiveButton("Eliminar", (dialog, which) -> {
-                    propiedadViewModel.delete(propiedad);
-                    if (getContext() != null) {
-                        com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
-                                .registrarBajaPropiedad(propiedad.titulo, propiedad.precio, "Eliminada del catálogo");
-                    }
-                    if (getView() != null) {
-                        Snackbar.make(getView(), "Propiedad eliminada correctamente", Snackbar.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+
+        // No permitir borrar una propiedad si tiene un contrato Activo o Pendiente
+        Contrato contratoVigente = buscarContratoActivoOPendiente(propiedad);
+        if (contratoVigente != null) {
+            mostrarDialogoAvisoContrato(propiedad, contratoVigente, "eliminar");
+            return;
+        }
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_aviso_propiedad_contrato, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_aviso_contrato_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_aviso_contrato_mensaje);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.btn_dialog_aviso_cerrar);
+        MaterialButton btnConfirmar = dialogView.findViewById(R.id.btn_dialog_aviso_ver_contratos);
+
+        if (tvTitulo != null) {
+            tvTitulo.setText("¿Eliminar propiedad?");
+        }
+        if (tvMensaje != null) {
+            tvMensaje.setText("¿Estás seguro de que deseas eliminar \"" + (propiedad.titulo != null ? propiedad.titulo : "esta propiedad") + "\"?\n\nEsta acción quitará la propiedad del catálogo y no se puede deshacer.");
+        }
+        if (btnCancelar != null) {
+            btnCancelar.setText("No, volver");
+            btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        }
+        if (btnConfirmar != null) {
+            btnConfirmar.setText("Sí, eliminar");
+            btnConfirmar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#BA1A1A")));
+            btnConfirmar.setTextColor(Color.WHITE);
+            btnConfirmar.setOnClickListener(v -> {
+                dialog.dismiss();
+                propiedadViewModel.delete(propiedad);
+                if (getContext() != null) {
+                    com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
+                            .registrarBajaPropiedad(propiedad.titulo, propiedad.precio, "Eliminada del catálogo");
+                }
+                if (getView() != null) {
+                    Snackbar.make(getView(), "Propiedad eliminada correctamente", Snackbar.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        dialog.show();
     }
 
     @Override
