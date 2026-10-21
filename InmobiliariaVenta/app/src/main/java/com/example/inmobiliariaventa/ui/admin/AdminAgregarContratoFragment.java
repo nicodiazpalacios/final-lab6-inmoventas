@@ -546,6 +546,7 @@ public class AdminAgregarContratoFragment extends Fragment {
                 } else {
                     tvPreviewAmount.setText("0.00");
                 }
+                actualizarPreviewCuotas();
             }
 
             @Override
@@ -584,6 +585,7 @@ public class AdminAgregarContratoFragment extends Fragment {
             String selected = (String) parent.getItemAtPosition(position);
             tvPreviewMethod.setText(selected);
             actualizarVisibilidadCuotas(selected);
+            actualizarPreviewCuotas();
         });
 
         // Installments preview
@@ -593,11 +595,7 @@ public class AdminAgregarContratoFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s != null && s.length() > 0) {
-                    tvPreviewInstallments.setText(s.toString() + " Cuotas");
-                } else {
-                    tvPreviewInstallments.setText("-");
-                }
+                actualizarPreviewCuotas();
                 if (!isPopulatingEditData) {
                     recalcularFechaVencimiento();
                 }
@@ -606,6 +604,58 @@ public class AdminAgregarContratoFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        if (etDownPayment != null) {
+            etDownPayment.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (tilDownPayment != null) tilDownPayment.setError(null);
+                    actualizarPreviewCuotas();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+    }
+
+    private void actualizarPreviewCuotas() {
+        if (tvPreviewInstallments == null) return;
+        String cuotasStr = etInstallments != null && etInstallments.getText() != null
+                ? etInstallments.getText().toString().trim() : "";
+        if (cuotasStr.isEmpty()) {
+            tvPreviewInstallments.setText("-");
+            return;
+        }
+        try {
+            int cuotas = Integer.parseInt(cuotasStr);
+            if (cuotas < 1) {
+                tvPreviewInstallments.setText("-");
+                return;
+            }
+            double monto = 0.0;
+            if (etAmount != null && etAmount.getText() != null && !etAmount.getText().toString().trim().isEmpty()) {
+                try { monto = Double.parseDouble(etAmount.getText().toString().trim()); } catch (NumberFormatException ignored) {}
+            }
+            double senia = 0.0;
+            if (etDownPayment != null && etDownPayment.getText() != null && !etDownPayment.getText().toString().trim().isEmpty()) {
+                try { senia = Double.parseDouble(etDownPayment.getText().toString().trim()); } catch (NumberFormatException ignored) {}
+            }
+            double saldoFinanciado = Math.max(0.0, monto - senia);
+            if (saldoFinanciado > 0) {
+                double valorCuota = saldoFinanciado / cuotas;
+                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                DecimalFormat df = new DecimalFormat("#,##0", symbols);
+                tvPreviewInstallments.setText(cuotas + (cuotas == 1 ? " cuota de $ " : " cuotas de $ ") + df.format(valorCuota));
+            } else {
+                tvPreviewInstallments.setText(cuotas + (cuotas == 1 ? " Cuota" : " Cuotas"));
+            }
+        } catch (NumberFormatException e) {
+            tvPreviewInstallments.setText(cuotasStr + " Cuotas");
+        }
     }
 
     private void setupActions(View root) {
@@ -748,16 +798,26 @@ public class AdminAgregarContratoFragment extends Fragment {
             }
         }
 
-        if (hasError) {
-            Toast.makeText(requireContext(), "Por favor, complete correctamente los campos obligatorios", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         double senia = 0.0;
         if (!TextUtils.isEmpty(downPaymentStr)) {
             try {
                 senia = Double.parseDouble(downPaymentStr);
-            } catch (NumberFormatException ignored) {}
+                if (senia < 0) {
+                    if (tilDownPayment != null) tilDownPayment.setError("La seña no puede ser negativa");
+                    hasError = true;
+                } else if (montoTotal > 0 && senia >= montoTotal) {
+                    if (tilDownPayment != null) tilDownPayment.setError("La seña debe ser menor al monto total");
+                    hasError = true;
+                }
+            } catch (NumberFormatException e) {
+                if (tilDownPayment != null) tilDownPayment.setError("Monto de seña inválido");
+                hasError = true;
+            }
+        }
+
+        if (hasError) {
+            Toast.makeText(requireContext(), "Por favor, complete correctamente los campos obligatorios", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         String tituloOficialPropiedad = propSeleccionada != null && propSeleccionada.titulo != null

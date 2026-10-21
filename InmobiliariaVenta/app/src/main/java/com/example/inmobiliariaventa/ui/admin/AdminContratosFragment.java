@@ -339,24 +339,33 @@ public class AdminContratosFragment extends Fragment {
             tvPropiedad.setText(propiedadName);
             tvMonto.setText(montoFormatted);
 
-            int cuotasVal = contrato.cuotas != null ? contrato.cuotas : 1;
-            if (!"Crédito".equalsIgnoreCase(contrato.metodoPago) || cuotasVal <= 1) {
+            String estadoActual = contrato.estado != null ? contrato.estado : "Activo";
+            if ("Rechazado".equalsIgnoreCase(estadoActual) || "Finalizado".equalsIgnoreCase(estadoActual)) {
+                estadoActual = "Cancelado";
+            }
+
+            int cuotasVal = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
+            double seniaVal = contrato.seniaMonto != null ? contrato.seniaMonto : 0.0;
+            double saldoRestante = Math.max(0.0, montoVal - seniaVal);
+
+            if (!"Crédito".equalsIgnoreCase(contrato.metodoPago)) {
                 String metodo = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
-                tvPlan.setText("Contado (" + metodo + ")");
+                if ("Pendiente".equalsIgnoreCase(estadoActual) && seniaVal > 0 && saldoRestante > 0) {
+                    tvPlan.setText("Resta $ " + currencyFormat.format(saldoRestante));
+                } else {
+                    tvPlan.setText("Contado (" + metodo + ")");
+                }
                 if (tvLabelVencimiento != null) tvLabelVencimiento.setText("FECHA FIRMA");
                 tvVencimiento.setText(contrato.fechaInicio != null && !contrato.fechaInicio.isEmpty() ? contrato.fechaInicio : "-");
             } else {
-                tvPlan.setText(cuotasVal + " Cuotas");
+                double valorCuota = saldoRestante / cuotasVal;
+                tvPlan.setText(cuotasVal + (cuotasVal == 1 ? " cuota ($ " : " cuotas ($ ") + currencyFormat.format(valorCuota) + ")");
                 if (tvLabelVencimiento != null) tvLabelVencimiento.setText("VENCIMIENTO");
                 tvVencimiento.setText(contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
                         ? contrato.fechaVencimiento
                         : (contrato.fechaInicio != null ? contrato.fechaInicio : "-"));
             }
 
-            String estadoActual = contrato.estado != null ? contrato.estado : "Activo";
-            if ("Rechazado".equalsIgnoreCase(estadoActual) || "Finalizado".equalsIgnoreCase(estadoActual)) {
-                estadoActual = "Cancelado";
-            }
             actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, estadoActual);
 
             final String finalClienteName = clienteFullName;

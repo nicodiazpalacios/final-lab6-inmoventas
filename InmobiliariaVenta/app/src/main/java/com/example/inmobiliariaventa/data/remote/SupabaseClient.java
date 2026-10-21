@@ -855,14 +855,14 @@ public class SupabaseClient {
             json.add("propiedadid", com.google.gson.JsonNull.INSTANCE);
         }
 
-        // clienteid tiene FK a usuarios(id); enviamos null para clientes ingresados en el contrato
-        json.add("clienteid", com.google.gson.JsonNull.INSTANCE);
-
+        json.addProperty("propiedadtitulo", contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "");
         json.addProperty("clientenombre", contrato.clienteNombre != null ? contrato.clienteNombre : "");
         json.addProperty("clienteapellido", contrato.clienteApellido != null ? contrato.clienteApellido : "");
         json.addProperty("clientedni", contrato.clienteDni != null ? contrato.clienteDni : "");
+        json.addProperty("clientetelefono", contrato.clienteTelefono != null ? contrato.clienteTelefono : "");
         json.addProperty("clienteemail", contrato.clienteEmail != null ? contrato.clienteEmail : "");
         json.addProperty("montototal", contrato.montoTotal != null ? contrato.montoTotal : 0.0);
+        json.addProperty("seniamonto", contrato.seniaMonto != null ? contrato.seniaMonto : 0.0);
         json.addProperty("metodopago", contrato.metodoPago != null ? contrato.metodoPago : "Efectivo");
         json.addProperty("cuotas", contrato.cuotas != null ? contrato.cuotas : 1);
         json.addProperty("fechainicio", contrato.fechaInicio != null ? contrato.fechaInicio : "");
@@ -871,20 +871,6 @@ public class SupabaseClient {
                 : (contrato.fechaInicio != null ? contrato.fechaInicio : ""));
         json.addProperty("estado", contrato.estado != null ? contrato.estado : "Activo");
         json.addProperty("descripcion", contrato.descripcion != null ? contrato.descripcion : "");
-        if (contrato.rutaLocalPdf != null && !contrato.rutaLocalPdf.isEmpty()) {
-            json.addProperty("rutalocalpdf", contrato.rutaLocalPdf);
-        } else {
-            json.add("rutalocalpdf", com.google.gson.JsonNull.INSTANCE);
-        }
-
-        // Empaquetar campos adicionales (teléfono, seña, título de propiedad y vencimiento) en urlnubepdf
-        JsonObject meta = new JsonObject();
-        meta.addProperty("telefono", contrato.clienteTelefono != null ? contrato.clienteTelefono : "");
-        meta.addProperty("seniaMonto", contrato.seniaMonto != null ? contrato.seniaMonto : 0.0);
-        meta.addProperty("propiedadTitulo", contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "");
-        meta.addProperty("fechaVencimiento", contrato.fechaVencimiento != null ? contrato.fechaVencimiento : "");
-        meta.addProperty("timestamp", contrato.timestamp > 0 ? contrato.timestamp : System.currentTimeMillis());
-        json.addProperty("urlnubepdf", meta.toString());
 
         return json;
     }

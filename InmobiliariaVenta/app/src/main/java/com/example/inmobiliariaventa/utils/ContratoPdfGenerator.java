@@ -362,7 +362,11 @@ public class ContratoPdfGenerator {
         double saldoRestante = Math.max(0.0, montoTotal - senia);
         String metodoPago = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
         int cuotas = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
-        boolean esCredito = "Crédito".equalsIgnoreCase(metodoPago) && cuotas > 1;
+        boolean esCredito = "Crédito".equalsIgnoreCase(metodoPago);
+        boolean esPendiente = "Pendiente".equalsIgnoreCase(estado);
+        boolean esCancelado = "Cancelado".equalsIgnoreCase(estado)
+                || "Rechazado".equalsIgnoreCase(estado)
+                || "Finalizado".equalsIgnoreCase(estado);
 
         paint.setColor(Color.parseColor("#FFFFFF"));
         RectF paymentBox = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 130);
@@ -374,30 +378,48 @@ public class ContratoPdfGenerator {
         paint.setStyle(Paint.Style.FILL);
 
         String montoStr = "$ " + currencyFormat.format(montoTotal);
-        String seniaStr = senia > 0 ? "$ " + currencyFormat.format(senia) : "$ 0 (Sin seña)";
-        String saldoStr = "$ " + currencyFormat.format(saldoRestante);
-        String planStr;
-        if (esCredito) {
-            double valorCuota = saldoRestante / cuotas;
-            planStr = cuotas + " cuotas de $ " + currencyFormat.format(valorCuota);
-        } else {
-            planStr = "Pago al Contado (" + metodoPago + ")";
-        }
-
+        String seniaStr = senia > 0 ? "$ " + currencyFormat.format(senia) : "$ 0 (Sin anticipo)";
         String fechaInicio = contrato.fechaInicio != null && !contrato.fechaInicio.isEmpty() ? contrato.fechaInicio : "-";
         String fechaVenc = contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty() ? contrato.fechaVencimiento : fechaInicio;
 
-        drawLabelValueHighlight(canvas, paint, "Monto Total de Venta:", montoStr, colLeft, y + 22);
-        drawLabelValue(canvas, paint, "Forma de Pago:", metodoPago, colRight, y + 22);
-
-        drawLabelValue(canvas, paint, "Seña / Anticipo:", seniaStr, colLeft, y + 56);
-        drawLabelValue(canvas, paint, "Plan de Cancelación:", planStr, colRight, y + 56);
-
-        drawLabelValueHighlight(canvas, paint, "Saldo a Cancelar:", saldoStr, colLeft, y + 90);
         if (esCredito) {
-            drawLabelValue(canvas, paint, "Inicio / Vencimiento:", fechaInicio + " al " + fechaVenc, colRight, y + 90);
+            double valorCuota = saldoRestante / Math.max(1, cuotas);
+            String planStr = cuotas + (cuotas == 1 ? " cuota de $ " : " cuotas de $ ") + currencyFormat.format(valorCuota);
+            String capitalFinanciadoStr = "$ " + currencyFormat.format(saldoRestante);
+
+            drawLabelValueHighlight(canvas, paint, "Monto Total de Venta:", montoStr, colLeft, y + 22);
+            drawLabelValue(canvas, paint, "Modalidad de Pago:", "Crédito Financiado", colRight, y + 22);
+
+            drawLabelValue(canvas, paint, "Entrega Inicial / Seña:", seniaStr, colLeft, y + 56);
+            drawLabelValue(canvas, paint, "Plan de Financiación:", planStr, colRight, y + 56);
+
+            drawLabelValueHighlight(canvas, paint, "Capital Financiado:", capitalFinanciadoStr, colLeft, y + 90);
+            drawLabelValue(canvas, paint, "Plazo (Inicio / Fin):", fechaInicio + " al " + fechaVenc, colRight, y + 90);
+        } else if (esPendiente) {
+            String saldoPendienteStr = "$ " + currencyFormat.format(saldoRestante);
+
+            drawLabelValueHighlight(canvas, paint, "Monto Total de Venta:", montoStr, colLeft, y + 22);
+            drawLabelValue(canvas, paint, "Modalidad de Pago:", "Contado (" + metodoPago + ")", colRight, y + 22);
+
+            drawLabelValue(canvas, paint, "Seña / Reserva Entregada:", seniaStr, colLeft, y + 56);
+            drawLabelValue(canvas, paint, "Estado de Operación:", "Reserva / Pendiente de firma", colRight, y + 56);
+
+            drawLabelValueHighlight(canvas, paint, "Saldo a Abonar en Firma:", saldoPendienteStr, colLeft, y + 90);
+            drawLabelValue(canvas, paint, "Fecha de Reserva:", fechaInicio, colRight, y + 90);
         } else {
-            drawLabelValue(canvas, paint, "Fecha del Contrato:", fechaInicio, colRight, y + 90);
+            String desgloseContado = senia > 0
+                    ? "Seña $ " + currencyFormat.format(senia) + " + Firma $ " + currencyFormat.format(saldoRestante)
+                    : "Pago único de $ " + currencyFormat.format(montoTotal);
+            String estadoCuenta = esCancelado ? "Contrato Dado de Baja" : "$ 0 (Pagado 100%)";
+
+            drawLabelValueHighlight(canvas, paint, "Monto Total de Venta:", montoStr, colLeft, y + 22);
+            drawLabelValue(canvas, paint, "Modalidad de Pago:", "Contado (" + metodoPago + ")", colRight, y + 22);
+
+            drawLabelValue(canvas, paint, "Integración del Pago:", desgloseContado, colLeft, y + 56);
+            drawLabelValue(canvas, paint, "Fecha del Contrato:", fechaInicio, colRight, y + 56);
+
+            drawLabelValueHighlight(canvas, paint, "Saldo Pendiente:", estadoCuenta, colLeft, y + 90);
+            drawLabelValue(canvas, paint, "Condición de Venta:", esCancelado ? "Operación Cancelada" : "Operación Saldada al Contado", colRight, y + 90);
         }
 
         y += 150;
