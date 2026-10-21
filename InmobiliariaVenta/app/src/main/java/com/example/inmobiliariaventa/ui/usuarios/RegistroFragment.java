@@ -53,6 +53,7 @@ public class RegistroFragment extends Fragment {
 
         EditText etFullName = view.findViewById(R.id.etFullName);
         EditText etEmail = view.findViewById(R.id.etEmail);
+        EditText etPhone = view.findViewById(R.id.etPhone);
         EditText etPassword = view.findViewById(R.id.etPassword);
         EditText etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
         ImageView btnTogglePassword = view.findViewById(R.id.btnTogglePassword);
@@ -132,6 +133,7 @@ public class RegistroFragment extends Fragment {
             btnRegister.setOnClickListener(v -> {
                 String fullName = etFullName != null && etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
                 String email = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+                String phone = etPhone != null && etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
                 String password = etPassword != null && etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
                 String confirmPassword = etConfirmPassword != null && etConfirmPassword.getText() != null ? etConfirmPassword.getText().toString().trim() : "";
 
@@ -147,6 +149,16 @@ public class RegistroFragment extends Fragment {
 
                 if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     if (etEmail != null) etEmail.setError("Ingrese un correo válido");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(phone)) {
+                    if (etPhone != null) etPhone.setError("Ingrese su número de teléfono");
+                    return;
+                }
+
+                if (phone.replaceAll("[^0-9]", "").length() < 6) {
+                    if (etPhone != null) etPhone.setError("Ingrese un número de teléfono válido");
                     return;
                 }
 
@@ -182,6 +194,7 @@ public class RegistroFragment extends Fragment {
                 nuevoUsuario.id = UUID.randomUUID().toString();
                 nuevoUsuario.nombre = fullName;
                 nuevoUsuario.email = email.toLowerCase();
+                nuevoUsuario.telefono = phone;
                 nuevoUsuario.rol = "CLIENTE";
                 nuevoUsuario.password = SecurityUtils.hashPassword(password);
                 nuevoUsuario.estadoSincronizacion = "PENDIENTE_SUBIR";
@@ -207,6 +220,7 @@ public class RegistroFragment extends Fragment {
                                 .putString("user_id", nuevoUsuario.id)
                                 .putString("user_email", nuevoUsuario.email)
                                 .putString("user_nombre", nuevoUsuario.nombre)
+                                .putString("user_telefono", nuevoUsuario.telefono)
                                 .putString("user_rol", nuevoUsuario.rol)
                                 .putString("user_password", password)
                                 .apply();
