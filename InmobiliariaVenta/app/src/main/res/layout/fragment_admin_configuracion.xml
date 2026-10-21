@@ -99,19 +99,21 @@
                         android:layout_marginBottom="16dp">
 
                         <TextView
+                            android:id="@+id/tv_cantidad_usuarios"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="24"
+                            android:text="0"
                             android:textColor="@color/colorPrimary"
                             android:textSize="32sp"
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tv_label_cantidad_usuarios"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_marginBottom="4dp"
-                            android:text="Agentes activos"
+                            android:text="Usuarios registrados"
                             android:textColor="@color/colorOnSurfaceVariant"
                             android:textSize="14sp" />
                     </LinearLayout>

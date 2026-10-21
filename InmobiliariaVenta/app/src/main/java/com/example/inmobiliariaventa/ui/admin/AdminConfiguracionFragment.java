@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -13,13 +14,17 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.EmpresaRepository;
+import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
 import androidx.core.util.Pair;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -79,6 +84,37 @@ public class AdminConfiguracionFragment extends Fragment {
             btnGestionarUsuarios.setOnClickListener(v -> {
                 androidx.navigation.Navigation.findNavController(view)
                         .navigate(R.id.action_nav_admin_configuracion_to_nav_admin_gestion_usuarios);
+            });
+        }
+
+        TextView tvCantidadUsuarios = view.findViewById(R.id.tv_cantidad_usuarios);
+        TextView tvLabelCantidadUsuarios = view.findViewById(R.id.tv_label_cantidad_usuarios);
+        if (tvCantidadUsuarios != null && getContext() != null) {
+            AppDatabase db = AppDatabase.getInstance(requireContext());
+            db.usuarioDao().obtenerTodos().observe(getViewLifecycleOwner(), lista -> {
+                int total = lista != null ? lista.size() : 0;
+                tvCantidadUsuarios.setText(String.valueOf(total));
+                if (tvLabelCantidadUsuarios != null) {
+                    tvLabelCantidadUsuarios.setText(total == 1 ? "Usuario registrado" : "Usuarios registrados");
+                }
+            });
+
+            SupabaseClient.obtenerUsuarios(new SupabaseClient.SupabaseCallback<List<Usuario>>() {
+                @Override
+                public void onSuccess(List<Usuario> result) {
+                    if (result != null && getContext() != null) {
+                        for (Usuario u : result) {
+                            u.password = null;
+                            u.estadoSincronizacion = "SINCRONIZADO";
+                        }
+                        AppDatabase.databaseWriteExecutor.execute(() -> {
+                            db.usuarioDao().insertarTodas(result);
+                        });
+                    }
+                }
+
+                @Override
+                public void onError(Exception error) { }
             });
         }
 

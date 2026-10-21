@@ -396,6 +396,68 @@ public class SupabaseClient {
         });
     }
 
+    public static void actualizarRolUsuario(String userId, String rol, SupabaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("User ID inválido")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("rol", rol);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/usuarios?id=eq." + userId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al actualizar rol de usuario en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code() + ": " + errorBody)));
+                }
+            }
+        });
+    }
+
+    public static void eliminarUsuario(String userId, SupabaseCallback<Boolean> callback) {
+        if (userId == null || userId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("User ID inválido")));
+            return;
+        }
+
+        Request request = buildBaseRequest("/rest/v1/usuarios?id=eq." + userId)
+                .delete()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al eliminar usuario en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (response.isSuccessful()) {
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code())));
+                }
+            }
+        });
+    }
+
     // ==========================================
     // CONFIGURACIÓN DE EMPRESA
     // ==========================================
