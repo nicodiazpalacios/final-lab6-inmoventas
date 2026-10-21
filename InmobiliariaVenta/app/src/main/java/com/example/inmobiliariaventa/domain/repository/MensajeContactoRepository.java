@@ -10,4 +10,5 @@ public interface MensajeContactoRepository {
     LiveData<List<MensajeContacto>> getAllMensajesLiveData();
     LiveData<Integer> getMensajesNoLeidosCount();
     void marcarComoLeido(MensajeContacto mensaje);
+    void marcarComoNoLeido(MensajeContacto mensaje);
 }

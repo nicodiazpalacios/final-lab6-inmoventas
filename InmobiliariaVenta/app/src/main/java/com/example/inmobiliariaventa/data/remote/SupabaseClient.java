@@ -701,4 +701,39 @@ public class SupabaseClient {
             }
         });
     }
+
+    public static void marcarMensajeComoNoLeido(String remoteId, SupabaseCallback<Boolean> callback) {
+        if (remoteId == null || remoteId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("isleido", false);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/mensajes?id=eq." + remoteId)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al marcar mensaje como no leído en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Mensaje marcado como no leído en Supabase: " + remoteId);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String msg = "HTTP " + response.code();
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
 }

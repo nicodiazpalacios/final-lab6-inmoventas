@@ -21,6 +21,7 @@ import androidx.core.util.Pair;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class AdminConfiguracionFragment extends Fragment {
 
@@ -156,6 +157,7 @@ public class AdminConfiguracionFragment extends Fragment {
             
             if (startDate != null && endDate != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                 String startDateStr = sdf.format(new Date(startDate));
                 String endDateStr = sdf.format(new Date(endDate));
                 

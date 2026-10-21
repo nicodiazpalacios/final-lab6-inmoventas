@@ -174,4 +174,17 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
             }
         });
     }
+
+    @Override
+    public void marcarComoNoLeido(MensajeContacto mensaje) {
+        if (mensaje == null) return;
+        mensaje.leido = false;
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            dao.marcarComoNoLeido(mensaje.id);
+            if (mensaje.remoteId != null && !mensaje.remoteId.isEmpty()) {
+                SupabaseClient.marcarMensajeComoNoLeido(mensaje.remoteId, null);
+            }
+        });
+    }
 }

@@ -5,20 +5,23 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +30,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
@@ -43,6 +48,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -318,6 +324,8 @@ public class AdminMensajesFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
+        View snackbarAnchor = btnMarcarLeido != null ? btnMarcarLeido : dialogView;
+
         // Acción: Copiar teléfono
         if (btnCopiarTel != null) {
             btnCopiarTel.setOnClickListener(v -> {
@@ -325,7 +333,7 @@ public class AdminMensajesFragment extends Fragment {
                 ClipData clip = ClipData.newPlainText("Teléfono cliente", item.clienteTelefono != null ? item.clienteTelefono : "");
                 if (clipboard != null) {
                     clipboard.setPrimaryClip(clip);
-                    Toast.makeText(requireContext(), "Teléfono copiado al portapapeles", Toast.LENGTH_SHORT).show();
+                    mostrarSnackbarElegante("Teléfono copiado al portapapeles", snackbarAnchor);
                 }
             });
         }
@@ -340,10 +348,10 @@ public class AdminMensajesFragment extends Fragment {
                         dialIntent.setData(Uri.parse("tel:" + phone));
                         startActivity(dialIntent);
                     } else {
-                        Toast.makeText(requireContext(), "El cliente no proporcionó teléfono", Toast.LENGTH_SHORT).show();
+                        mostrarSnackbarElegante("El cliente no proporcionó teléfono", snackbarAnchor);
                     }
                 } catch (Exception e) {
-                    Toast.makeText(requireContext(), "No se pudo iniciar la llamada", Toast.LENGTH_SHORT).show();
+                    mostrarSnackbarElegante("No se pudo iniciar la llamada", snackbarAnchor);
                 }
             });
         }
@@ -360,7 +368,7 @@ public class AdminMensajesFragment extends Fragment {
                     whatsappIntent.setData(Uri.parse(url));
                     startActivity(whatsappIntent);
                 } catch (Exception e) {
-                    Toast.makeText(requireContext(), "No se pudo abrir WhatsApp", Toast.LENGTH_SHORT).show();
+                    mostrarSnackbarElegante("No se pudo abrir WhatsApp", snackbarAnchor);
                 }
             });
         }
@@ -368,14 +376,15 @@ public class AdminMensajesFragment extends Fragment {
         // Acción: Marcar como leído
         if (btnMarcarLeido != null) {
             btnMarcarLeido.setOnClickListener(v -> {
+                dialog.dismiss();
+
                 item.leido = true;
-                actualizarEstadoBadgeDialog(tvEstado, btnMarcarLeido, true);
 
                 // Guardar en la base de datos Room y en Supabase
                 MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoLeido(item);
 
-                Toast.makeText(requireContext(), "Mensaje marcado como leído", Toast.LENGTH_SHORT).show();
                 applyFilters(root);
+                mostrarSnackbarEleganteConDeshacer(item, root);
             });
         }
 
@@ -384,7 +393,42 @@ public class AdminMensajesFragment extends Fragment {
             btnCerrarTop.setOnClickListener(v -> dialog.dismiss());
         }
 
+        dialogView.setClickable(true);
+        dialogView.setFocusable(true);
+
         dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+            View parentPanel = dialog.findViewById(androidx.appcompat.R.id.parentPanel);
+            if (parentPanel != null) {
+                ViewGroup.LayoutParams lp = parentPanel.getLayoutParams();
+                if (lp instanceof FrameLayout.LayoutParams) {
+                    ((FrameLayout.LayoutParams) lp).gravity = Gravity.CENTER;
+                }
+                if (lp instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                    int marginH = (int) (20 * getResources().getDisplayMetrics().density);
+                    mlp.setMargins(marginH, 0, marginH, 0);
+                    parentPanel.setLayoutParams(mlp);
+                }
+            }
+
+            View decorView = dialog.getWindow().getDecorView();
+            decorView.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    Rect rect = new Rect();
+                    dialogView.getGlobalVisibleRect(rect);
+                    if (!rect.contains((int) event.getX(), (int) event.getY())) {
+                        dialog.dismiss();
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
     }
 
     private void actualizarEstadoBadgeDialog(TextView tvEstado, MaterialButton btnMarcarLeido, boolean isRead) {
@@ -447,15 +491,16 @@ public class AdminMensajesFragment extends Fragment {
                         .build();
 
                 datePicker.addOnPositiveButtonClickListener(selection -> {
-                    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-                    calendar.setTimeInMillis(selection);
-                    SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                    selectedDateFilter = format.format(calendar.getTime());
+                    if (selection != null) {
+                        SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+                        selectedDateFilter = format.format(new Date(selection));
 
-                    chipFecha.setText(selectedDateFilter);
-                    chipFecha.setCloseIconVisible(true);
-                    currentPage = 1;
-                    applyFilters(root);
+                        chipFecha.setText(selectedDateFilter);
+                        chipFecha.setCloseIconVisible(true);
+                        currentPage = 1;
+                        applyFilters(root);
+                    }
                 });
 
                 datePicker.show(getParentFragmentManager(), "DATE_PICKER_MENSAJES");
@@ -476,7 +521,7 @@ public class AdminMensajesFragment extends Fragment {
         }
         currentPage = 1;
         applyFilters(root);
-        Toast.makeText(requireContext(), "Filtro de fecha quitado", Toast.LENGTH_SHORT).show();
+        mostrarSnackbarElegante("Filtro de fecha quitado");
     }
 
     private void applyFilters(View root) {
@@ -609,7 +654,7 @@ public class AdminMensajesFragment extends Fragment {
         }
 
         if (showToast && getContext() != null) {
-            Toast.makeText(requireContext(), "Página " + currentPage + " de " + maxPages, Toast.LENGTH_SHORT).show();
+            mostrarSnackbarElegante("Página " + currentPage + " de " + maxPages);
         }
     }
 
@@ -632,5 +677,147 @@ public class AdminMensajesFragment extends Fragment {
             tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant));
             tv.setTypeface(null, Typeface.NORMAL);
         }
+    }
+
+    private void mostrarSnackbarEleganteConDeshacer(MensajeContacto item, View root) {
+        if (!isAdded() || getActivity() == null || item == null) return;
+
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = root;
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, "Mensaje marcado como visto", Snackbar.LENGTH_LONG)
+                .setAction("DESHACER", v -> {
+                    item.leido = false;
+                    MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoNoLeido(item);
+                    applyFilters(root);
+                    mostrarSnackbarElegante("Se restableció a no leído");
+                })
+                .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        TextView actionTextView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
+        if (actionTextView != null) {
+            actionTextView.setTypeface(Typeface.DEFAULT_BOLD);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, 0, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        if (lp instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
+    }
+
+    private void mostrarSnackbarElegante(String mensaje) {
+        mostrarSnackbarElegante(mensaje, null);
+    }
+
+    private void mostrarSnackbarElegante(String mensaje, View anchorOrRoot) {
+        if (!isAdded() || getActivity() == null || mensaje == null) return;
+
+        View rootView = anchorOrRoot;
+        if (rootView == null) {
+            rootView = requireActivity().findViewById(R.id.main);
+        }
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        float density = getResources().getDisplayMetrics().density;
+        int marginLeft = (int) (16 * density);
+        int marginRight = (int) (16 * density);
+        int marginB = (int) (8 * density);
+
+        boolean anchorToButton = anchorOrRoot != null && anchorOrRoot.getWidth() > 0 && anchorOrRoot.getHeight() > 0;
+        if (anchorToButton) {
+            View contentView = anchorOrRoot.getRootView().findViewById(android.R.id.content);
+            if (contentView == null) {
+                contentView = anchorOrRoot.getRootView();
+            }
+            int[] anchorLoc = new int[2];
+            int[] parentLoc = new int[2];
+            anchorOrRoot.getLocationOnScreen(anchorLoc);
+            contentView.getLocationOnScreen(parentLoc);
+
+            marginLeft = Math.max(0, anchorLoc[0] - parentLoc[0]);
+            marginRight = Math.max(0, (parentLoc[0] + contentView.getWidth()) - (anchorLoc[0] + anchorOrRoot.getWidth()));
+            marginB = -anchorOrRoot.getHeight();
+        } else if (anchorOrRoot != null) {
+            marginLeft = (int) (44 * density);
+            marginRight = (int) (44 * density);
+            marginB = (int) (24 * density);
+        }
+
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            marginParams.setMargins(marginLeft, 0, marginRight, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        if (lp instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        } else if (lp instanceof androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) {
+            ((androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+        snackbarView.setElevation(8 * density);
+
+        if (anchorToButton) {
+            if (tv != null) {
+                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                tv.setGravity(Gravity.CENTER);
+            }
+            snackbar.setAnchorView(anchorOrRoot);
+        } else {
+            View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+            if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE && anchorOrRoot == null) {
+                snackbar.setAnchorView(bottomNav);
+            }
+        }
+
+        snackbar.show();
     }
 }

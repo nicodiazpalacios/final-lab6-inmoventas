@@ -51,6 +51,12 @@ public interface MensajeContactoDao {
     @Query("UPDATE mensajes_contacto SET leido = 1 WHERE remote_id = :remoteId")
     void marcarComoLeidoPorRemoteId(String remoteId);
 
+    @Query("UPDATE mensajes_contacto SET leido = 0 WHERE id = :id")
+    void marcarComoNoLeido(long id);
+
+    @Query("UPDATE mensajes_contacto SET leido = 0 WHERE remote_id = :remoteId")
+    void marcarComoNoLeidoPorRemoteId(String remoteId);
+
     @Query("UPDATE mensajes_contacto SET estadoSincronizacion = :estado WHERE id = :id")
     void actualizarEstadoSincronizacion(long id, String estado);
 

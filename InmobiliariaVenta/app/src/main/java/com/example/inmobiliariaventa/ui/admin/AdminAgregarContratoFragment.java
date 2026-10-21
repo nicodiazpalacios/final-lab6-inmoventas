@@ -27,6 +27,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class AdminAgregarContratoFragment extends Fragment {
 
@@ -142,6 +143,7 @@ public class AdminAgregarContratoFragment extends Fragment {
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                     String formattedDate = sdf.format(new Date(selection));
                     etStartDate.setText(formattedDate);
                 }
