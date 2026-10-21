@@ -37,6 +37,7 @@
 
             <!-- Header Section -->
             <TextView
+                android:id="@+id/tv_header_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Nuevo Contrato"
@@ -45,6 +46,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tv_header_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -157,26 +159,57 @@
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
 
-                    <!-- DNI / ID Fiscal -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/til_dni"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    <!-- DNI / ID Fiscal & Teléfono / WhatsApp (2 Columnas) -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hint="DNI / ID Fiscal"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxStrokeColor="@color/colorPrimary">
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_dni"
-                            android:layout_width="match_parent"
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_dni"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:inputType="text" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:layout_marginEnd="6dp"
+                            android:layout_marginBottom="16dp"
+                            android:layout_weight="1"
+                            android:hint="DNI / ID Fiscal"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/colorPrimary">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_dni"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_phone"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginBottom="16dp"
+                            android:layout_weight="1"
+                            android:hint="Teléfono / WhatsApp"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/colorPrimary">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_phone"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="phone" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
 
                     <!-- Correo Electrónico -->
                     <com.google.android.material.textfield.TextInputLayout
@@ -252,10 +285,10 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Propiedad (Búsqueda) -->
+                    <!-- Propiedad (Selector / Autocompletado conectado al catálogo) -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/til_property"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
@@ -268,11 +301,12 @@
                         app:startIconDrawable="@drawable/ic_search"
                         app:startIconTint="@color/colorOutline">
 
-                        <com.google.android.material.textfield.TextInputEditText
+                        <AutoCompleteTextView
                             android:id="@+id/et_property"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="text" />
+                            android:completionThreshold="1"
+                            android:inputType="textCapWords" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- Monto Total & Método de Pago -->
@@ -329,12 +363,14 @@
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
 
-                    <!-- Cuotas & Fecha de Inicio -->
+                    <!-- Cuotas (solo Crédito) & Seña / Anticipo (siempre visible) -->
                     <LinearLayout
+                        android:id="@+id/layout_financiacion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:baselineAligned="false"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:visibility="visible">
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/til_installments"
@@ -345,6 +381,7 @@
                             android:layout_marginBottom="16dp"
                             android:layout_weight="1"
                             android:hint="Cuotas"
+                            android:visibility="gone"
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
@@ -359,14 +396,44 @@
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_down_payment"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:layout_weight="1"
+                            android:hint="Seña / Anticipo"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/colorPrimary"
+                            app:prefixText="$ "
+                            app:prefixTextColor="@color/colorOnSurfaceVariant">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_down_payment"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- Fecha del Contrato / Inicio & Fecha de Vencimiento (solo Crédito) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/til_start_date"
                             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
                             android:layout_marginBottom="16dp"
                             android:layout_weight="1"
-                            android:hint="Fecha de Inicio"
+                            android:hint="Fecha del Contrato"
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
@@ -378,6 +445,34 @@
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/et_start_date"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:cursorVisible="false"
+                                android:focusable="false"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_end_date"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginBottom="16dp"
+                            android:layout_weight="1"
+                            android:hint="Vencimiento"
+                            android:visibility="gone"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxStrokeColor="@color/colorPrimary"
+                            app:endIconDrawable="@drawable/ic_calendar_today"
+                            app:endIconMode="custom"
+                            app:endIconTint="@color/colorPrimary">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_end_date"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:cursorVisible="false"
@@ -413,6 +508,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
                         android:hint="Descripción Adicional"
                         app:boxCornerRadiusBottomEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
@@ -428,6 +524,22 @@
                             android:lines="4"
                             android:minLines="3" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Adjuntar PDF del Contrato -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_adjuntar_pdf"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="Adjuntar PDF del contrato (opcional)"
+                        android:textAllCaps="false"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="13sp"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_contratos"
+                        app:iconGravity="textStart"
+                        app:iconTint="@color/colorPrimary"
+                        app:strokeColor="@color/colorOutlineVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -547,16 +659,20 @@
                         </LinearLayout>
 
                         <View
+                            android:id="@+id/divider_preview_installments"
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="#1AFFFFFF" />
+                            android:background="#1AFFFFFF"
+                            android:visibility="gone" />
 
                         <!-- Cuotas Row -->
                         <LinearLayout
+                            android:id="@+id/layout_preview_installments"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:paddingVertical="8dp">
+                            android:paddingVertical="8dp"
+                            android:visibility="gone">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -622,6 +738,14 @@
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
+
+                    <!-- Real Property Photo Background (when selected) -->
+                    <ImageView
+                        android:id="@+id/iv_reference_property_bg"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
 
                     <!-- Watermark / Building Icon Illustration -->
                     <ImageView

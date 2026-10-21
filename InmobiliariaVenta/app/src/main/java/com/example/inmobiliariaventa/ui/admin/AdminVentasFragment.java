@@ -45,7 +45,17 @@ public class AdminVentasFragment extends Fragment {
 
         MaterialButton btnCustomRange = view.findViewById(R.id.btn_custom_range);
         if (btnCustomRange != null) {
-            btnCustomRange.setOnClickListener(v -> mostrarDateRangePicker(btnCustomRange));
+            btnCustomRange.setOnClickListener(v -> mostrarDateRangePicker(btnCustomRange, null));
+        }
+
+        MaterialButton btnExportarPdf = view.findViewById(R.id.btn_exportar_pdf);
+        if (btnExportarPdf != null) {
+            btnExportarPdf.setOnClickListener(v -> mostrarDateRangePicker(btnExportarPdf, "PDF"));
+        }
+
+        MaterialButton btnExportarExcel = view.findViewById(R.id.btn_exportar_excel);
+        if (btnExportarExcel != null) {
+            btnExportarExcel.setOnClickListener(v -> mostrarDateRangePicker(btnExportarExcel, "Excel"));
         }
 
         View tvVerTodas = view.findViewById(R.id.tv_ver_todas_propiedades);
@@ -56,7 +66,7 @@ public class AdminVentasFragment extends Fragment {
         }
     }
 
-    private void mostrarDateRangePicker(MaterialButton button) {
+    private void mostrarDateRangePicker(MaterialButton button, String exportFormat) {
         // Reducir el rango de fechas aliviando el RecyclerView (soluciona el lag al hacer scroll)
         long current = MaterialDatePicker.todayInUtcMilliseconds();
         java.util.Calendar calendar = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
@@ -74,12 +84,16 @@ public class AdminVentasFragment extends Fragment {
                 .setEnd(endDateLimit)
                 .build();
 
-        MaterialDatePicker<Pair<Long, Long>> dateRangePicker =
-                MaterialDatePicker.Builder.dateRangePicker()
-                        .setTitleText("Seleccionar rango de fechas")
-                        .setCalendarConstraints(constraints)
-                        .setTheme(R.style.CustomDatePickerTheme)
-                        .build();
+        MaterialDatePicker.Builder<Pair<Long, Long>> builder = MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText(exportFormat != null ? "Seleccionar rango para exportar" : "Seleccionar rango de fechas")
+                .setCalendarConstraints(constraints)
+                .setTheme(R.style.CustomDatePickerTheme);
+
+        if (exportFormat != null) {
+            builder.setPositiveButtonText("Descargar");
+        }
+
+        MaterialDatePicker<Pair<Long, Long>> dateRangePicker = builder.build();
 
         dateRangePicker.addOnPositiveButtonClickListener(selection -> {
             Long startDate = selection.first;
@@ -91,10 +105,15 @@ public class AdminVentasFragment extends Fragment {
                 String startDateStr = sdf.format(new Date(startDate));
                 String endDateStr = sdf.format(new Date(endDate));
                 
-                // Actualizar el texto del botón con el rango seleccionado
-                button.setText(startDateStr + " - " + endDateStr);
-                
-                // TODO: Llamar al ViewModel o a la base de datos para cargar datos en este rango
+                if (exportFormat != null) {
+                    button.setText("Exportar " + exportFormat + " (" + startDateStr + " - " + endDateStr + ")");
+                    if (getContext() != null) {
+                        android.widget.Toast.makeText(getContext(), "Descargando " + exportFormat + "...", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Actualizar el texto del botón con el rango seleccionado
+                    button.setText(startDateStr + " - " + endDateStr);
+                }
             }
         });
 

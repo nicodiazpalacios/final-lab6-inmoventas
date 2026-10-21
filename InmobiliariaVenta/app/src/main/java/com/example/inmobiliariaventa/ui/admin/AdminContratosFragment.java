@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,29 +18,40 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.repository.ActividadRepository;
+import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
 public class AdminContratosFragment extends Fragment {
 
+    private static final int PAGE_SIZE = 6;
+
     private TextInputEditText etBuscarContrato;
-    private MaterialCardView cardContrato1;
-    private MaterialCardView cardContrato2;
-    private MaterialCardView cardContrato3;
-    private MaterialCardView cardContrato4;
-
-    private TextView tvCliente1, tvPropiedad1;
-    private TextView tvCliente2, tvPropiedad2;
-    private TextView tvCliente3, tvPropiedad3;
-    private TextView tvCliente4, tvPropiedad4;
-
+    private LinearLayout layoutContractsContainer;
+    private View layoutEmptyContracts;
+    private TextView tvEmptyContractsTitle;
+    private TextView tvEmptyContractsSubtitle;
+    private View layoutPagination;
     private FloatingActionButton fabNuevoContrato;
+
+    private final List<Contrato> allContratos = new ArrayList<>();
+    private String currentStatusFilter = "Todos";
+    private String currentSearchQuery = "";
+    private String currentSortOrder = "Recientes";
 
     private int currentPage = 1;
     private int startPage = 1;
-    private final int maxPages = 7; // 42 contratos / 6 por página
+    private int maxPages = 1;
 
     private MaterialCardView btnPagePrev, btnPageNext;
     private MaterialCardView cardPage1, cardPage2, cardPage3, cardPage4;
@@ -60,63 +72,44 @@ public class AdminContratosFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Bind search input
         etBuscarContrato = view.findViewById(R.id.et_buscar_contrato);
+        layoutContractsContainer = view.findViewById(R.id.layout_contracts_container);
+        layoutEmptyContracts = view.findViewById(R.id.layout_empty_contracts);
+        tvEmptyContractsTitle = view.findViewById(R.id.tv_empty_contracts_title);
+        tvEmptyContractsSubtitle = view.findViewById(R.id.tv_empty_contracts_subtitle);
+        layoutPagination = view.findViewById(R.id.layout_pagination);
 
-        // Bind cards
-        cardContrato1 = view.findViewById(R.id.card_contrato_1);
-        cardContrato2 = view.findViewById(R.id.card_contrato_2);
-        cardContrato3 = view.findViewById(R.id.card_contrato_3);
-        cardContrato4 = view.findViewById(R.id.card_contrato_4);
-
-        // Bind card texts for filtering
-        tvCliente1 = view.findViewById(R.id.tv_cliente_1);
-        tvPropiedad1 = view.findViewById(R.id.tv_propiedad_1);
-
-        tvCliente2 = view.findViewById(R.id.tv_cliente_2);
-        tvPropiedad2 = view.findViewById(R.id.tv_propiedad_2);
-
-        tvCliente3 = view.findViewById(R.id.tv_cliente_3);
-        tvPropiedad3 = view.findViewById(R.id.tv_propiedad_3);
-
-        tvCliente4 = view.findViewById(R.id.tv_cliente_4);
-        tvPropiedad4 = view.findViewById(R.id.tv_propiedad_4);
-
-        // Bind action buttons
-        setupCardActions(view, R.id.btn_modificar_1, R.id.btn_baja_1, R.id.badge_wrapper_1, R.id.tv_badge_status_1, "Juan Pérez", "Skyline Luxury Residences", "$ 150,000");
-        setupCardActions(view, R.id.btn_modificar_2, R.id.btn_baja_2, R.id.badge_wrapper_2, R.id.tv_badge_status_2, "Elena Rodríguez", "Villa Bellavista", "$ 320,000");
-        setupCardActions(view, R.id.btn_modificar_3, R.id.btn_baja_3, R.id.badge_wrapper_3, R.id.tv_badge_status_3, "Roberto Gómez", "Green Valley House", "$ 85,000");
-        setupCardActions(view, R.id.btn_modificar_4, R.id.btn_baja_4, R.id.badge_wrapper_4, R.id.tv_badge_status_4, "Ana Martínez", "Urban Loft Palermo", "$ 98,000");
-
-        // Bind FAB
         fabNuevoContrato = view.findViewById(R.id.fab_nuevo_contrato);
         if (fabNuevoContrato != null) {
-            fabNuevoContrato.setOnClickListener(v -> 
-                Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato)
+            fabNuevoContrato.setOnClickListener(v ->
+                    Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato)
             );
         }
 
-        // Bind Filter and Sort buttons
-        View btnFilterStatus = view.findViewById(R.id.btn_filter_status);
+        MaterialButton btnFilterStatus = view.findViewById(R.id.btn_filter_status);
         if (btnFilterStatus != null) {
             btnFilterStatus.setOnClickListener(v -> {
                 android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnFilterStatus);
                 popup.getMenu().add("Todos");
                 popup.getMenu().add("Activo");
                 popup.getMenu().add("Pendiente");
-                popup.getMenu().add("Rechazado");
-                popup.getMenu().add("Finalizado");
+                popup.getMenu().add("Cancelado");
                 popup.setOnMenuItemClickListener(item -> {
-                    String status = item.getTitle().toString();
-                    filterByStatus(status);
-                    Toast.makeText(requireContext(), "Filtro: " + status, Toast.LENGTH_SHORT).show();
+                    currentStatusFilter = item.getTitle().toString();
+                    btnFilterStatus.setText("Todos".equalsIgnoreCase(currentStatusFilter)
+                            ? "FILTROS"
+                            : "FILTROS (" + currentStatusFilter + ")");
+                    currentPage = 1;
+                    startPage = 1;
+                    renderContractsList();
+                    Toast.makeText(requireContext(), "Filtro: " + currentStatusFilter, Toast.LENGTH_SHORT).show();
                     return true;
                 });
                 popup.show();
             });
         }
 
-        View btnSortContracts = view.findViewById(R.id.btn_sort_contracts);
+        MaterialButton btnSortContracts = view.findViewById(R.id.btn_sort_contracts);
         if (btnSortContracts != null) {
             btnSortContracts.setOnClickListener(v -> {
                 android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnSortContracts);
@@ -124,82 +117,234 @@ public class AdminContratosFragment extends Fragment {
                 popup.getMenu().add("Mayor Monto");
                 popup.getMenu().add("Menor Monto");
                 popup.setOnMenuItemClickListener(item -> {
-                    Toast.makeText(requireContext(), "Orden: " + item.getTitle(), Toast.LENGTH_SHORT).show();
+                    currentSortOrder = item.getTitle().toString();
+                    btnSortContracts.setText("ORDEN (" + currentSortOrder + ")");
+                    currentPage = 1;
+                    startPage = 1;
+                    renderContractsList();
+                    Toast.makeText(requireContext(), "Orden: " + currentSortOrder, Toast.LENGTH_SHORT).show();
                     return true;
                 });
                 popup.show();
             });
         }
 
-        // Setup real-time search filter
         setupSearchFilter();
-
         setupPagination(view);
+        observeContracts();
     }
 
-    private void filterByStatus(String status) {
-        if ("Todos".equals(status)) {
-            if (cardContrato1 != null) cardContrato1.setVisibility(View.VISIBLE);
-            if (cardContrato2 != null) cardContrato2.setVisibility(View.VISIBLE);
-            if (cardContrato3 != null) cardContrato3.setVisibility(View.VISIBLE);
-            if (cardContrato4 != null) cardContrato4.setVisibility(View.VISIBLE);
-        } else if ("Activo".equals(status)) {
-            if (cardContrato1 != null) cardContrato1.setVisibility(View.VISIBLE);
-            if (cardContrato2 != null) cardContrato2.setVisibility(View.GONE);
-            if (cardContrato3 != null) cardContrato3.setVisibility(View.GONE);
-            if (cardContrato4 != null) cardContrato4.setVisibility(View.GONE);
-        } else if ("Rechazado".equals(status)) {
-            if (cardContrato1 != null) cardContrato1.setVisibility(View.GONE);
-            if (cardContrato2 != null) cardContrato2.setVisibility(View.VISIBLE);
-            if (cardContrato3 != null) cardContrato3.setVisibility(View.GONE);
-            if (cardContrato4 != null) cardContrato4.setVisibility(View.GONE);
-        } else if ("Pendiente".equals(status)) {
-            if (cardContrato1 != null) cardContrato1.setVisibility(View.GONE);
-            if (cardContrato2 != null) cardContrato2.setVisibility(View.GONE);
-            if (cardContrato3 != null) cardContrato3.setVisibility(View.VISIBLE);
-            if (cardContrato4 != null) cardContrato4.setVisibility(View.GONE);
-        } else if ("Finalizado".equals(status)) {
-            if (cardContrato1 != null) cardContrato1.setVisibility(View.GONE);
-            if (cardContrato2 != null) cardContrato2.setVisibility(View.GONE);
-            if (cardContrato3 != null) cardContrato3.setVisibility(View.GONE);
-            if (cardContrato4 != null) cardContrato4.setVisibility(View.VISIBLE);
+    private void observeContracts() {
+        AppDatabase db = AppDatabase.getInstance(requireContext());
+        db.contratoDao().obtenerTodosLiveData().observe(getViewLifecycleOwner(), contratos -> {
+            allContratos.clear();
+            if (contratos != null) {
+                allContratos.addAll(contratos);
+                sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(contratos));
+            }
+            renderContractsList();
+        });
+    }
+
+    private void sincronizarPropiedadesPausadasPorContratos(List<Contrato> contratos) {
+        if (getActivity() == null) return;
+        android.app.Application appContext = requireActivity().getApplication();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(appContext);
+            List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+            if (todas == null || todas.isEmpty()) return;
+
+            com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl repo = null;
+            for (Contrato c : contratos) {
+                if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                    for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
+                        boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
+                        boolean matchTitulo = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
+                        if ((matchId || matchTitulo) && !p.isPausada()) {
+                            p.estado = "Pausado";
+                            if (repo == null) {
+                                repo = new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext);
+                            }
+                            repo.update(p);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void renderContractsList() {
+        if (layoutContractsContainer == null || getContext() == null) return;
+
+        List<Contrato> filtered = new ArrayList<>();
+        for (Contrato c : allContratos) {
+            if (!"Todos".equalsIgnoreCase(currentStatusFilter)) {
+                String est = c.estado != null ? c.estado : "";
+                if ("Rechazado".equalsIgnoreCase(est) || "Finalizado".equalsIgnoreCase(est)) {
+                    est = "Cancelado";
+                }
+                if (!est.equalsIgnoreCase(currentStatusFilter)) {
+                    continue;
+                }
+            }
+
+            if (!currentSearchQuery.isEmpty()) {
+                String fullClient = c.getNombreCompletoCliente().toLowerCase(Locale.ROOT);
+                String prop = (c.propiedadTitulo != null ? c.propiedadTitulo : "").toLowerCase(Locale.ROOT);
+                String dni = (c.clienteDni != null ? c.clienteDni : "").toLowerCase(Locale.ROOT);
+                if (!fullClient.contains(currentSearchQuery) && !prop.contains(currentSearchQuery) && !dni.contains(currentSearchQuery)) {
+                    continue;
+                }
+            }
+
+            filtered.add(c);
         }
-    }
 
-    private void setupCardActions(View root, int btnModificarId, int btnBajaId, int badgeWrapperId, int tvBadgeStatusId, String clienteName, String propiedadName, String monto) {
-        MaterialButton btnModificar = root.findViewById(btnModificarId);
-        MaterialButton btnBaja = root.findViewById(btnBajaId);
-        MaterialCardView badgeWrapper = root.findViewById(badgeWrapperId);
-        TextView tvBadgeStatus = root.findViewById(tvBadgeStatusId);
+        if ("Mayor Monto".equals(currentSortOrder)) {
+            Collections.sort(filtered, (a, b) -> Double.compare(
+                    b.montoTotal != null ? b.montoTotal : 0.0,
+                    a.montoTotal != null ? a.montoTotal : 0.0));
+        } else if ("Menor Monto".equals(currentSortOrder)) {
+            Collections.sort(filtered, (a, b) -> Double.compare(
+                    a.montoTotal != null ? a.montoTotal : 0.0,
+                    b.montoTotal != null ? b.montoTotal : 0.0));
+        } else {
+            Collections.sort(filtered, (a, b) -> Long.compare(b.timestamp, a.timestamp));
+        }
 
-        if (btnModificar != null) {
+        layoutContractsContainer.removeAllViews();
+
+        if (filtered.isEmpty()) {
+            if (layoutEmptyContracts != null) {
+                layoutEmptyContracts.setVisibility(View.VISIBLE);
+                if (allContratos.isEmpty()) {
+                    if (tvEmptyContractsTitle != null) tvEmptyContractsTitle.setText("No hay contratos cargados");
+                    if (tvEmptyContractsSubtitle != null) {
+                        tvEmptyContractsSubtitle.setText("Presiona el botón + abajo a la derecha para registrar el primer contrato en el sistema.");
+                    }
+                } else {
+                    if (tvEmptyContractsTitle != null) tvEmptyContractsTitle.setText("Sin resultados");
+                    if (tvEmptyContractsSubtitle != null) {
+                        tvEmptyContractsSubtitle.setText("No se encontraron contratos que coincidan con la búsqueda o el filtro actual.");
+                    }
+                }
+            }
+            if (layoutPagination != null) {
+                layoutPagination.setVisibility(View.GONE);
+            }
+            return;
+        }
+
+        if (layoutEmptyContracts != null) {
+            layoutEmptyContracts.setVisibility(View.GONE);
+        }
+
+        maxPages = Math.max(1, (int) Math.ceil((double) filtered.size() / PAGE_SIZE));
+        if (currentPage > maxPages) {
+            currentPage = maxPages;
+            startPage = currentPage;
+        }
+
+        int fromIndex = (currentPage - 1) * PAGE_SIZE;
+        int toIndex = Math.min(fromIndex + PAGE_SIZE, filtered.size());
+        List<Contrato> pageItems = filtered.subList(fromIndex, toIndex);
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.US);
+        currencyFormat.setMaximumFractionDigits(0);
+
+        for (Contrato contrato : pageItems) {
+            View cardView = inflater.inflate(R.layout.item_contrato_card, layoutContractsContainer, false);
+
+            TextView tvCliente = cardView.findViewById(R.id.tv_cliente);
+            TextView tvPropiedad = cardView.findViewById(R.id.tv_propiedad);
+            MaterialCardView badgeWrapper = cardView.findViewById(R.id.badge_wrapper);
+            TextView tvBadgeStatus = cardView.findViewById(R.id.tv_badge_status);
+            TextView tvMonto = cardView.findViewById(R.id.tv_monto);
+            TextView tvLabelVencimiento = cardView.findViewById(R.id.tv_label_vencimiento);
+            TextView tvVencimiento = cardView.findViewById(R.id.tv_vencimiento);
+            TextView tvPlan = cardView.findViewById(R.id.tv_plan);
+            MaterialButton btnModificar = cardView.findViewById(R.id.btn_modificar);
+            MaterialButton btnBaja = cardView.findViewById(R.id.btn_baja);
+
+            String clienteFullName = contrato.getNombreCompletoCliente();
+            String propiedadName = contrato.propiedadTitulo != null && !contrato.propiedadTitulo.isEmpty()
+                    ? contrato.propiedadTitulo
+                    : contrato.propiedadId;
+
+            double montoVal = contrato.montoTotal != null ? contrato.montoTotal : 0.0;
+            String montoFormatted = "$ " + currencyFormat.format(montoVal);
+
+            tvCliente.setText(clienteFullName);
+            tvPropiedad.setText(propiedadName);
+            tvMonto.setText(montoFormatted);
+
+            int cuotasVal = contrato.cuotas != null ? contrato.cuotas : 1;
+            if (!"Crédito".equalsIgnoreCase(contrato.metodoPago) || cuotasVal <= 1) {
+                String metodo = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
+                tvPlan.setText("Contado (" + metodo + ")");
+                if (tvLabelVencimiento != null) tvLabelVencimiento.setText("FECHA FIRMA");
+                tvVencimiento.setText(contrato.fechaInicio != null && !contrato.fechaInicio.isEmpty() ? contrato.fechaInicio : "-");
+            } else {
+                tvPlan.setText(cuotasVal + " Cuotas");
+                if (tvLabelVencimiento != null) tvLabelVencimiento.setText("VENCIMIENTO");
+                tvVencimiento.setText(contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
+                        ? contrato.fechaVencimiento
+                        : (contrato.fechaInicio != null ? contrato.fechaInicio : "-"));
+            }
+
+            String estadoActual = contrato.estado != null ? contrato.estado : "Activo";
+            if ("Rechazado".equalsIgnoreCase(estadoActual) || "Finalizado".equalsIgnoreCase(estadoActual)) {
+                estadoActual = "Cancelado";
+            }
+            actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, estadoActual);
+
+            final String finalClienteName = clienteFullName;
+            final String finalPropiedadName = propiedadName;
+            final String finalMonto = montoFormatted;
+
             btnModificar.setOnClickListener(v -> {
-                android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnModificar);
-                popup.getMenu().add("Activo");
-                popup.getMenu().add("Pendiente");
-                popup.getMenu().add("Rechazado");
-                popup.getMenu().add("Finalizado");
-
-                popup.setOnMenuItemClickListener(item -> {
-                    String nuevaSituacion = item.getTitle().toString();
-                    actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, nuevaSituacion);
-                    com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
-                            .registrarModificacionContrato(clienteName, propiedadName, monto, nuevaSituacion);
-                    Toast.makeText(requireContext(), "Situación de contrato actualizada a: " + nuevaSituacion, Toast.LENGTH_SHORT).show();
-                    return true;
-                });
-                popup.show();
+                Bundle args = new Bundle();
+                args.putString("contrato_id", contrato.id);
+                Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato, args);
             });
-        }
 
-        if (btnBaja != null) {
             btnBaja.setOnClickListener(v -> {
-                actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, "Finalizado");
-                com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
-                        .registrarModificacionContrato(clienteName, propiedadName, monto, "Finalizado (Baja)");
-                Toast.makeText(requireContext(), "Contrato de " + clienteName + " dado de baja", Toast.LENGTH_SHORT).show();
+                darDeBajaContrato(contrato);
+                ActividadRepository.getInstance(requireContext())
+                        .registrarModificacionContrato(finalClienteName, finalPropiedadName, finalMonto, "Cancelado (Baja)");
+                Toast.makeText(requireContext(), "Contrato de " + finalClienteName + " cancelado", Toast.LENGTH_SHORT).show();
             });
+
+            layoutContractsContainer.addView(cardView);
         }
+
+        if (layoutPagination != null) {
+            layoutPagination.setVisibility(maxPages > 1 ? View.VISIBLE : View.GONE);
+        }
+        renderPagination(false);
+    }
+
+    private void darDeBajaContrato(Contrato contrato) {
+        contrato.estado = "Cancelado";
+        if (getActivity() == null) return;
+        android.app.Application appContext = requireActivity().getApplication();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(appContext);
+            db.contratoDao().actualizar(contrato);
+
+            List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+            if (todas != null) {
+                for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
+                    boolean matchId = contrato.propiedadId != null && !contrato.propiedadId.isEmpty() && contrato.propiedadId.equals(p.id);
+                    boolean matchTitulo = contrato.propiedadTitulo != null && p.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
+                    if ((matchId || matchTitulo) && p.isPausada()) {
+                        p.estado = "Publicado";
+                        new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext).update(p);
+                    }
+                }
+            }
+        });
     }
 
     private void actualizarBadgeSituacion(MaterialCardView badgeWrapper, TextView tvBadgeStatus, String situacion) {
@@ -215,12 +360,9 @@ public class AdminContratosFragment extends Fragment {
                 case "Pendiente":
                     color = android.graphics.Color.parseColor("#BA8400");
                     break;
-                case "Rechazado":
-                    color = android.graphics.Color.parseColor("#BA1A1A");
-                    break;
-                case "Finalizado":
+                case "Cancelado":
                 default:
-                    color = android.graphics.Color.parseColor("#73777F");
+                    color = android.graphics.Color.parseColor("#BA1A1A");
                     break;
             }
             badgeWrapper.setCardBackgroundColor(color);
@@ -236,36 +378,15 @@ public class AdminContratosFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterContracts(s != null ? s.toString().trim().toLowerCase() : "");
+                currentSearchQuery = s != null ? s.toString().trim().toLowerCase(Locale.ROOT) : "";
+                currentPage = 1;
+                startPage = 1;
+                renderContractsList();
             }
 
             @Override
             public void afterTextChanged(Editable s) { }
         });
-    }
-
-    private void filterContracts(String query) {
-        filterSingleCard(cardContrato1, tvCliente1, tvPropiedad1, query);
-        filterSingleCard(cardContrato2, tvCliente2, tvPropiedad2, query);
-        filterSingleCard(cardContrato3, tvCliente3, tvPropiedad3, query);
-        filterSingleCard(cardContrato4, tvCliente4, tvPropiedad4, query);
-    }
-
-    private void filterSingleCard(MaterialCardView card, TextView tvCliente, TextView tvPropiedad, String query) {
-        if (card == null) return;
-        if (query.isEmpty()) {
-            card.setVisibility(View.VISIBLE);
-            return;
-        }
-
-        String cliente = tvCliente != null ? tvCliente.getText().toString().toLowerCase() : "";
-        String propiedad = tvPropiedad != null ? tvPropiedad.getText().toString().toLowerCase() : "";
-
-        if (cliente.contains(query) || propiedad.contains(query)) {
-            card.setVisibility(View.VISIBLE);
-        } else {
-            card.setVisibility(View.GONE);
-        }
     }
 
     private void setupPagination(View root) {
@@ -287,7 +408,7 @@ public class AdminContratosFragment extends Fragment {
         if (btnPagePrev != null) {
             btnPagePrev.setOnClickListener(v -> {
                 if (currentPage > 1) {
-                    goToPage(currentPage - 1, root);
+                    goToPage(currentPage - 1);
                 }
             });
         }
@@ -295,39 +416,39 @@ public class AdminContratosFragment extends Fragment {
         if (btnPageNext != null) {
             btnPageNext.setOnClickListener(v -> {
                 if (currentPage < maxPages) {
-                    goToPage(currentPage + 1, root);
+                    goToPage(currentPage + 1);
                 }
             });
         }
 
         if (cardPage1 != null) {
-            cardPage1.setOnClickListener(v -> goToPage(startPage, root));
+            cardPage1.setOnClickListener(v -> goToPage(startPage));
         }
         if (cardPage2 != null) {
-            cardPage2.setOnClickListener(v -> goToPage(startPage + 1, root));
+            cardPage2.setOnClickListener(v -> goToPage(startPage + 1));
         }
         if (cardPage3 != null) {
-            cardPage3.setOnClickListener(v -> goToPage(startPage + 2, root));
+            cardPage3.setOnClickListener(v -> goToPage(startPage + 2));
         }
         if (cardPage4 != null) {
-            cardPage4.setOnClickListener(v -> goToPage(startPage + 3, root));
+            cardPage4.setOnClickListener(v -> goToPage(startPage + 3));
         }
 
-        renderPagination(root, false);
+        renderPagination(false);
     }
 
-    private void goToPage(int page, View root) {
+    private void goToPage(int page) {
         if (page < 1) page = 1;
         if (page > maxPages) page = maxPages;
         if (page == currentPage && startPage == page) return;
 
         currentPage = page;
-        // As requested: "si presionas por ejemplo la pagina 2 que muestre del 2 que esta seleccionada hasta 5 y asi"
         startPage = currentPage;
-        renderPagination(root, true);
+        renderContractsList();
+        Toast.makeText(requireContext(), "Página " + currentPage + " de " + maxPages, Toast.LENGTH_SHORT).show();
     }
 
-    private void renderPagination(View root, boolean showToast) {
+    private void renderPagination(boolean showToast) {
         if (cardPage1 == null) return;
 
         int slot1 = startPage;
@@ -344,7 +465,6 @@ public class AdminContratosFragment extends Fragment {
         cardPage3.setVisibility(slot3 <= maxPages ? View.VISIBLE : View.GONE);
         cardPage4.setVisibility(slot4 <= maxPages ? View.VISIBLE : View.GONE);
 
-        // Slot 1 is always the selected page since startPage == currentPage
         stylePageCard(cardPage1, tvPage1, true);
         stylePageCard(cardPage2, tvPage2, false);
         stylePageCard(cardPage3, tvPage3, false);

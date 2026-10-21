@@ -1,24 +1,40 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.Patterns;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.repository.EmpresaRepository;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
 public class AdminHomeFragment extends Fragment {
 
     private ActividadRecienteAdapter actividadAdapter;
+    private EmpresaRepository empresaRepository;
 
     public AdminHomeFragment() {
         // Required empty public constructor
@@ -108,10 +124,10 @@ public class AdminHomeFragment extends Fragment {
             });
         }
 
-        View cardAjustes = view.findViewById(R.id.card_ajustes);
-        if (cardAjustes != null) {
-            cardAjustes.setOnClickListener(v -> {
-                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_configuracion);
+        View cardContratos = view.findViewById(R.id.card_contratos);
+        if (cardContratos != null) {
+            cardContratos.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_contratos);
             });
         }
 
@@ -161,5 +177,163 @@ public class AdminHomeFragment extends Fragment {
                             .getActividades()
             );
         }
+    }
+
+    private void mostrarDialogoEditarDatosEmpresa() {
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View dialogView = inflater.inflate(R.layout.dialog_editar_datos_empresa, null);
+
+        EditText etNombre = dialogView.findViewById(R.id.et_dialog_empresa_nombre);
+        EditText etTelefono = dialogView.findViewById(R.id.et_dialog_empresa_telefono);
+        EditText etEmail = dialogView.findViewById(R.id.et_dialog_empresa_email);
+        EditText etDireccion = dialogView.findViewById(R.id.et_dialog_empresa_direccion);
+        TextView tvError = dialogView.findViewById(R.id.dialog_empresa_tv_error);
+
+        android.widget.ImageButton btnCerrar = dialogView.findViewById(R.id.dialog_empresa_btn_cerrar);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_empresa_btn_cancelar);
+        MaterialButton btnGuardar = dialogView.findViewById(R.id.dialog_empresa_btn_guardar);
+
+        if (etNombre != null) etNombre.setText(empresaRepository.getNombreEmpresaInmediato());
+        if (etTelefono != null) etTelefono.setText(empresaRepository.getTelefonoWhatsappInmediato());
+        if (etEmail != null) etEmail.setText(empresaRepository.getEmailInmediato());
+        if (etDireccion != null) etDireccion.setText(empresaRepository.getDireccionInmediata());
+
+        empresaRepository.cargarConfiguracionAsync(config -> {
+            if (config != null && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (etNombre != null && config.nombreEmpresa != null) etNombre.setText(config.nombreEmpresa);
+                    if (etTelefono != null && config.telefonoWhatsapp != null) etTelefono.setText(config.telefonoWhatsapp);
+                    if (etEmail != null && config.email != null) etEmail.setText(config.email);
+                    if (etDireccion != null && config.direccion != null) etDireccion.setText(config.direccion);
+                });
+            }
+        });
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        View.OnClickListener dismissWithKeyboard = v -> {
+            View focus = dialog.getCurrentFocus();
+            if (focus != null && getContext() != null) {
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+            }
+            dialog.dismiss();
+        };
+
+        if (btnCerrar != null) btnCerrar.setOnClickListener(dismissWithKeyboard);
+        if (btnCancelar != null) btnCancelar.setOnClickListener(dismissWithKeyboard);
+
+        if (btnGuardar != null) {
+            btnGuardar.setOnClickListener(v -> {
+                String nuevoNombre = etNombre != null && etNombre.getText() != null ? etNombre.getText().toString().trim() : "";
+                String nuevoTelefono = etTelefono != null && etTelefono.getText() != null ? etTelefono.getText().toString().trim() : "";
+                String nuevoEmail = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+                String nuevaDireccion = etDireccion != null && etDireccion.getText() != null ? etDireccion.getText().toString().trim() : "";
+
+                if (nuevoNombre.isEmpty()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa el nombre de la empresa");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    if (etNombre != null) etNombre.requestFocus();
+                    return;
+                }
+
+                if (nuevoEmail.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(nuevoEmail).matches()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa un correo electrónico oficial válido");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    if (etEmail != null) etEmail.requestFocus();
+                    return;
+                }
+
+                if (nuevoTelefono.isEmpty()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa un teléfono o WhatsApp de contacto");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    if (etTelefono != null) etTelefono.requestFocus();
+                    return;
+                }
+
+                if (nuevaDireccion.isEmpty()) {
+                    if (tvError != null) {
+                        tvError.setText("Por favor, ingresa la dirección de la inmobiliaria");
+                        tvError.setVisibility(View.VISIBLE);
+                    }
+                    if (etDireccion != null) etDireccion.requestFocus();
+                    return;
+                }
+
+                btnGuardar.setEnabled(false);
+                btnGuardar.setText("Guardando...");
+
+                empresaRepository.guardarConfiguracion(nuevoNombre, nuevoTelefono, nuevoEmail, nuevaDireccion);
+
+                View focus = dialog.getCurrentFocus();
+                if (focus != null && getContext() != null) {
+                    InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+                }
+                dialog.dismiss();
+                mostrarSnackbarElegante("Datos de la empresa actualizados correctamente");
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void mostrarSnackbarElegante(String mensaje) {
+        if (!isAdded() || getActivity() == null) return;
+        View rootView = requireActivity().findViewById(R.id.main);
+        if (rootView == null) {
+            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+        }
+        if (rootView == null) {
+            rootView = getView();
+        }
+        if (rootView == null) return;
+
+        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
+                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
+        snackbarView.setBackgroundTintList(null);
+
+        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setMaxLines(3);
+        }
+
+        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
+            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
+            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
+            marginParams.setMargins(marginH, 0, marginH, marginB);
+            snackbarView.setLayoutParams(marginParams);
+        }
+        if (lp instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
+
+        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE) {
+            snackbar.setAnchorView(bottomNav);
+        }
+
+        snackbar.show();
     }
 }

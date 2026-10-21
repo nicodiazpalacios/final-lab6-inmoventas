@@ -1,50 +1,98 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.bumptech.glide.Glide;
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.repository.ActividadRepository;
+import com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl;
+import com.example.inmobiliariaventa.domain.entity.Contrato;
+import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class AdminAgregarContratoFragment extends Fragment {
 
-    // Inputs
-    private TextInputLayout tilFirstName, tilLastName, tilDni, tilEmail;
-    private TextInputEditText etFirstName, etLastName, etDni, etEmail;
+    // Header
+    private TextView tvHeaderTitle, tvHeaderSubtitle;
 
-    private TextInputLayout tilProperty, tilAmount, tilPaymentMethod, tilInstallments, tilStartDate, tilStatus, tilDescription;
-    private TextInputEditText etProperty, etAmount, etInstallments, etStartDate, etDescription;
-    private AutoCompleteTextView actvPaymentMethod, actvStatus;
+    // Inputs: Cliente
+    private TextInputLayout tilFirstName, tilLastName, tilDni, tilPhone, tilEmail;
+    private TextInputEditText etFirstName, etLastName, etDni, etPhone, etEmail;
+
+    // Inputs: Contrato
+    private TextInputLayout tilProperty, tilAmount, tilPaymentMethod, tilInstallments, tilDownPayment, tilStartDate, tilEndDate, tilStatus, tilDescription;
+    private AutoCompleteTextView etProperty, actvPaymentMethod, actvStatus;
+    private TextInputEditText etAmount, etInstallments, etDownPayment, etStartDate, etEndDate, etDescription;
+    private View layoutFinanciacion;
+    private MaterialButton btnAdjuntarPdf;
 
     // Preview
     private TextView tvPreviewAmount, tvPreviewProp, tvPreviewMethod, tvPreviewInstallments, tvReferencePropertyTitle;
+    private View layoutPreviewInstallments, dividerPreviewInstallments;
+    private ImageView ivReferencePropertyBg;
 
     // Buttons
     private ImageButton btnBack;
     private MaterialButton btnCancelar, btnGuardarContrato;
+
+    // Estado interno
+    private final Map<String, Propiedad> mapaPropiedades = new HashMap<>();
+    private Long selectedStartDateMillis = null;
+    private String attachedPdfUriStr = null;
+    private String editingContratoId = null;
+    private Contrato contratoEnEdicion = null;
+    private boolean isPopulatingEditData = false;
+
+    private final ActivityResultLauncher<String> pdfPickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    attachedPdfUriStr = uri.toString();
+                    String fileName = obtenerNombreArchivo(uri);
+                    if (btnAdjuntarPdf != null) {
+                        btnAdjuntarPdf.setText("PDF adjunto: " + fileName);
+                    }
+                }
+            });
 
     public AdminAgregarContratoFragment() {
         // Required empty public constructor
@@ -60,16 +108,22 @@ public class AdminAgregarContratoFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (getArguments() != null) {
+            editingContratoId = getArguments().getString("contrato_id");
+        }
+
         initViews(view);
         setupDropdowns();
-        setupDatePicker();
+        setupDatePickers();
         setupLivePreview();
         setupActions(view);
+        cargarPropiedadesYContratoExistente();
     }
 
     private void initViews(View view) {
-        // Header
         btnBack = view.findViewById(R.id.btn_back);
+        tvHeaderTitle = view.findViewById(R.id.tv_header_title);
+        tvHeaderSubtitle = view.findViewById(R.id.tv_header_subtitle);
 
         // Client info
         tilFirstName = view.findViewById(R.id.til_first_name);
@@ -78,6 +132,8 @@ public class AdminAgregarContratoFragment extends Fragment {
         etLastName = view.findViewById(R.id.et_last_name);
         tilDni = view.findViewById(R.id.til_dni);
         etDni = view.findViewById(R.id.et_dni);
+        tilPhone = view.findViewById(R.id.til_phone);
+        etPhone = view.findViewById(R.id.et_phone);
         tilEmail = view.findViewById(R.id.til_email);
         etEmail = view.findViewById(R.id.et_email);
 
@@ -88,25 +144,40 @@ public class AdminAgregarContratoFragment extends Fragment {
         etAmount = view.findViewById(R.id.et_amount);
         tilPaymentMethod = view.findViewById(R.id.til_payment_method);
         actvPaymentMethod = view.findViewById(R.id.actv_payment_method);
+        layoutFinanciacion = view.findViewById(R.id.layout_financiacion);
         tilInstallments = view.findViewById(R.id.til_installments);
         etInstallments = view.findViewById(R.id.et_installments);
+        tilDownPayment = view.findViewById(R.id.til_down_payment);
+        etDownPayment = view.findViewById(R.id.et_down_payment);
         tilStartDate = view.findViewById(R.id.til_start_date);
         etStartDate = view.findViewById(R.id.et_start_date);
+        tilEndDate = view.findViewById(R.id.til_end_date);
+        etEndDate = view.findViewById(R.id.et_end_date);
         tilStatus = view.findViewById(R.id.til_status);
         actvStatus = view.findViewById(R.id.actv_status);
         tilDescription = view.findViewById(R.id.til_description);
         etDescription = view.findViewById(R.id.et_description);
+        btnAdjuntarPdf = view.findViewById(R.id.btn_adjuntar_pdf);
 
         // Live preview
         tvPreviewAmount = view.findViewById(R.id.tv_preview_amount);
         tvPreviewProp = view.findViewById(R.id.tv_preview_prop);
         tvPreviewMethod = view.findViewById(R.id.tv_preview_method);
         tvPreviewInstallments = view.findViewById(R.id.tv_preview_installments);
+        layoutPreviewInstallments = view.findViewById(R.id.layout_preview_installments);
+        dividerPreviewInstallments = view.findViewById(R.id.divider_preview_installments);
         tvReferencePropertyTitle = view.findViewById(R.id.tv_reference_property_title);
+        ivReferencePropertyBg = view.findViewById(R.id.iv_reference_property_bg);
 
         // Action buttons
         btnCancelar = view.findViewById(R.id.btn_cancelar);
         btnGuardarContrato = view.findViewById(R.id.btn_guardar_contrato);
+
+        if (editingContratoId != null && !editingContratoId.isEmpty()) {
+            if (tvHeaderTitle != null) tvHeaderTitle.setText("Modificar Contrato");
+            if (tvHeaderSubtitle != null) tvHeaderSubtitle.setText("Modifique los datos del acuerdo inmobiliario seleccionado.");
+            if (btnGuardarContrato != null) btnGuardarContrato.setText("Guardar Cambios");
+        }
     }
 
     private void setupDropdowns() {
@@ -121,9 +192,10 @@ public class AdminAgregarContratoFragment extends Fragment {
         );
         actvPaymentMethod.setAdapter(methodAdapter);
         actvPaymentMethod.setText(paymentMethods[0], false);
+        actualizarVisibilidadCuotas(paymentMethods[0]);
 
         // Status Dropdown
-        String[] statusOptions = {"Activo", "Pendiente", "Rechazado", "Finalizado"};
+        String[] statusOptions = {"Activo", "Pendiente", "Cancelado"};
         ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
@@ -133,27 +205,277 @@ public class AdminAgregarContratoFragment extends Fragment {
         actvStatus.setText(statusOptions[0], false);
     }
 
-    private void setupDatePicker() {
-        View.OnClickListener dateClickListener = v -> {
+    private void actualizarVisibilidadCuotas(String metodoPago) {
+        boolean tieneCuotas = "Crédito".equalsIgnoreCase(metodoPago);
+        int dp6 = Math.round(6 * getResources().getDisplayMetrics().density);
+
+        if (layoutFinanciacion != null) {
+            layoutFinanciacion.setVisibility(View.VISIBLE);
+        }
+        if (tilInstallments != null) {
+            tilInstallments.setVisibility(tieneCuotas ? View.VISIBLE : View.GONE);
+        }
+        if (tilDownPayment != null && tilDownPayment.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) tilDownPayment.getLayoutParams();
+            lp.setMarginStart(tieneCuotas ? dp6 : 0);
+            tilDownPayment.setLayoutParams(lp);
+        }
+        if (tilEndDate != null) {
+            tilEndDate.setVisibility(tieneCuotas ? View.VISIBLE : View.GONE);
+        }
+        if (tilStartDate != null) {
+            tilStartDate.setHint(tieneCuotas ? "Fecha de Inicio" : "Fecha del Contrato");
+            if (tilStartDate.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams lpStart = (ViewGroup.MarginLayoutParams) tilStartDate.getLayoutParams();
+                lpStart.setMarginEnd(tieneCuotas ? dp6 : 0);
+                tilStartDate.setLayoutParams(lpStart);
+            }
+        }
+        if (layoutPreviewInstallments != null) {
+            layoutPreviewInstallments.setVisibility(tieneCuotas ? View.VISIBLE : View.GONE);
+        }
+        if (dividerPreviewInstallments != null) {
+            dividerPreviewInstallments.setVisibility(tieneCuotas ? View.VISIBLE : View.GONE);
+        }
+        if (!tieneCuotas) {
+            if (etInstallments != null) etInstallments.setText("");
+            if (tilInstallments != null) tilInstallments.setError(null);
+            if (tilEndDate != null) tilEndDate.setError(null);
+            if (selectedStartDateMillis != null && etEndDate != null && etStartDate != null) {
+                etEndDate.setText(etStartDate.getText());
+            }
+        } else if (!isPopulatingEditData) {
+            recalcularFechaVencimiento();
+        }
+    }
+
+    private void cargarPropiedadesYContratoExistente() {
+        if (getContext() == null) return;
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(requireContext());
+            List<Propiedad> propiedades = db.propiedadDao().obtenerTodasSync();
+            List<String> titulos = new ArrayList<>();
+            mapaPropiedades.clear();
+
+            if (propiedades != null) {
+                for (Propiedad p : propiedades) {
+                    if (p.titulo != null && !p.titulo.trim().isEmpty()) {
+                        String t = p.titulo.trim();
+                        if (!mapaPropiedades.containsKey(t)) {
+                            titulos.add(t);
+                            mapaPropiedades.put(t, p);
+                        }
+                    }
+                }
+            }
+
+            if (editingContratoId != null && !editingContratoId.isEmpty()) {
+                contratoEnEdicion = db.contratoDao().obtenerPorIdSync(editingContratoId);
+            }
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (!isAdded() || getContext() == null) return;
+                    ArrayAdapter<String> propAdapter = new ArrayAdapter<>(
+                            requireContext(),
+                            android.R.layout.simple_dropdown_item_1line,
+                            titulos
+                    );
+                    etProperty.setAdapter(propAdapter);
+                    etProperty.setOnItemClickListener((parent, view, position, id) -> {
+                        String seleccion = (String) parent.getItemAtPosition(position);
+                        aplicarPropiedadSeleccionada(seleccion, true);
+                    });
+
+                    if (contratoEnEdicion != null) {
+                        poblarDatosContrato(contratoEnEdicion);
+                    }
+                });
+            }
+        });
+    }
+
+    private void poblarDatosContrato(Contrato c) {
+        isPopulatingEditData = true;
+
+        if (etFirstName != null && c.clienteNombre != null) etFirstName.setText(c.clienteNombre);
+        if (etLastName != null && c.clienteApellido != null) etLastName.setText(c.clienteApellido);
+        if (etDni != null && c.clienteDni != null) etDni.setText(c.clienteDni);
+        if (etPhone != null && c.clienteTelefono != null) etPhone.setText(c.clienteTelefono);
+        if (etEmail != null && c.clienteEmail != null) etEmail.setText(c.clienteEmail);
+
+        String propTitulo = c.propiedadTitulo != null && !c.propiedadTitulo.isEmpty() ? c.propiedadTitulo : c.propiedadId;
+        if (etProperty != null && propTitulo != null) {
+            etProperty.setText(propTitulo, false);
+            tvPreviewProp.setText(propTitulo);
+            tvReferencePropertyTitle.setText(propTitulo);
+            aplicarPropiedadSeleccionada(propTitulo, false);
+        }
+
+        if (etAmount != null && c.montoTotal != null) {
+            if (c.montoTotal == c.montoTotal.longValue()) {
+                etAmount.setText(String.valueOf(c.montoTotal.longValue()));
+            } else {
+                etAmount.setText(String.valueOf(c.montoTotal));
+            }
+        }
+
+        String metodo = c.metodoPago != null && !c.metodoPago.isEmpty() ? c.metodoPago : "Efectivo";
+        if (actvPaymentMethod != null) {
+            actvPaymentMethod.setText(metodo, false);
+        }
+        if (tvPreviewMethod != null) {
+            tvPreviewMethod.setText(metodo);
+        }
+        actualizarVisibilidadCuotas(metodo);
+
+        if ("Crédito".equalsIgnoreCase(metodo) && etInstallments != null && c.cuotas != null) {
+            etInstallments.setText(String.valueOf(c.cuotas));
+        }
+
+        if (etDownPayment != null && c.seniaMonto != null && c.seniaMonto > 0) {
+            if (c.seniaMonto == c.seniaMonto.longValue()) {
+                etDownPayment.setText(String.valueOf(c.seniaMonto.longValue()));
+            } else {
+                etDownPayment.setText(String.valueOf(c.seniaMonto));
+            }
+        }
+
+        if (etStartDate != null && c.fechaInicio != null && !c.fechaInicio.isEmpty()) {
+            etStartDate.setText(c.fechaInicio);
+        }
+        if (etEndDate != null && c.fechaVencimiento != null && !c.fechaVencimiento.isEmpty()) {
+            etEndDate.setText(c.fechaVencimiento);
+        }
+
+        if (actvStatus != null && c.estado != null && !c.estado.isEmpty()) {
+            String estadoNorm = ("Rechazado".equalsIgnoreCase(c.estado) || "Finalizado".equalsIgnoreCase(c.estado))
+                    ? "Cancelado" : c.estado;
+            actvStatus.setText(estadoNorm, false);
+        }
+
+        if (etDescription != null && c.descripcion != null) {
+            etDescription.setText(c.descripcion);
+        }
+
+        if (c.rutaLocalPdf != null && !c.rutaLocalPdf.isEmpty()) {
+            attachedPdfUriStr = c.rutaLocalPdf;
+            if (btnAdjuntarPdf != null) {
+                btnAdjuntarPdf.setText("PDF adjunto vinculado");
+            }
+        }
+
+        isPopulatingEditData = false;
+    }
+
+    private void aplicarPropiedadSeleccionada(String titulo, boolean actualizarMonto) {
+        Propiedad prop = mapaPropiedades.get(titulo);
+        if (prop != null) {
+            if (actualizarMonto && prop.precio > 0 && etAmount != null) {
+                if (prop.precio == (long) prop.precio) {
+                    etAmount.setText(String.valueOf((long) prop.precio));
+                } else {
+                    etAmount.setText(String.valueOf(prop.precio));
+                }
+            }
+            if (ivReferencePropertyBg != null && prop.imagenes != null && !prop.imagenes.isEmpty()) {
+                String imgUrl = prop.imagenes.get(0);
+                if (imgUrl != null && !imgUrl.trim().isEmpty()) {
+                    ivReferencePropertyBg.setVisibility(View.VISIBLE);
+                    Glide.with(this)
+                            .load(imgUrl)
+                            .centerCrop()
+                            .into(ivReferencePropertyBg);
+                    return;
+                }
+            }
+        }
+        if (ivReferencePropertyBg != null) {
+            ivReferencePropertyBg.setVisibility(View.GONE);
+        }
+    }
+
+    private void setupDatePickers() {
+        // Fecha por defecto: Hoy
+        long todayUtc = MaterialDatePicker.todayInUtcMilliseconds();
+        selectedStartDateMillis = todayUtc;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String hoyStr = sdf.format(new Date(todayUtc));
+        if (etStartDate != null) etStartDate.setText(hoyStr);
+        if (etEndDate != null) etEndDate.setText(hoyStr);
+
+        View.OnClickListener startDateClickListener = v -> {
             MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                    .setTitleText("Seleccionar fecha de inicio")
+                    .setTitleText("Seleccionar fecha")
+                    .setSelection(selectedStartDateMillis != null ? selectedStartDateMillis : MaterialDatePicker.todayInUtcMilliseconds())
                     .setTheme(R.style.CustomDatePickerTheme)
                     .build();
 
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 if (selection != null) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    String formattedDate = sdf.format(new Date(selection));
+                    selectedStartDateMillis = selection;
+                    SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    format.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    String formattedDate = format.format(new Date(selection));
                     etStartDate.setText(formattedDate);
+                    tilStartDate.setError(null);
+                    recalcularFechaVencimiento();
                 }
             });
 
-            datePicker.show(getParentFragmentManager(), "DATE_PICKER");
+            datePicker.show(getParentFragmentManager(), "START_DATE_PICKER");
         };
 
-        etStartDate.setOnClickListener(dateClickListener);
-        tilStartDate.setEndIconOnClickListener(dateClickListener);
+        etStartDate.setOnClickListener(startDateClickListener);
+        tilStartDate.setEndIconOnClickListener(startDateClickListener);
+
+        View.OnClickListener endDateClickListener = v -> {
+            MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                    .setTitleText("Seleccionar fecha de vencimiento")
+                    .setTheme(R.style.CustomDatePickerTheme)
+                    .build();
+
+            datePicker.addOnPositiveButtonClickListener(selection -> {
+                if (selection != null) {
+                    SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    format.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    etEndDate.setText(format.format(new Date(selection)));
+                    tilEndDate.setError(null);
+                }
+            });
+
+            datePicker.show(getParentFragmentManager(), "END_DATE_PICKER");
+        };
+
+        etEndDate.setOnClickListener(endDateClickListener);
+        tilEndDate.setEndIconOnClickListener(endDateClickListener);
+    }
+
+    private void recalcularFechaVencimiento() {
+        if (selectedStartDateMillis == null || etEndDate == null) return;
+        String metodo = actvPaymentMethod != null && actvPaymentMethod.getText() != null
+                ? actvPaymentMethod.getText().toString() : "Efectivo";
+
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.setTimeInMillis(selectedStartDateMillis);
+
+        if ("Crédito".equalsIgnoreCase(metodo) && etInstallments != null && etInstallments.getText() != null) {
+            String cuotasStr = etInstallments.getText().toString().trim();
+            if (!cuotasStr.isEmpty()) {
+                try {
+                    int meses = Integer.parseInt(cuotasStr);
+                    if (meses > 1) {
+                        cal.add(Calendar.MONTH, meses);
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        etEndDate.setText(format.format(cal.getTime()));
     }
 
     private void setupLivePreview() {
@@ -165,7 +487,14 @@ public class AdminAgregarContratoFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s != null && s.length() > 0) {
-                    tvPreviewAmount.setText(s.toString());
+                    try {
+                        double val = Double.parseDouble(s.toString());
+                        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                        DecimalFormat df = new DecimalFormat("#,##0.##", symbols);
+                        tvPreviewAmount.setText(df.format(val));
+                    } catch (NumberFormatException e) {
+                        tvPreviewAmount.setText(s.toString());
+                    }
                 } else {
                     tvPreviewAmount.setText("0.00");
                 }
@@ -186,9 +515,15 @@ public class AdminAgregarContratoFragment extends Fragment {
                     String prop = s.toString().trim();
                     tvPreviewProp.setText(prop);
                     tvReferencePropertyTitle.setText(prop);
+                    if (mapaPropiedades.containsKey(prop)) {
+                        aplicarPropiedadSeleccionada(prop, !isPopulatingEditData);
+                    }
                 } else {
                     tvPreviewProp.setText("No seleccionada");
                     tvReferencePropertyTitle.setText("Skyline Luxury Residences");
+                    if (ivReferencePropertyBg != null) {
+                        ivReferencePropertyBg.setVisibility(View.GONE);
+                    }
                 }
             }
 
@@ -196,10 +531,11 @@ public class AdminAgregarContratoFragment extends Fragment {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Payment method preview
+        // Payment method preview + ocultar/mostrar cuotas
         actvPaymentMethod.setOnItemClickListener((parent, view, position, id) -> {
             String selected = (String) parent.getItemAtPosition(position);
             tvPreviewMethod.setText(selected);
+            actualizarVisibilidadCuotas(selected);
         });
 
         // Installments preview
@@ -210,9 +546,12 @@ public class AdminAgregarContratoFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s != null && s.length() > 0) {
-                    tvPreviewInstallments.setText(s.toString() + " pagos");
+                    tvPreviewInstallments.setText(s.toString() + " Cuotas");
                 } else {
                     tvPreviewInstallments.setText("-");
+                }
+                if (!isPopulatingEditData) {
+                    recalcularFechaVencimiento();
                 }
             }
 
@@ -222,7 +561,6 @@ public class AdminAgregarContratoFragment extends Fragment {
     }
 
     private void setupActions(View root) {
-        // Back / Cancel
         View.OnClickListener goBackListener = v -> Navigation.findNavController(v).popBackStack();
 
         if (btnBack != null) {
@@ -231,25 +569,61 @@ public class AdminAgregarContratoFragment extends Fragment {
         if (btnCancelar != null) {
             btnCancelar.setOnClickListener(goBackListener);
         }
-
-        // Save contract
+        if (btnAdjuntarPdf != null) {
+            btnAdjuntarPdf.setOnClickListener(v -> pdfPickerLauncher.launch("application/pdf"));
+        }
         if (btnGuardarContrato != null) {
             btnGuardarContrato.setOnClickListener(v -> handleGuardarContrato(root));
         }
+    }
+
+    private String obtenerNombreArchivo(Uri uri) {
+        if (getContext() == null) return "contrato.pdf";
+        String result = null;
+        if ("content".equals(uri.getScheme())) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (idx >= 0) {
+                        result = cursor.getString(idx);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (result == null) {
+            result = uri.getLastPathSegment();
+        }
+        return result != null ? result : "contrato.pdf";
     }
 
     private void handleGuardarContrato(View root) {
         // Clear previous errors
         tilFirstName.setError(null);
         tilLastName.setError(null);
+        tilDni.setError(null);
+        tilPhone.setError(null);
+        tilEmail.setError(null);
         tilProperty.setError(null);
         tilAmount.setError(null);
+        tilInstallments.setError(null);
+        tilStartDate.setError(null);
+        tilEndDate.setError(null);
 
         String firstName = etFirstName.getText() != null ? etFirstName.getText().toString().trim() : "";
         String lastName = etLastName.getText() != null ? etLastName.getText().toString().trim() : "";
+        String dni = etDni.getText() != null ? etDni.getText().toString().trim() : "";
+        String phone = etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
+        String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String property = etProperty.getText() != null ? etProperty.getText().toString().trim() : "";
-        String amount = etAmount.getText() != null ? etAmount.getText().toString().trim() : "";
+        String amountStr = etAmount.getText() != null ? etAmount.getText().toString().trim() : "";
+        String paymentMethod = actvPaymentMethod.getText() != null ? actvPaymentMethod.getText().toString().trim() : "Efectivo";
+        String installmentsStr = etInstallments.getText() != null ? etInstallments.getText().toString().trim() : "";
+        String downPaymentStr = etDownPayment.getText() != null ? etDownPayment.getText().toString().trim() : "";
+        String startDate = etStartDate.getText() != null ? etStartDate.getText().toString().trim() : "";
+        String endDate = etEndDate.getText() != null ? etEndDate.getText().toString().trim() : "";
+        String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
 
+        boolean tieneCuotas = "Crédito".equalsIgnoreCase(paymentMethod);
         boolean hasError = false;
 
         if (TextUtils.isEmpty(firstName)) {
@@ -260,33 +634,171 @@ public class AdminAgregarContratoFragment extends Fragment {
             tilLastName.setError("Ingrese el apellido");
             hasError = true;
         }
-        if (TextUtils.isEmpty(property)) {
-            tilProperty.setError("Ingrese la propiedad");
+        if (TextUtils.isEmpty(dni)) {
+            tilDni.setError("Ingrese el DNI");
             hasError = true;
         }
-        if (TextUtils.isEmpty(amount)) {
+        if (TextUtils.isEmpty(phone)) {
+            tilPhone.setError("Ingrese el teléfono");
+            hasError = true;
+        }
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            tilEmail.setError("Ingrese un correo válido");
+            hasError = true;
+        }
+        if (TextUtils.isEmpty(property)) {
+            tilProperty.setError("Seleccione o ingrese la propiedad");
+            hasError = true;
+        }
+        double montoTotal = 0;
+        if (TextUtils.isEmpty(amountStr)) {
             tilAmount.setError("Ingrese el monto total");
             hasError = true;
+        } else {
+            try {
+                montoTotal = Double.parseDouble(amountStr);
+                if (montoTotal <= 0) {
+                    tilAmount.setError("El monto debe ser mayor a 0");
+                    hasError = true;
+                }
+            } catch (NumberFormatException e) {
+                tilAmount.setError("Monto inválido");
+                hasError = true;
+            }
+        }
+
+        int cuotas = 1;
+        if (tieneCuotas) {
+            if (TextUtils.isEmpty(installmentsStr)) {
+                tilInstallments.setError("Ingrese las cuotas");
+                hasError = true;
+            } else {
+                try {
+                    cuotas = Integer.parseInt(installmentsStr);
+                    if (cuotas < 1) {
+                        tilInstallments.setError("Mínimo 1 cuota");
+                        hasError = true;
+                    }
+                } catch (NumberFormatException e) {
+                    tilInstallments.setError("Número inválido");
+                    hasError = true;
+                }
+            }
+        }
+
+        if (TextUtils.isEmpty(startDate)) {
+            tilStartDate.setError("Seleccione fecha");
+            hasError = true;
+        }
+        if (tieneCuotas && TextUtils.isEmpty(endDate)) {
+            tilEndDate.setError("Seleccione vencimiento");
+            hasError = true;
+        }
+        if (!tieneCuotas) {
+            endDate = startDate;
         }
 
         if (hasError) {
-            Toast.makeText(requireContext(), "Por favor, complete los campos obligatorios", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Por favor, complete correctamente los campos obligatorios", Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        double senia = 0.0;
+        if (!TextUtils.isEmpty(downPaymentStr)) {
+            try {
+                senia = Double.parseDouble(downPaymentStr);
+            } catch (NumberFormatException ignored) {}
         }
 
         String situacion = actvStatus != null && actvStatus.getText() != null && !actvStatus.getText().toString().isEmpty()
                 ? actvStatus.getText().toString().trim()
                 : "Activo";
 
+        boolean esEdicion = (contratoEnEdicion != null);
+        String contratoId = esEdicion ? contratoEnEdicion.id : UUID.randomUUID().toString();
+        long timestamp = esEdicion ? contratoEnEdicion.timestamp : System.currentTimeMillis();
+
+        Contrato contratoGuardado = new Contrato(
+                contratoId,
+                firstName,
+                lastName,
+                dni,
+                phone,
+                email,
+                property,
+                montoTotal,
+                senia,
+                paymentMethod,
+                tieneCuotas ? cuotas : 1,
+                startDate,
+                endDate,
+                situacion,
+                description,
+                attachedPdfUriStr,
+                timestamp
+        );
+
+        Propiedad propSeleccionada = mapaPropiedades.get(property);
+        if (propSeleccionada != null && propSeleccionada.id != null) {
+            contratoGuardado.propiedadId = propSeleccionada.id;
+        }
+
+        android.app.Application appContext = requireActivity().getApplication();
+
+        // Guardar en Room Database y actualizar estado de la propiedad afectada según el estado del contrato
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(appContext);
+            db.contratoDao().insertar(contratoGuardado);
+
+            Propiedad propAfectada = null;
+            if (contratoGuardado.propiedadId != null && !contratoGuardado.propiedadId.isEmpty()) {
+                propAfectada = db.propiedadDao().obtenerPorIdSync(contratoGuardado.propiedadId);
+            }
+            if (propAfectada == null) {
+                List<Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+                if (todas != null) {
+                    for (Propiedad p : todas) {
+                        if (p.titulo != null && p.titulo.trim().equalsIgnoreCase(property)) {
+                            propAfectada = p;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (propAfectada != null) {
+                if ("Activo".equalsIgnoreCase(situacion) || "Pendiente".equalsIgnoreCase(situacion)) {
+                    if (!propAfectada.isPausada()) {
+                        propAfectada.estado = "Pausado";
+                        new PropiedadRepositoryImpl(appContext).update(propAfectada);
+                    }
+                } else if ("Cancelado".equalsIgnoreCase(situacion)) {
+                    if (propAfectada.isPausada()) {
+                        propAfectada.estado = "Publicado";
+                        new PropiedadRepositoryImpl(appContext).update(propAfectada);
+                    }
+                }
+            }
+        });
+
         // Registrar en actividad reciente / notificaciones admin
-        com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
-                .registrarNuevoContrato(firstName + " " + lastName, property, amount, situacion);
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        DecimalFormat df = new DecimalFormat("#,##0", symbols);
+        String montoFormateado = "$ " + df.format(montoTotal);
+        if (esEdicion) {
+            ActividadRepository.getInstance(requireContext())
+                    .registrarModificacionContrato(firstName + " " + lastName, property, montoFormateado, situacion);
+        } else {
+            ActividadRepository.getInstance(requireContext())
+                    .registrarNuevoContrato(firstName + " " + lastName, property, montoFormateado, situacion);
+        }
 
-        // Simulate save progress / success
         btnGuardarContrato.setEnabled(false);
-        Toast.makeText(requireContext(), "Contrato guardado exitosamente para " + firstName + " " + lastName, Toast.LENGTH_LONG).show();
+        String msgExito = esEdicion
+                ? "Contrato actualizado exitosamente para " + firstName + " " + lastName
+                : "Contrato guardado exitosamente para " + firstName + " " + lastName;
+        Toast.makeText(requireContext(), msgExito, Toast.LENGTH_LONG).show();
 
-        // Return to contracts management screen
         Navigation.findNavController(root).popBackStack();
     }
 }

@@ -127,8 +127,6 @@ public class AdminPerfilFragment extends Fragment {
         ivFotoPerfil = view.findViewById(R.id.iv_foto_perfil);
         TextView tvNombre = view.findViewById(R.id.tv_nombre_usuario_perfil);
         TextView tvEmail = view.findViewById(R.id.tv_email_usuario_perfil);
-        TextView tvEmpresaNombreLabel = view.findViewById(R.id.tv_empresa_nombre_label);
-        TextView tvEmpresaResumen = view.findViewById(R.id.tv_empresa_resumen);
         TextView tvMensajesSub = view.findViewById(R.id.tv_perfil_mensajes_sub);
 
         if (tvNombre != null) {
@@ -136,12 +134,6 @@ public class AdminPerfilFragment extends Fragment {
         }
         if (tvEmail != null && !email.isEmpty()) {
             tvEmail.setText(email);
-        }
-        if (tvEmpresaNombreLabel != null) {
-            tvEmpresaNombreLabel.setText(empresaRepository.getNombreEmpresaInmediato());
-        }
-        if (tvEmpresaResumen != null) {
-            tvEmpresaResumen.setText(empresaRepository.getTelefonoWhatsappInmediato());
         }
 
         // Cargar foto guardada
@@ -174,19 +166,12 @@ public class AdminPerfilFragment extends Fragment {
             });
         }
 
-        // Cargar datos de la empresa de forma asíncrona
-        empresaRepository.cargarConfiguracionAsync(config -> {
-            if (config != null && getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    actualizarTextosEmpresa(tvEmpresaNombreLabel, tvEmpresaResumen, config);
-                });
-            }
-        });
-
-        // Configurar Datos de la Empresa (reemplazo de área soporte)
-        View btnConfigurarEmpresa = view.findViewById(R.id.btn_configurar_empresa);
-        if (btnConfigurarEmpresa != null) {
-            btnConfigurarEmpresa.setOnClickListener(v -> mostrarDialogoEditarDatosEmpresa(tvEmpresaNombreLabel, tvEmpresaResumen));
+        // Empresa: Ajustes
+        View btnAjustes = view.findViewById(R.id.btn_admin_ajustes);
+        if (btnAjustes != null) {
+            btnAjustes.setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.nav_admin_configuracion);
+            });
         }
 
         // Configuración de Cuenta: Información Personal
@@ -205,11 +190,11 @@ public class AdminPerfilFragment extends Fragment {
         View btnNotificaciones = view.findViewById(R.id.btn_perfil_notificaciones);
         if (btnNotificaciones != null) {
             btnNotificaciones.setOnClickListener(v -> {
-                Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
+                Navigation.findNavController(view).navigate(R.id.nav_admin_notificaciones);
             });
         }
 
-        // Configuración de Cuenta: Mensajes de Clientes
+        // Gestión del Sistema: Mensajes de Clientes
         View btnMensajes = view.findViewById(R.id.btn_mensajes_clientes);
         if (btnMensajes != null) {
             btnMensajes.setOnClickListener(v -> {
@@ -232,13 +217,6 @@ public class AdminPerfilFragment extends Fragment {
         }
 
         // Accesos rápidos de Gestión
-        View btnDashboard = view.findViewById(R.id.btn_admin_dashboard);
-        if (btnDashboard != null) {
-            btnDashboard.setOnClickListener(v -> {
-                Navigation.findNavController(view).navigate(R.id.nav_admin_home);
-            });
-        }
-
         View btnPropiedades = view.findViewById(R.id.btn_admin_propiedades);
         if (btnPropiedades != null) {
             btnPropiedades.setOnClickListener(v -> {

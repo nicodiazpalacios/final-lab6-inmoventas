@@ -74,16 +74,6 @@ public class AdminConfiguracionFragment extends Fragment {
             });
         }
 
-        MaterialButton btnExportarPdf = view.findViewById(R.id.btn_exportar_pdf);
-        if (btnExportarPdf != null) {
-            btnExportarPdf.setOnClickListener(v -> mostrarDateRangePicker(btnExportarPdf, "PDF"));
-        }
-
-        MaterialButton btnExportarExcel = view.findViewById(R.id.btn_exportar_excel);
-        if (btnExportarExcel != null) {
-            btnExportarExcel.setOnClickListener(v -> mostrarDateRangePicker(btnExportarExcel, "Excel"));
-        }
-
         MaterialButton btnGestionarUsuarios = view.findViewById(R.id.btn_gestionar_usuarios);
         if (btnGestionarUsuarios != null) {
             btnGestionarUsuarios.setOnClickListener(v -> {
