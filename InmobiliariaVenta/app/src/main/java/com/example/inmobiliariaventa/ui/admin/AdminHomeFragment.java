@@ -13,9 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AdminHomeFragment extends Fragment {
@@ -62,15 +60,7 @@ public class AdminHomeFragment extends Fragment {
             });
         }
 
-        // 4. FAB Agregar Propiedad
-        FloatingActionButton fabAddProperty = view.findViewById(R.id.fab_add_property);
-        if (fabAddProperty != null) {
-            fabAddProperty.setOnClickListener(v -> {
-                Navigation.findNavController(view).navigate(R.id.nav_admin_agregar_propiedad);
-            });
-        }
-
-        // 5. Botón Alternar Modo Usuario
+        // 4. Botón Alternar Modo Usuario
         View btnSwitchUserMode = view.findViewById(R.id.btnSwitchUserMode);
         if (btnSwitchUserMode != null) {
             btnSwitchUserMode.setOnClickListener(v -> {
@@ -148,7 +138,9 @@ public class AdminHomeFragment extends Fragment {
             rvActividadReciente.setHasFixedSize(true);
             rvActividadReciente.setNestedScrollingEnabled(false);
 
-            List<ActividadAdmin> actividades = obtenerActividadesIniciales();
+            List<ActividadAdmin> actividades = com.example.inmobiliariaventa.data.repository.ActividadRepository
+                    .getInstance(requireContext())
+                    .getActividades();
             actividadAdapter = new ActividadRecienteAdapter(actividades, actividad -> {
                 // Al tocar una actividad, navegar al centro de notificaciones de admin
                 try {
@@ -159,69 +151,15 @@ public class AdminHomeFragment extends Fragment {
         }
     }
 
-    private List<ActividadAdmin> obtenerActividadesIniciales() {
-        List<ActividadAdmin> lista = new ArrayList<>();
-
-        // 1. Cambio de precio
-        lista.add(new ActividadAdmin(
-                "act_1",
-                "Apartamento Loft Skywalk",
-                ActividadAdmin.TipoActividad.CAMBIO_PRECIO,
-                "Hace 15 min",
-                "$450,000 USD",
-                "• Antes $485,000 USD (-7.2%)"
-        ));
-
-        // 2. Nueva propiedad subida
-        lista.add(new ActividadAdmin(
-                "act_2",
-                "Residencia Los Olivos - San Benito",
-                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
-                "Hoy, 14:20 hs",
-                "$420,000 USD",
-                "• Publicación ingresada al catálogo"
-        ));
-
-        // 3. Propiedad dada de baja
-        lista.add(new ActividadAdmin(
-                "act_3",
-                "Penthouse Torre Altagracia",
-                ActividadAdmin.TipoActividad.DADA_DE_BAJA,
-                "Ayer, 18:30 hs",
-                "$1,750,000 USD",
-                "• Retirada de catálogo (Pausada)"
-        ));
-
-        // 4. Cambio de precio
-        lista.add(new ActividadAdmin(
-                "act_4",
-                "Villa Los Laureles - Santa Elena",
-                ActividadAdmin.TipoActividad.CAMBIO_PRECIO,
-                "19 Oct, 11:10 hs",
-                "$850,000 USD",
-                "• Antes $890,000 USD (Ajuste comercial)"
-        ));
-
-        // 5. Nueva propiedad subida
-        lista.add(new ActividadAdmin(
-                "act_5",
-                "Casa Moderna Santa Elena",
-                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
-                "18 Oct, 16:45 hs",
-                "$620,000 USD",
-                "• Publicación activa para visitas"
-        ));
-
-        // 6. Propiedad dada de baja
-        lista.add(new ActividadAdmin(
-                "act_6",
-                "Terreno Campestre San José",
-                ActividadAdmin.TipoActividad.DADA_DE_BAJA,
-                "17 Oct, 10:15 hs",
-                "$310,000 USD",
-                "• Baja por contrato finalizado"
-        ));
-
-        return lista;
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (actividadAdapter != null && getContext() != null) {
+            actividadAdapter.setActividades(
+                    com.example.inmobiliariaventa.data.repository.ActividadRepository
+                            .getInstance(requireContext())
+                            .getActividades()
+            );
+        }
     }
 }

@@ -681,17 +681,4 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FAB Nueva Propiedad -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_property"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:layout_gravity="bottom|end"
-        android:src="@drawable/ic_add"
-        app:backgroundTint="@color/colorPrimary"
-        app:tint="@color/colorOnPrimary"
-        app:elevation="4dp"
-        android:contentDescription="Nueva Propiedad" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

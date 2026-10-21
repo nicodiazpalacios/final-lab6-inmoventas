@@ -91,6 +91,46 @@ public class ActividadRecienteAdapter extends RecyclerView.Adapter<ActividadReci
                 holder.tvBadgeTipo.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FCE8E6")));
                 holder.tvPrecio.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurfaceVariant));
                 break;
+
+            case NUEVO_CONTRATO:
+                holder.ivIcono.setImageResource(R.drawable.ic_contratos);
+                holder.cardIconoBg.setCardBackgroundColor(Color.parseColor("#DCE1FF"));
+                holder.ivIcono.setImageTintList(ColorStateList.valueOf(Color.parseColor("#00236F")));
+                holder.tvBadgeTipo.setText("NUEVO CONTRATO");
+                holder.tvBadgeTipo.setTextColor(Color.parseColor("#00236F"));
+                holder.tvBadgeTipo.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#DCE1FF")));
+                holder.tvPrecio.setTextColor(Color.parseColor("#00236F"));
+                break;
+
+            case MODIFICACION_CONTRATO:
+                holder.ivIcono.setImageResource(R.drawable.ic_tune);
+                holder.cardIconoBg.setCardBackgroundColor(Color.parseColor("#E8DEF8"));
+                holder.ivIcono.setImageTintList(ColorStateList.valueOf(Color.parseColor("#6750A4")));
+                holder.tvBadgeTipo.setText("SITUACIÓN CONTRATO");
+                holder.tvBadgeTipo.setTextColor(Color.parseColor("#6750A4"));
+                holder.tvBadgeTipo.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E8DEF8")));
+                holder.tvPrecio.setTextColor(Color.parseColor("#6750A4"));
+                break;
+
+            case NUEVO_MENSAJE:
+                holder.ivIcono.setImageResource(R.drawable.ic_chat);
+                holder.cardIconoBg.setCardBackgroundColor(Color.parseColor("#C4E7FF"));
+                holder.ivIcono.setImageTintList(ColorStateList.valueOf(Color.parseColor("#00677D")));
+                holder.tvBadgeTipo.setText("NUEVO MENSAJE");
+                holder.tvBadgeTipo.setTextColor(Color.parseColor("#00677D"));
+                holder.tvBadgeTipo.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#C4E7FF")));
+                holder.tvPrecio.setTextColor(Color.parseColor("#00677D"));
+                break;
+
+            case MENSAJE_VISTO:
+                holder.ivIcono.setImageResource(R.drawable.ic_visibility);
+                holder.cardIconoBg.setCardBackgroundColor(Color.parseColor("#DBE5EB"));
+                holder.ivIcono.setImageTintList(ColorStateList.valueOf(Color.parseColor("#4E6073")));
+                holder.tvBadgeTipo.setText("MENSAJE VISTO");
+                holder.tvBadgeTipo.setTextColor(Color.parseColor("#4E6073"));
+                holder.tvBadgeTipo.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#DBE5EB")));
+                holder.tvPrecio.setTextColor(Color.parseColor("#4E6073"));
+                break;
         }
 
         holder.itemView.setOnClickListener(v -> {

@@ -83,10 +83,10 @@ public class AdminContratosFragment extends Fragment {
         tvPropiedad4 = view.findViewById(R.id.tv_propiedad_4);
 
         // Bind action buttons
-        setupCardActions(view, R.id.btn_modificar_1, R.id.btn_baja_1, "Juan Pérez");
-        setupCardActions(view, R.id.btn_modificar_2, R.id.btn_baja_2, "Elena Rodríguez");
-        setupCardActions(view, R.id.btn_modificar_3, R.id.btn_baja_3, "Roberto Gómez");
-        setupCardActions(view, R.id.btn_modificar_4, R.id.btn_baja_4, "Ana Martínez");
+        setupCardActions(view, R.id.btn_modificar_1, R.id.btn_baja_1, R.id.badge_wrapper_1, R.id.tv_badge_status_1, "Juan Pérez", "Skyline Luxury Residences", "$ 150,000");
+        setupCardActions(view, R.id.btn_modificar_2, R.id.btn_baja_2, R.id.badge_wrapper_2, R.id.tv_badge_status_2, "Elena Rodríguez", "Villa Bellavista", "$ 320,000");
+        setupCardActions(view, R.id.btn_modificar_3, R.id.btn_baja_3, R.id.badge_wrapper_3, R.id.tv_badge_status_3, "Roberto Gómez", "Green Valley House", "$ 85,000");
+        setupCardActions(view, R.id.btn_modificar_4, R.id.btn_baja_4, R.id.badge_wrapper_4, R.id.tv_badge_status_4, "Ana Martínez", "Urban Loft Palermo", "$ 98,000");
 
         // Bind FAB
         fabNuevoContrato = view.findViewById(R.id.fab_nuevo_contrato);
@@ -166,20 +166,64 @@ public class AdminContratosFragment extends Fragment {
         }
     }
 
-    private void setupCardActions(View root, int btnModificarId, int btnBajaId, String clienteName) {
+    private void setupCardActions(View root, int btnModificarId, int btnBajaId, int badgeWrapperId, int tvBadgeStatusId, String clienteName, String propiedadName, String monto) {
         MaterialButton btnModificar = root.findViewById(btnModificarId);
         MaterialButton btnBaja = root.findViewById(btnBajaId);
+        MaterialCardView badgeWrapper = root.findViewById(badgeWrapperId);
+        TextView tvBadgeStatus = root.findViewById(tvBadgeStatusId);
 
         if (btnModificar != null) {
-            btnModificar.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Modificar contrato de " + clienteName, Toast.LENGTH_SHORT).show()
-            );
+            btnModificar.setOnClickListener(v -> {
+                android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnModificar);
+                popup.getMenu().add("Activo");
+                popup.getMenu().add("Pendiente");
+                popup.getMenu().add("Rechazado");
+                popup.getMenu().add("Finalizado");
+
+                popup.setOnMenuItemClickListener(item -> {
+                    String nuevaSituacion = item.getTitle().toString();
+                    actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, nuevaSituacion);
+                    com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
+                            .registrarModificacionContrato(clienteName, propiedadName, monto, nuevaSituacion);
+                    Toast.makeText(requireContext(), "Situación de contrato actualizada a: " + nuevaSituacion, Toast.LENGTH_SHORT).show();
+                    return true;
+                });
+                popup.show();
+            });
         }
 
         if (btnBaja != null) {
-            btnBaja.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Dar de baja contrato de " + clienteName, Toast.LENGTH_SHORT).show()
-            );
+            btnBaja.setOnClickListener(v -> {
+                actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, "Finalizado");
+                com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
+                        .registrarModificacionContrato(clienteName, propiedadName, monto, "Finalizado (Baja)");
+                Toast.makeText(requireContext(), "Contrato de " + clienteName + " dado de baja", Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
+    private void actualizarBadgeSituacion(MaterialCardView badgeWrapper, TextView tvBadgeStatus, String situacion) {
+        if (tvBadgeStatus != null) {
+            tvBadgeStatus.setText(situacion);
+        }
+        if (badgeWrapper != null) {
+            int color;
+            switch (situacion) {
+                case "Activo":
+                    color = android.graphics.Color.parseColor("#006C49");
+                    break;
+                case "Pendiente":
+                    color = android.graphics.Color.parseColor("#BA8400");
+                    break;
+                case "Rechazado":
+                    color = android.graphics.Color.parseColor("#BA1A1A");
+                    break;
+                case "Finalizado":
+                default:
+                    color = android.graphics.Color.parseColor("#73777F");
+                    break;
+            }
+            badgeWrapper.setCardBackgroundColor(color);
         }
     }
 

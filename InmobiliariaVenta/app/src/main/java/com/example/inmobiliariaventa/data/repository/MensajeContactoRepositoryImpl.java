@@ -19,6 +19,7 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
     private static final String TAG = "MensajeContactoRepo";
     private static volatile MensajeContactoRepositoryImpl INSTANCE;
 
+    private final Context appContext;
     private final MensajeContactoDao dao;
 
     public static MensajeContactoRepositoryImpl getInstance(Context context) {
@@ -33,6 +34,7 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
     }
 
     public MensajeContactoRepositoryImpl(Context context) {
+        this.appContext = context != null ? context.getApplicationContext() : null;
         AppDatabase db = AppDatabase.getInstance(context);
         this.dao = db.mensajeContactoDao();
     }
@@ -46,6 +48,15 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
         }
         mensaje.estadoSincronizacion = "PENDIENTE_SUBIR";
         mensaje.calcularTimestampSiEsNecesario();
+
+        // Notificar en Actividad Reciente del Administrador
+        if (appContext != null) {
+            ActividadRepository.getInstance(appContext).registrarNuevoMensaje(
+                    mensaje.clienteNombre,
+                    mensaje.propiedadTitulo,
+                    mensaje.mensaje
+            );
+        }
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
             long localId = dao.insert(mensaje);
@@ -147,6 +158,15 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
     public void marcarComoLeido(MensajeContacto mensaje) {
         if (mensaje == null) return;
         mensaje.leido = true;
+
+        // Notificar en Actividad Reciente del Administrador
+        if (appContext != null) {
+            ActividadRepository.getInstance(appContext).registrarMensajeVisto(
+                    mensaje.clienteNombre,
+                    mensaje.propiedadTitulo
+            );
+        }
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
             dao.marcarComoLeido(mensaje.id);
             if (mensaje.remoteId != null && !mensaje.remoteId.isEmpty()) {

@@ -272,6 +272,14 @@ public class AdminAgregarContratoFragment extends Fragment {
             return;
         }
 
+        String situacion = actvStatus != null && actvStatus.getText() != null && !actvStatus.getText().toString().isEmpty()
+                ? actvStatus.getText().toString().trim()
+                : "Activo";
+
+        // Registrar en actividad reciente / notificaciones admin
+        com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
+                .registrarNuevoContrato(firstName + " " + lastName, property, amount, situacion);
+
         // Simulate save progress / success
         btnGuardarContrato.setEnabled(false);
         Toast.makeText(requireContext(), "Contrato guardado exitosamente para " + firstName + " " + lastName, Toast.LENGTH_LONG).show();

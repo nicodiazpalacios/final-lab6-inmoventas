@@ -5,7 +5,11 @@ public class ActividadAdmin {
     public enum TipoActividad {
         NUEVA_PROPIEDAD,
         CAMBIO_PRECIO,
-        DADA_DE_BAJA
+        DADA_DE_BAJA,
+        NUEVO_CONTRATO,
+        MODIFICACION_CONTRATO,
+        NUEVO_MENSAJE,
+        MENSAJE_VISTO
     }
 
     private final String id;
