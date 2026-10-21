@@ -284,8 +284,13 @@ public class SearchLocationFragment extends Fragment {
         // Cargar catálogo de propiedades para extraer ciudades y barrios reales de la base local Room
         propiedadViewModel = new ViewModelProvider(this).get(PropiedadViewModel.class);
         propiedadViewModel.getAllPropiedades().observe(getViewLifecycleOwner(), propiedades -> {
+            cachedProperties.clear();
             if (propiedades != null) {
-                cachedProperties = new ArrayList<>(propiedades);
+                for (Propiedad p : propiedades) {
+                    if (p != null && p.isVisibleParaCliente()) {
+                        cachedProperties.add(p);
+                    }
+                }
                 String currentText = searchEditText != null ? searchEditText.getText().toString().trim() : "";
                 if (currentText.isEmpty()) {
                     renderPublishedLocations();

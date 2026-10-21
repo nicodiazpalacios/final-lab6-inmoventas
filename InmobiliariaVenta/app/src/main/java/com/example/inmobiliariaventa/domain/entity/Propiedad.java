@@ -89,4 +89,21 @@ public class Propiedad {
     @ColumnInfo(name = "created_at")
     @SerializedName("created_at")
     public String createdAt;
+
+    @androidx.room.Ignore
+    public boolean isPausada() {
+        if (estado == null) return false;
+        String est = estado.trim();
+        return est.equalsIgnoreCase("Pausado") ||
+               est.equalsIgnoreCase("PAUSADO") ||
+               est.equalsIgnoreCase("PAUSADA") ||
+               est.equalsIgnoreCase("NO_VISIBLE") ||
+               est.equalsIgnoreCase("Inactivo") ||
+               est.equalsIgnoreCase("PAUSA");
+    }
+
+    @androidx.room.Ignore
+    public boolean isVisibleParaCliente() {
+        return !isPausada();
+    }
 }

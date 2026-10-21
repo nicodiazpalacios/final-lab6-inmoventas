@@ -128,6 +128,54 @@ public class ActividadRepository {
         agregarAlInicio(actividad);
     }
 
+    public synchronized void registrarNuevaPropiedad(String titulo, double precio) {
+        String ref = titulo != null && !titulo.trim().isEmpty() ? titulo.trim() : "Nueva Propiedad";
+        String finalMonto = formatearMonto(String.format(java.util.Locale.US, "%,d", (long) precio));
+        String detalle = "• Publicación ingresada al catálogo";
+
+        ActividadAdmin actividad = new ActividadAdmin(
+                UUID.randomUUID().toString(),
+                ref,
+                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
+                "Hace unos momentos",
+                finalMonto,
+                detalle
+        );
+        agregarAlInicio(actividad);
+    }
+
+    public synchronized void registrarCambioPrecio(String titulo, double precioAnterior, double precioNuevo) {
+        String ref = titulo != null && !titulo.trim().isEmpty() ? titulo.trim() : "Propiedad";
+        String finalMonto = formatearMonto(String.format(java.util.Locale.US, "%,d", (long) precioNuevo));
+        String detalle = "• Antes " + formatearMonto(String.format(java.util.Locale.US, "%,d", (long) precioAnterior));
+
+        ActividadAdmin actividad = new ActividadAdmin(
+                UUID.randomUUID().toString(),
+                ref,
+                ActividadAdmin.TipoActividad.CAMBIO_PRECIO,
+                "Hace unos momentos",
+                finalMonto,
+                detalle
+        );
+        agregarAlInicio(actividad);
+    }
+
+    public synchronized void registrarBajaPropiedad(String titulo, double precio, String motivo) {
+        String ref = titulo != null && !titulo.trim().isEmpty() ? titulo.trim() : "Propiedad";
+        String finalMonto = formatearMonto(String.format(java.util.Locale.US, "%,d", (long) precio));
+        String detalle = "• " + (motivo != null && !motivo.isEmpty() ? motivo : "Eliminada del catálogo");
+
+        ActividadAdmin actividad = new ActividadAdmin(
+                UUID.randomUUID().toString(),
+                ref,
+                ActividadAdmin.TipoActividad.DADA_DE_BAJA,
+                "Hace unos momentos",
+                finalMonto,
+                detalle
+        );
+        agregarAlInicio(actividad);
+    }
+
     private synchronized void agregarAlInicio(ActividadAdmin actividad) {
         List<ActividadAdmin> actual = new ArrayList<>(getActividades());
         actual.add(0, actividad);

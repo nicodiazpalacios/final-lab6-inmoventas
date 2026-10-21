@@ -161,7 +161,11 @@ public class MisFavoritosFragment extends Fragment {
 
                     listaOriginal.clear();
                     if (propiedades != null) {
-                        listaOriginal.addAll(propiedades);
+                        for (Propiedad p : propiedades) {
+                            if (p != null && p.isVisibleParaCliente()) {
+                                listaOriginal.add(p);
+                            }
+                        }
                     }
 
                     actualizarVistaFavoritos();

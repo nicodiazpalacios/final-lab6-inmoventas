@@ -207,11 +207,10 @@ public class HomeUsuarioFragment extends Fragment {
 
             observerPropiedades = propiedades -> {
                 if (Boolean.TRUE.equals(ultimoEstadoConexion)) {
-                    if (propiedades != null) {
-                        listaCompletaHome = propiedades;
-                        limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
-                        featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
-                    }
+                    List<Propiedad> visibles = filtrarPropiedadesVisibles(propiedades);
+                    listaCompletaHome = visibles;
+                    limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
+                    featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
                 }
             };
 
@@ -225,7 +224,8 @@ public class HomeUsuarioFragment extends Fragment {
 
             observerPropiedades = propiedades -> {
                 if (Boolean.FALSE.equals(ultimoEstadoConexion)) {
-                    if (propiedades == null || propiedades.isEmpty()) {
+                    List<Propiedad> visibles = filtrarPropiedadesVisibles(propiedades);
+                    if (visibles.isEmpty()) {
                         if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.GONE);
                         if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.VISIBLE);
                         if (tvOfflineVacioTitulo != null) tvOfflineVacioTitulo.setText("Sin propiedades guardadas");
@@ -235,7 +235,7 @@ public class HomeUsuarioFragment extends Fragment {
                     } else {
                         if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
                         if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
-                        listaCompletaHome = propiedades;
+                        listaCompletaHome = visibles;
                         limiteActualHome = Math.min(BATCH_SIZE, listaCompletaHome.size());
                         featuredAdapter.setPropiedades(new ArrayList<>(listaCompletaHome.subList(0, limiteActualHome)));
                     }
@@ -245,6 +245,18 @@ public class HomeUsuarioFragment extends Fragment {
             liveDataPropiedadesActual = viewModel.getAllPropiedades();
             liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
         }
+    }
+
+    private List<Propiedad> filtrarPropiedadesVisibles(List<Propiedad> lista) {
+        List<Propiedad> visibles = new ArrayList<>();
+        if (lista != null) {
+            for (Propiedad p : lista) {
+                if (p != null && p.isVisibleParaCliente()) {
+                    visibles.add(p);
+                }
+            }
+        }
+        return visibles;
     }
 
     private void mostrarSnackbarReconexion(View rootView) {

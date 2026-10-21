@@ -36,6 +36,7 @@
                 
             <!-- Title -->
             <TextView
+                android:id="@+id/tv_titulo_pantalla_agregar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Publicar Nueva Propiedad"
@@ -44,6 +45,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tv_subtitulo_pantalla_agregar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -235,7 +237,7 @@
                             android:layout_width="0dp"
                             android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:hint="Estado"
+                            android:hint="Provincia"
                             app:boxBackgroundMode="outline"
                             app:boxCornerRadiusTopStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
@@ -244,6 +246,7 @@
                             app:boxStrokeColor="@color/colorOutlineVariant"
                             android:layout_marginStart="8dp">
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_provincia_propiedad"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -369,26 +372,55 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- Lista horizontal de fotos subidas con botón X para eliminar -->
+                    <LinearLayout
+                        android:id="@+id/layout_fotos_subidas_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:id="@+id/tv_contador_fotos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Fotos cargadas (0)"
+                            android:textColor="@color/colorPrimary"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_fotos_propiedad"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:clipToPadding="false" />
+                    </LinearLayout>
+
+                    <!-- Recuadro para agregar nuevas fotos -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:background="@drawable/bg_dotted_border" 
-                        android:padding="24dp"
+                        android:padding="20dp"
                         android:gravity="center"
                         android:layout_marginBottom="24dp">
                         
                         <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
                             android:src="@android:drawable/ic_menu_gallery"
                             app:tint="@color/colorOutlineVariant"
-                            android:layout_marginBottom="8dp"/>
+                            android:layout_marginBottom="6dp"/>
                         
                         <TextView
+                            android:id="@+id/tv_explorar_archivos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Haga clic para explorar archivos"
+                            android:text="Haga clic para agregar fotos a la propiedad"
                             android:textColor="@color/colorOnSurfaceVariant"
                             android:textSize="14sp"
                             android:gravity="center" />
@@ -397,8 +429,8 @@
                             android:id="@+id/btn_seleccionar_fotos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:text="Seleccionar Fotos"
+                            android:layout_marginTop="12dp"
+                            android:text="Agregar Fotos"
                             app:backgroundTint="#B6C4FF"
                             app:cornerRadius="12dp"
                             android:textColor="#264191" />

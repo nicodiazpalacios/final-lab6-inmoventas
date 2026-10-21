@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_admin_propiedad_item"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/colorOutlineVariant"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Portada de la propiedad + Badge de estado -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="160dp">
+
+            <ImageView
+                android:id="@+id/iv_admin_propiedad_foto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="@color/colorSurfaceVariant"
+                tools:src="@android:drawable/ic_menu_gallery" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_badge_admin_propiedad"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                app:cardBackgroundColor="#006C49"
+                app:cardCornerRadius="8dp"
+                app:strokeWidth="0dp">
+
+                <TextView
+                    android:id="@+id/tv_badge_admin_propiedad"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="Publicado"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+
+        <!-- Contenedor de Información y Acciones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Fila superior: Título de la propiedad + Slide Switch de Visibilidad -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/tv_admin_propiedad_titulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_toStartOf="@+id/switch_admin_propiedad_visibilidad"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="12dp"
+                    android:text="Título de la propiedad"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_admin_propiedad_visibilidad"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:checked="true" />
+            </RelativeLayout>
+
+            <!-- Ubicación -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_location_on"
+                    app:tint="@color/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/tv_admin_propiedad_ubicacion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Ubicación disponible"
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Características -->
+            <TextView
+                android:id="@+id/tv_admin_propiedad_caracteristicas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3 amb • 2 baños • 120 m²"
+                android:textColor="@color/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Precio -->
+            <TextView
+                android:id="@+id/tv_admin_propiedad_precio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$ 0 USD"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Botones de Acción: Modificar & Borrar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_admin_modificar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Modificar"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/colorOnPrimary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_admin_borrar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Borrar"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="#FFDAD6"
+                    android:textColor="#BA1A1A" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

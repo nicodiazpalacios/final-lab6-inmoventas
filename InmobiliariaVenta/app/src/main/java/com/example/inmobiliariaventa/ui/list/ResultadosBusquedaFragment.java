@@ -415,6 +415,11 @@ public class ResultadosBusquedaFragment extends Fragment {
         List<Propiedad> filtered = new ArrayList<>();
 
         for (Propiedad prop : masterList) {
+            // No mostrar al cliente propiedades pausadas por el administrador
+            if (prop == null || !prop.isVisibleParaCliente()) {
+                continue;
+            }
+
             // Filtro por tipo
             if (!"Todas".equalsIgnoreCase(selectedTipo)) {
                 if (prop.tipoPropiedad == null) continue;
