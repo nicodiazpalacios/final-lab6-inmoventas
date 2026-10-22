@@ -271,12 +271,15 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
         String status = isChecked ? "activada" : "pausada";
         if (getView() != null) {
-            Snackbar.make(getView(), "Propiedad " + status + " en el catálogo", Snackbar.LENGTH_SHORT).show();
+            CartelUtils.mostrar(getView(), "Propiedad " + status + " en el catálogo");
         }
 
         if (!isChecked && getContext() != null) {
             com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
                     .registrarBajaPropiedad(propiedad.titulo, propiedad.precio, "Retirada de catálogo (Pausada)");
+        } else if (isChecked && getContext() != null) {
+            com.example.inmobiliariaventa.data.repository.ActividadRepository.getInstance(requireContext())
+                    .notificarReactivacionPropiedad(propiedad);
         }
 
         // Re-filtrar si hay un filtro de estado activo
@@ -416,7 +419,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                             .registrarBajaPropiedad(propiedad.titulo, propiedad.precio, "Eliminada del catálogo");
                 }
                 if (getView() != null) {
-                    Snackbar.make(getView(), "Propiedad eliminada correctamente", Snackbar.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(getView(), "Propiedad eliminada correctamente");
                 }
             });
         }
@@ -462,7 +465,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
         aplicarFiltrosYOrden();
 
         if (getView() != null) {
-            Snackbar.make(getView(), "Filtros y orden restablecidos", Snackbar.LENGTH_SHORT).show();
+            CartelUtils.mostrar(getView(), "Filtros y orden restablecidos");
         }
     }
 }

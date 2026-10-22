@@ -466,32 +466,114 @@ public class ClienteNotificacionesFragment extends Fragment {
         tvSub.setLayoutParams(subLp);
         root.addView(tvSub);
 
+        List<SwitchMaterial> switchList = new ArrayList<>();
+        List<String> keyList = new ArrayList<>();
+
+        MaterialButton btnToggleTodas = new MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        LinearLayout.LayoutParams toggleLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.round(42 * density));
+        toggleLp.bottomMargin = pad12;
+        btnToggleTodas.setLayoutParams(toggleLp);
+        btnToggleTodas.setCornerRadius(Math.round(12 * density));
+        btnToggleTodas.setStrokeWidth(Math.round(1.2f * density));
+        btnToggleTodas.setInsetTop(0);
+        btnToggleTodas.setInsetBottom(0);
+        btnToggleTodas.setTextSize(12.5f);
+        btnToggleTodas.setTypeface(null, Typeface.BOLD);
+        btnToggleTodas.setIconPadding(Math.round(8 * density));
+        btnToggleTodas.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START);
+
+        Runnable actualizarBotonToggle = () -> {
+            boolean hayAlgunaActiva = false;
+            for (SwitchMaterial sw : switchList) {
+                if (sw.isChecked()) {
+                    hayAlgunaActiva = true;
+                    break;
+                }
+            }
+            if (hayAlgunaActiva) {
+                btnToggleTodas.setText("Cancelar todas las notificaciones");
+                btnToggleTodas.setIconResource(R.drawable.ic_visibility_off);
+                btnToggleTodas.setTextColor(ContextCompat.getColor(context, R.color.colorError));
+                btnToggleTodas.setStrokeColor(ContextCompat.getColorStateList(context, R.color.colorError));
+                btnToggleTodas.setIconTint(ContextCompat.getColorStateList(context, R.color.colorError));
+            } else {
+                btnToggleTodas.setText("Activar todas las notificaciones");
+                btnToggleTodas.setIconResource(R.drawable.ic_notifications);
+                btnToggleTodas.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+                btnToggleTodas.setStrokeColor(ContextCompat.getColorStateList(context, R.color.colorPrimary));
+                btnToggleTodas.setIconTint(ContextCompat.getColorStateList(context, R.color.colorPrimary));
+            }
+        };
+
+        btnToggleTodas.setOnClickListener(v -> {
+            boolean hayAlgunaActiva = false;
+            for (SwitchMaterial sw : switchList) {
+                if (sw.isChecked()) {
+                    hayAlgunaActiva = true;
+                    break;
+                }
+            }
+            boolean nuevoEstado = !hayAlgunaActiva;
+            SharedPreferences.Editor editor = prefs.edit();
+            for (int i = 0; i < switchList.size(); i++) {
+                SwitchMaterial sw = switchList.get(i);
+                sw.setChecked(nuevoEstado);
+                if (i < keyList.size()) {
+                    editor.putBoolean(keyList.get(i), nuevoEstado);
+                }
+            }
+            editor.apply();
+            actualizarBotonToggle.run();
+        });
+
+        root.addView(btnToggleTodas);
+
         ScrollView scrollView = new ScrollView(context);
         LinearLayout list = new LinearLayout(context);
         list.setOrientation(LinearLayout.VERTICAL);
         scrollView.addView(list);
 
-        agregarFilaSwitch(context, list, prefs,
+        keyList.add(ActividadRepository.KEY_CLI_PRECIOS_FAV);
+        switchList.add(agregarFilaSwitch(context, list, prefs,
                 ActividadRepository.KEY_CLI_PRECIOS_FAV,
                 "Aumentos y bajas de precio",
-                "Recibir alertas cuando cambia el precio en USD de tus favoritos.");
+                "Recibir alertas cuando cambia el precio en USD de tus favoritos.",
+                actualizarBotonToggle));
 
-        agregarFilaSwitch(context, list, prefs,
+        keyList.add(ActividadRepository.KEY_CLI_ESTADO_FAV);
+        switchList.add(agregarFilaSwitch(context, list, prefs,
                 ActividadRepository.KEY_CLI_ESTADO_FAV,
                 "Estado de mis favoritos",
-                "Recibir alertas cuando un favorito se reserva, pausa o libera.");
+                "Recibir alertas cuando un favorito se reserva, pausa o libera.",
+                actualizarBotonToggle));
 
-        agregarFilaSwitch(context, list, prefs,
+        keyList.add(ActividadRepository.KEY_CLI_REACTIVACION_FAV);
+        switchList.add(agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_CLI_REACTIVACION_FAV,
+                "Favoritos disponibles nuevamente",
+                "Avisos cuando una propiedad que guardaste vuelve a publicarse activa en el catálogo.",
+                actualizarBotonToggle));
+
+        keyList.add(ActividadRepository.KEY_CLI_RECOMENDACIONES);
+        switchList.add(agregarFilaSwitch(context, list, prefs,
                 ActividadRepository.KEY_CLI_RECOMENDACIONES,
                 "Recomendaciones cerca tuyo",
-                "Recibir avisos de nuevas propiedades disponibles en tu zona.");
+                "Recibir avisos de nuevas propiedades disponibles en tu zona.",
+                actualizarBotonToggle));
 
-        agregarFilaSwitch(context, list, prefs,
+        keyList.add(ActividadRepository.KEY_CLI_CONSULTAS);
+        switchList.add(agregarFilaSwitch(context, list, prefs,
                 ActividadRepository.KEY_CLI_CONSULTAS,
                 "Estado de mis consultas",
-                "Recibir confirmación cuando el asesor inmobiliario lee tus mensajes.");
+                "Recibir confirmación cuando el asesor inmobiliario lee tus mensajes.",
+                actualizarBotonToggle));
 
-        root.addView(scrollView);
+        actualizarBotonToggle.run();
+
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.round(350 * density));
+        root.addView(scrollView, scrollLp);
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(context)
                 .setView(wrapper)
@@ -521,13 +603,14 @@ public class ClienteNotificacionesFragment extends Fragment {
         dialog.show();
     }
 
-    private void agregarFilaSwitch(
+    private SwitchMaterial agregarFilaSwitch(
             Context context,
             LinearLayout parent,
             SharedPreferences prefs,
             String key,
             String titulo,
-            String subtitulo) {
+            String subtitulo,
+            Runnable onStateChanged) {
 
         float density = context.getResources().getDisplayMetrics().density;
         int padV = Math.round(10 * density);
@@ -560,6 +643,9 @@ public class ClienteNotificacionesFragment extends Fragment {
         sw.setChecked(prefs.getBoolean(key, true));
         sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean(key, isChecked).apply();
+            if (onStateChanged != null) {
+                onStateChanged.run();
+            }
         });
 
         row.addView(textCol);
@@ -571,6 +657,7 @@ public class ClienteNotificacionesFragment extends Fragment {
                 ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, Math.round(density))));
         divider.setBackgroundColor(ContextCompat.getColor(context, R.color.colorOutlineVariant));
         parent.addView(divider);
+        return sw;
     }
 
     private String formatearTiempoRelativo(Long timestamp) {

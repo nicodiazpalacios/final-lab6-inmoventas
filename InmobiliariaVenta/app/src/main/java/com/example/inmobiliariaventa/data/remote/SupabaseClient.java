@@ -19,6 +19,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import java.io.IOException;
@@ -48,6 +57,68 @@ public class SupabaseClient {
             .writeTimeout(20, TimeUnit.SECONDS)
             .build();
 
+    public static String formatIsoUtc(long millis) {
+        if (millis <= 0) millis = System.currentTimeMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(new Date(millis));
+    }
+
+    public static long parseTimestampFlexible(JsonElement element) {
+        if (element == null || element.isJsonNull()) return System.currentTimeMillis();
+        try {
+            if (element.isJsonPrimitive()) {
+                JsonPrimitive prim = element.getAsJsonPrimitive();
+                if (prim.isNumber()) {
+                    return prim.getAsLong();
+                }
+                String val = prim.getAsString().trim();
+                if (val.isEmpty()) return System.currentTimeMillis();
+                try {
+                    return Long.parseLong(val);
+                } catch (NumberFormatException ignored) {}
+
+                // Truncar microsegundos si existen (.569428 -> .569) para SimpleDateFormat
+                if (val.contains(".")) {
+                    int dotIdx = val.indexOf('.');
+                    int tzIdx = val.indexOf('+', dotIdx);
+                    if (tzIdx == -1) tzIdx = val.indexOf('-', dotIdx);
+                    if (tzIdx == -1) tzIdx = val.indexOf('Z', dotIdx);
+                    if (tzIdx != -1) {
+                        String millisPart = val.substring(dotIdx + 1, tzIdx);
+                        if (millisPart.length() > 3) {
+                            val = val.substring(0, dotIdx + 1) + millisPart.substring(0, 3) + val.substring(tzIdx);
+                        }
+                    } else {
+                        String millisPart = val.substring(dotIdx + 1);
+                        if (millisPart.length() > 3) {
+                            val = val.substring(0, dotIdx + 1) + millisPart.substring(0, 3);
+                        }
+                    }
+                }
+
+                String[] formats = new String[] {
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                    "yyyy-MM-dd'T'HH:mm:ssXXX",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-dd"
+                };
+
+                for (String format : formats) {
+                    try {
+                        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
+                        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                        Date d = sdf.parse(val);
+                        if (d != null) return d.getTime();
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception ignored) {}
+        return System.currentTimeMillis();
+    }
+
     private static final Gson gson = new GsonBuilder()
             .setExclusionStrategies(new ExclusionStrategy() {
                 @Override
@@ -58,6 +129,61 @@ public class SupabaseClient {
                 @Override
                 public boolean shouldSkipClass(Class<?> clazz) {
                     return false;
+                }
+            })
+            .registerTypeAdapter(Notificacion.class, new JsonDeserializer<Notificacion>() {
+                @Override
+                public Notificacion deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                    JsonObject obj = json.getAsJsonObject();
+                    Notificacion n = new Notificacion();
+                    if (obj.has("id") && !obj.get("id").isJsonNull()) {
+                        n.id = obj.get("id").getAsString();
+                    }
+                    if (obj.has("usuario_id") && !obj.get("usuario_id").isJsonNull()) {
+                        n.usuario_id = obj.get("usuario_id").getAsString();
+                    }
+                    if (obj.has("titulo") && !obj.get("titulo").isJsonNull()) {
+                        n.titulo = obj.get("titulo").getAsString();
+                    }
+                    if (obj.has("mensaje") && !obj.get("mensaje").isJsonNull()) {
+                        n.mensaje = obj.get("mensaje").getAsString();
+                    }
+                    if (obj.has("fecha") && !obj.get("fecha").isJsonNull()) {
+                        n.fecha = parseTimestampFlexible(obj.get("fecha"));
+                    }
+                    if (obj.has("isleida") && !obj.get("isleida").isJsonNull()) {
+                        n.isLeida = obj.get("isleida").getAsBoolean();
+                    }
+                    if (obj.has("categoria") && !obj.get("categoria").isJsonNull()) {
+                        n.categoria = obj.get("categoria").getAsString();
+                    }
+                    if (obj.has("referencia_id") && !obj.get("referencia_id").isJsonNull()) {
+                        n.referencia_id = obj.get("referencia_id").getAsString();
+                    }
+                    return n;
+                }
+            })
+            .registerTypeAdapter(Favorito.class, new JsonDeserializer<Favorito>() {
+                @Override
+                public Favorito deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                    JsonObject obj = json.getAsJsonObject();
+                    Favorito fav = new Favorito();
+                    if (obj.has("usuarioid") && !obj.get("usuarioid").isJsonNull()) {
+                        fav.usuarioId = obj.get("usuarioid").getAsString();
+                    } else if (obj.has("usuarioId") && !obj.get("usuarioId").isJsonNull()) {
+                        fav.usuarioId = obj.get("usuarioId").getAsString();
+                    }
+                    if (obj.has("propiedadid") && !obj.get("propiedadid").isJsonNull()) {
+                        fav.propiedadId = obj.get("propiedadid").getAsString();
+                    } else if (obj.has("propiedadId") && !obj.get("propiedadId").isJsonNull()) {
+                        fav.propiedadId = obj.get("propiedadId").getAsString();
+                    }
+                    if (obj.has("fechaguardado") && !obj.get("fechaguardado").isJsonNull()) {
+                        fav.fechaGuardado = parseTimestampFlexible(obj.get("fechaguardado"));
+                    } else if (obj.has("fechaGuardado") && !obj.get("fechaGuardado").isJsonNull()) {
+                        fav.fechaGuardado = parseTimestampFlexible(obj.get("fechaGuardado"));
+                    }
+                    return fav;
                 }
             })
             .create();
@@ -576,8 +702,11 @@ public class SupabaseClient {
             fav.fechaGuardado = System.currentTimeMillis();
         }
 
-        String json = gson.toJson(fav);
-        RequestBody requestBody = RequestBody.create(json, JSON);
+        JsonObject json = new JsonObject();
+        json.addProperty("usuarioid", fav.usuarioId);
+        json.addProperty("propiedadid", fav.propiedadId);
+        json.addProperty("fechaguardado", formatIsoUtc(fav.fechaGuardado));
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
 
         Request request = buildBaseRequest("/rest/v1/favoritos")
                 .header("Prefer", "resolution=merge-duplicates")
@@ -1009,7 +1138,7 @@ public class SupabaseClient {
         }
         json.addProperty("titulo", notif.titulo != null ? notif.titulo : "Notificación");
         json.addProperty("mensaje", notif.mensaje != null ? notif.mensaje : "");
-        json.addProperty("fecha", notif.fecha > 0 ? notif.fecha : System.currentTimeMillis());
+        json.addProperty("fecha", formatIsoUtc(notif.fecha > 0 ? notif.fecha : System.currentTimeMillis()));
         json.addProperty("isleida", notif.isLeida);
         json.addProperty("categoria", notif.categoria != null ? notif.categoria : "GENERAL");
         if (notif.referencia_id != null && !notif.referencia_id.isEmpty()) {

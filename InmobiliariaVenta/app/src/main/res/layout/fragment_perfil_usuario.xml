@@ -73,7 +73,7 @@
                             android:layout_height="match_parent"
                             android:padding="6dp"
                             android:src="@android:drawable/ic_menu_camera"
-                            android:tint="#ffffff" />
+                            app:tint="#ffffff" />
                     </androidx.cardview.widget.CardView>
                 </FrameLayout>
 

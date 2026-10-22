@@ -99,7 +99,6 @@ public class ResultadosBusquedaFragment extends Fragment {
         // RecyclerView Setup con optimizaciones de rendimiento
         adapter = new PropiedadDestacadaAdapter(new ArrayList<>());
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        searchResultsRecyclerView.setHasFixedSize(true);
         searchResultsRecyclerView.setItemViewCacheSize(20);
         searchResultsRecyclerView.setAdapter(adapter);
 

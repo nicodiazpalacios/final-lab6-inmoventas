@@ -60,4 +60,7 @@ public interface FavoritoDao {
 
     @Query("DELETE FROM favoritos WHERE usuarioId = :usuarioId")
     void eliminarTodosDeUsuario(String usuarioId);
+
+    @Query("SELECT usuarioId FROM favoritos WHERE propiedadId = :propiedadId")
+    List<String> obtenerUsuariosQueGuardaronPropiedad(String propiedadId);
 }

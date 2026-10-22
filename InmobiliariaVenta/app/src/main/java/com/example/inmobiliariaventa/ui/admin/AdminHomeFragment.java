@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -164,7 +166,6 @@ public class AdminHomeFragment extends Fragment {
         RecyclerView rvActividadReciente = view.findViewById(R.id.rvActividadReciente);
         if (rvActividadReciente != null && getContext() != null) {
             rvActividadReciente.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-            rvActividadReciente.setHasFixedSize(true);
             rvActividadReciente.setNestedScrollingEnabled(false);
 
             List<ActividadAdmin> actividades = com.example.inmobiliariaventa.data.repository.ActividadRepository
@@ -311,54 +312,10 @@ public class AdminHomeFragment extends Fragment {
                     if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
                 }
                 dialog.dismiss();
-                mostrarSnackbarElegante("Datos de la empresa actualizados correctamente");
+                CartelUtils.mostrar(this, "Datos de la empresa actualizados correctamente");
             });
         }
 
         dialog.show();
-    }
-
-    private void mostrarSnackbarElegante(String mensaje) {
-        if (!isAdded() || getActivity() == null) return;
-        View rootView = requireActivity().findViewById(R.id.main);
-        if (rootView == null) {
-            rootView = requireActivity().getWindow().getDecorView().findViewById(android.R.id.content);
-        }
-        if (rootView == null) {
-            rootView = getView();
-        }
-        if (rootView == null) return;
-
-        Snackbar snackbar = Snackbar.make(rootView, mensaje, Snackbar.LENGTH_SHORT)
-                .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
-
-        View snackbarView = snackbar.getView();
-        snackbarView.setBackgroundResource(R.drawable.bg_snackbar_favoritos);
-        snackbarView.setBackgroundTintList(null);
-
-        TextView tv = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
-        if (tv != null) {
-            tv.setMaxLines(3);
-        }
-
-        ViewGroup.LayoutParams lp = snackbarView.getLayoutParams();
-        if (lp instanceof ViewGroup.MarginLayoutParams) {
-            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) lp;
-            int marginH = (int) (16 * getResources().getDisplayMetrics().density);
-            int marginB = (int) (8 * getResources().getDisplayMetrics().density);
-            marginParams.setMargins(marginH, 0, marginH, marginB);
-            snackbarView.setLayoutParams(marginParams);
-        }
-        if (lp instanceof FrameLayout.LayoutParams) {
-            ((FrameLayout.LayoutParams) lp).gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        }
-        snackbarView.setElevation(8 * getResources().getDisplayMetrics().density);
-
-        View bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
-        if (bottomNav != null && bottomNav.getVisibility() == View.VISIBLE) {
-            snackbar.setAnchorView(bottomNav);
-        }
-
-        snackbar.show();
     }
 }

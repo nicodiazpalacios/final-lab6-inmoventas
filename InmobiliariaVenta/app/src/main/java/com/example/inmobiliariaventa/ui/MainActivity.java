@@ -23,6 +23,7 @@ import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,14 +36,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Solicitar permisos de ubicación apenas se abre la app
+        // Inicializar canal de notificaciones locales
+        com.example.inmobiliariaventa.utils.NotificacionDispositivoUtils.crearCanalNotificaciones(this);
+
+        // Solicitar permisos de inicio (Ubicación y Notificaciones agrupados en Android 13+)
         locationPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
                     // El usuario respondió la solicitud de permisos
                 }
         );
-        checkAndRequestLocationPermission();
+        solicitarPermisosIniciales();
 
         WindowInsetsControllerCompat windowInsetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
@@ -242,15 +246,28 @@ public class MainActivity extends AppCompatActivity {
                         .sincronizarConNube(null);
             } catch (Exception ignored) {}
         });
+
+        rootLayout.post(() -> procesarIntentNotificacion(getIntent()));
     }
 
-    private void checkAndRequestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            locationPermissionLauncher.launch(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-            });
+    private void solicitarPermisosIniciales() {
+        List<String> permisosPendientes = new ArrayList<>();
+
+        boolean faltaFine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED;
+        boolean faltaCoarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
+        if (faltaFine && faltaCoarse) {
+            permisosPendientes.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            permisosPendientes.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permisosPendientes.add(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
+        if (!permisosPendientes.isEmpty()) {
+            locationPermissionLauncher.launch(permisosPendientes.toArray(new String[0]));
         }
     }
 
@@ -283,6 +300,45 @@ public class MainActivity extends AppCompatActivity {
             try {
                 navController.navigate(itemId);
             } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        procesarIntentNotificacion(intent);
+    }
+
+    private void procesarIntentNotificacion(android.content.Intent intent) {
+        if (intent == null) return;
+        String propId = intent.getStringExtra("extra_propiedad_id");
+        String destino = intent.getStringExtra("extra_destino");
+
+        if (propId == null && destino == null) return;
+
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment);
+        if (navHostFragment == null) return;
+        NavController navController = navHostFragment.getNavController();
+
+        if (propId != null && !propId.isEmpty()) {
+            Bundle bundle = new Bundle();
+            bundle.putString("propiedad_id", propId);
+            try {
+                navController.navigate(R.id.nav_detalle_propiedad, bundle);
+            } catch (Exception ignored) {}
+            intent.removeExtra("extra_propiedad_id");
+        } else if ("admin_notificaciones".equals(destino)) {
+            try {
+                navController.navigate(R.id.nav_admin_notificaciones);
+            } catch (Exception ignored) {}
+            intent.removeExtra("extra_destino");
+        } else if ("cliente_notificaciones".equals(destino)) {
+            try {
+                navController.navigate(R.id.nav_cliente_notificaciones);
+            } catch (Exception ignored) {}
+            intent.removeExtra("extra_destino");
         }
     }
 }

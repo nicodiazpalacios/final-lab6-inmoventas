@@ -8,6 +8,7 @@ import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Notificacion;
+import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.ui.admin.ActividadAdmin;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -33,10 +34,12 @@ public class ActividadRepository {
     public static final String KEY_ADMIN_NUEVA_PROPIEDAD = "pref_admin_notif_nuevas_propiedades";
     public static final String KEY_ADMIN_CAMBIO_PRECIO = "pref_admin_notif_cambio_precios";
     public static final String KEY_ADMIN_BAJA_PROPIEDAD = "pref_admin_notif_baja_propiedades";
+    public static final String KEY_ADMIN_REACTIVAR_PROPIEDAD = "pref_admin_notif_reactivar_propiedad";
 
     // Preferencias de Notificaciones de Cliente
     public static final String KEY_CLI_PRECIOS_FAV = "pref_cli_notif_precios_fav";
     public static final String KEY_CLI_ESTADO_FAV = "pref_cli_notif_estado_fav";
+    public static final String KEY_CLI_REACTIVACION_FAV = "pref_cli_notif_reactivacion_fav";
     public static final String KEY_CLI_RECOMENDACIONES = "pref_cli_notif_recomendaciones";
     public static final String KEY_CLI_CONSULTAS = "pref_cli_notif_consultas";
 
@@ -320,6 +323,9 @@ public class ActividadRepository {
         if (t.contains("cambio de estado") || m.contains("eliminada") || m.contains("pausada") || m.contains("baja")) {
             return notifPrefs.getBoolean(KEY_ADMIN_BAJA_PROPIEDAD, true);
         }
+        if (t.contains("reactivad") || m.contains("reactivad") || m.contains("publicada nuevamente activa")) {
+            return notifPrefs.getBoolean(KEY_ADMIN_REACTIVAR_PROPIEDAD, true);
+        }
         if (t.contains("nueva propiedad") || m.contains("ingresó")) {
             return notifPrefs.getBoolean(KEY_ADMIN_NUEVA_PROPIEDAD, true);
         }
@@ -327,9 +333,7 @@ public class ActividadRepository {
     }
 
     private void guardarNotificacionPersistente(String prefKey, String titulo, String mensaje, String categoria, String referenciaId) {
-        if (prefKey != null && !isAdminPrefEnabled(prefKey)) {
-            return;
-        }
+        // Las notificaciones siempre se registran e insertan en la app y en Supabase para el historial interno
         Notificacion notif = new Notificacion(
                 UUID.randomUUID().toString(),
                 null,
@@ -346,6 +350,24 @@ public class ActividadRepository {
             } catch (Exception ignored) {}
         });
         SupabaseClient.guardarNotificacion(notif, null);
+
+        // Los slides de la tuerca configuran únicamente si se emite la alerta en cascada en el celular
+        try {
+            SharedPreferences appPrefs = appContext.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+            String rol = appPrefs.getString("user_rol", "");
+            boolean isAdmin = rol != null && rol.trim().toUpperCase().contains("ADMIN");
+            boolean debeAlertarEnCelular = (prefKey == null || isAdminPrefEnabled(prefKey));
+            if (isAdmin && debeAlertarEnCelular) {
+                com.example.inmobiliariaventa.utils.NotificacionDispositivoUtils.mostrarNotificacion(
+                        appContext,
+                        Math.abs(notif.id.hashCode()),
+                        titulo,
+                        mensaje,
+                        referenciaId,
+                        true
+                );
+            }
+        } catch (Exception ignored) {}
     }
 
     public synchronized void registrarNuevoContrato(String cliente, String propiedad, String monto, String situacion) {
@@ -524,6 +546,78 @@ public class ActividadRepository {
                 "PROPIEDADES",
                 ref
         );
+    }
+
+    public synchronized void notificarReactivacionPropiedad(Propiedad propiedad) {
+        if (propiedad == null) return;
+        String ref = propiedad.titulo != null && !propiedad.titulo.trim().isEmpty() ? propiedad.titulo.trim() : "Propiedad";
+        String finalMonto = formatearMonto(String.format(Locale.US, "%,d", (long) propiedad.precio));
+
+        // 1. Registrar actividad y notificación para el Administrador
+        ActividadAdmin actividad = new ActividadAdmin(
+                UUID.randomUUID().toString(),
+                ref,
+                ActividadAdmin.TipoActividad.NUEVA_PROPIEDAD,
+                obtenerHoraActualTexto(),
+                finalMonto,
+                "• Reactivada en el catálogo"
+        );
+        agregarAlInicio(actividad);
+
+        guardarNotificacionPersistente(
+                KEY_ADMIN_REACTIVAR_PROPIEDAD,
+                "Propiedad reactivada: " + ref,
+                "La propiedad '" + ref + "' (" + finalMonto + ") fue publicada nuevamente activa en el catálogo.",
+                "PROPIEDADES",
+                propiedad.id
+        );
+
+        // 2. Notificar a todos los clientes que la tienen en FAVORITOS
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(appContext);
+                List<String> usuarios = db.favoritoDao().obtenerUsuariosQueGuardaronPropiedad(propiedad.id);
+                if (usuarios != null) {
+                    for (String uid : usuarios) {
+                        if (uid == null || uid.isEmpty()) continue;
+                        String notifId = "fav_reactivada_" + propiedad.id + "_" + uid + "_" + System.currentTimeMillis();
+                        Notificacion n = new Notificacion(
+                                notifId,
+                                uid,
+                                "¡Buenas noticias! Volvió a estar disponible: " + ref,
+                                "La propiedad '" + ref + "' que guardaste en tus favoritos está nuevamente activa en el catálogo. Tocá para ver sus fotos y detalles.",
+                                System.currentTimeMillis(),
+                                false,
+                                "FAVORITOS",
+                                propiedad.id
+                        );
+                        db.notificacionDao().insertar(n);
+                        SupabaseClient.guardarNotificacion(n, null);
+
+                        // Si el usuario con sesión iniciada en este dispositivo es este cliente, disparar notificación local
+                        try {
+                            SharedPreferences appPrefs = appContext.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+                            String currentUserId = appPrefs.getString("user_id", "");
+                            if (uid.equals(currentUserId)) {
+                                SharedPreferences notifPrefs = appContext.getSharedPreferences(PREF_NOTIF_SETTINGS, Context.MODE_PRIVATE);
+                                if (notifPrefs.getBoolean(KEY_CLI_REACTIVACION_FAV, true)) {
+                                    com.example.inmobiliariaventa.utils.NotificacionDispositivoUtils.mostrarNotificacion(
+                                            appContext,
+                                            Math.abs(n.id.hashCode()),
+                                            n.titulo,
+                                            n.mensaje,
+                                            propiedad.id,
+                                            false
+                                    );
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            } catch (Exception e) {
+                android.util.Log.e("ActividadRepo", "Error al notificar reactivación a favoritos", e);
+            }
+        });
     }
 
     private String obtenerHoraActualTexto() {

@@ -150,7 +150,6 @@ public class HomeUsuarioFragment extends Fragment {
             featuredAdapter.setCoordinatorLayout(rootView.findViewById(R.id.coordinator_home));
         }
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        featuredRecyclerView.setHasFixedSize(true);
         featuredRecyclerView.setItemViewCacheSize(20);
         featuredRecyclerView.setAdapter(featuredAdapter);
 
