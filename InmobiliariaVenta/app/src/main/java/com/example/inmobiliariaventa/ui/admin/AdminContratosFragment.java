@@ -791,7 +791,6 @@ public class AdminContratosFragment extends Fragment {
         TextView tvTitulo = dialogView.findViewById(R.id.dialog_pago_tv_titulo);
         TextView tvSubtitulo = dialogView.findViewById(R.id.dialog_pago_tv_subtitulo);
         TextInputEditText etMonto = dialogView.findViewById(R.id.et_pago_monto);
-        AutoCompleteTextView actvMedio = dialogView.findViewById(R.id.actv_pago_medio);
         TextInputEditText etFecha = dialogView.findViewById(R.id.et_pago_fecha);
         TextInputEditText etConcepto = dialogView.findViewById(R.id.et_pago_concepto);
         MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_pago_btn_cancelar);
@@ -815,13 +814,6 @@ public class AdminContratosFragment extends Fragment {
         if (etFecha != null) etFecha.setText(sdf.format(new Date()));
         if (etConcepto != null) etConcepto.setText("Cobro simultáneo (" + textoCuotas + ")");
 
-        if (actvMedio != null) {
-            String[] medios = {"Efectivo", "Transferencia", "Depósito Bancario", "Cheque", "Tarjeta de Débito"};
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, medios);
-            actvMedio.setAdapter(adapter);
-            actvMedio.setText(contrato.metodoPago != null ? contrato.metodoPago : "Efectivo", false);
-        }
-
         if (btnCancelar != null) btnCancelar.setOnClickListener(v -> dialog.dismiss());
 
         if (btnConfirmar != null) {
@@ -834,8 +826,9 @@ public class AdminContratosFragment extends Fragment {
                     }
                 } catch (Exception ignored) {}
 
-                String medio = actvMedio != null ? actvMedio.getText().toString().trim() : "Efectivo";
-                if (medio.isEmpty()) medio = "Efectivo";
+                String medio = (contrato.metodoPago != null && !contrato.metodoPago.trim().isEmpty())
+                        ? contrato.metodoPago.trim()
+                        : "Efectivo";
 
                 String fecha = (etFecha != null && etFecha.getText() != null && !etFecha.getText().toString().trim().isEmpty())
                         ? etFecha.getText().toString().trim()
@@ -947,7 +940,6 @@ public class AdminContratosFragment extends Fragment {
         TextView tvTitulo = dialogView.findViewById(R.id.dialog_pago_tv_titulo);
         TextView tvSubtitulo = dialogView.findViewById(R.id.dialog_pago_tv_subtitulo);
         TextInputEditText etMonto = dialogView.findViewById(R.id.et_pago_monto);
-        AutoCompleteTextView actvMedio = dialogView.findViewById(R.id.actv_pago_medio);
         TextInputEditText etFecha = dialogView.findViewById(R.id.et_pago_fecha);
         TextInputEditText etConcepto = dialogView.findViewById(R.id.et_pago_concepto);
         MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_pago_btn_cancelar);
@@ -961,10 +953,6 @@ public class AdminContratosFragment extends Fragment {
         nf.setMaximumFractionDigits(2);
         etMonto.setText(nf.format(montoSugerido));
 
-        String[] medios = {"Efectivo", "Transferencia", "Tarjeta de Débito", "Tarjeta de Crédito", "Cheque"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, medios);
-        actvMedio.setAdapter(adapter);
-        actvMedio.setText(medios[0], false);
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         etFecha.setText(sdf.format(new Date()));
@@ -987,8 +975,9 @@ public class AdminContratosFragment extends Fragment {
                 return;
             }
 
-            String medio = actvMedio.getText().toString().trim();
-            if (medio.isEmpty()) medio = "Efectivo";
+            String medio = (contrato.metodoPago != null && !contrato.metodoPago.trim().isEmpty())
+                    ? contrato.metodoPago.trim()
+                    : "Efectivo";
 
             String fecha = etFecha.getText() != null && !etFecha.getText().toString().trim().isEmpty()
                     ? etFecha.getText().toString().trim()

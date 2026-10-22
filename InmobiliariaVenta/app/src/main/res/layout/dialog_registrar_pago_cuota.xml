@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:layout_marginBottom="16dp"
-            android:text="Ingresá los datos del pago recibido"
+            android:text="Confirmá los datos del pago recibido"
             android:textColor="@color/colorOnSurfaceVariant"
             android:textSize="13sp" />
 
@@ -53,29 +53,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
-                android:textColor="@color/colorOnSurface"
-                android:textSize="15sp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Campo Medio de Pago (Dropdown) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_pago_medio"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:hint="Medio de Pago"
-            app:boxCornerRadiusBottomEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxStrokeColor="@color/colorPrimary">
-
-            <AutoCompleteTextView
-                android:id="@+id/actv_pago_medio"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
                 android:textColor="@color/colorOnSurface"
                 android:textSize="15sp" />
         </com.google.android.material.textfield.TextInputLayout>
