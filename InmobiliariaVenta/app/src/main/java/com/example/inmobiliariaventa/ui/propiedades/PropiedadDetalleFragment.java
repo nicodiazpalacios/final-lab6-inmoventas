@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.propiedades;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -523,7 +525,7 @@ public class PropiedadDetalleFragment extends Fragment {
             whatsappIntent.setData(Uri.parse(url));
             startActivity(whatsappIntent);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No se pudo abrir WhatsApp. Verifique tener la aplicación instalada.", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "No se pudo abrir WhatsApp. Verifique tener la aplicación instalada.");
         }
     }
 
@@ -538,7 +540,7 @@ public class PropiedadDetalleFragment extends Fragment {
             dialIntent.setData(Uri.parse("tel:" + cleanPhone));
             startActivity(dialIntent);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No se pudo iniciar la llamada.", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "No se pudo iniciar la llamada.");
         }
     }
 
@@ -745,7 +747,7 @@ public class PropiedadDetalleFragment extends Fragment {
                     try {
                         Navigation.findNavController(getView()).navigate(R.id.nav_login);
                     } catch (Exception e) {
-                        Toast.makeText(requireContext(), "Por favor ingresa desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                        CartelUtils.mostrar(requireContext(), "Por favor ingresa desde la sección Perfil");
                     }
                 }
             });
@@ -758,7 +760,7 @@ public class PropiedadDetalleFragment extends Fragment {
                     try {
                         Navigation.findNavController(getView()).navigate(R.id.nav_registro);
                     } catch (Exception e) {
-                        Toast.makeText(requireContext(), "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                        CartelUtils.mostrar(requireContext(), "Por favor registrate desde la sección Perfil");
                     }
                 }
             });

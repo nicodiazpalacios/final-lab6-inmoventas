@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -68,9 +70,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
                         }
                     }
                     actualizarListaFotos();
-                    Toast.makeText(requireContext(),
-                            agregadas == 1 ? "Foto agregada" : agregadas + " fotos agregadas",
-                            Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), agregadas == 1 ? "Foto agregada" : agregadas + " fotos agregadas");
                 }
             });
 
@@ -113,7 +113,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
                 if (position >= 0 && position < listaFotos.size()) {
                     listaFotos.remove(position);
                     actualizarListaFotos();
-                    Toast.makeText(requireContext(), "Foto eliminada", Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), "Foto eliminada");
                 }
             });
             rvFotosPropiedad.setAdapter(fotosAdapter);
@@ -344,7 +344,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
                         .registrarCambioPrecio(titulo, precioAnterior, precio);
             }
 
-            Toast.makeText(requireContext(), "Propiedad actualizada correctamente", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "Propiedad actualizada correctamente");
         } else {
             // Crear nueva propiedad
             Propiedad nueva = new Propiedad();
@@ -372,7 +372,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
                         .registrarNuevaPropiedad(titulo, precio);
             }
 
-            Toast.makeText(requireContext(), "Propiedad publicada y sincronizada correctamente", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "Propiedad publicada y sincronizada correctamente");
         }
 
         Navigation.findNavController(view).popBackStack();

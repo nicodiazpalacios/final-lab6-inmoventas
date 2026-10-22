@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.home;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -431,7 +433,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                 try {
                     Navigation.findNavController(anchorView).navigate(R.id.nav_login);
                 } catch (Exception e) {
-                    Toast.makeText(context, "Por favor ingresa desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(context, "Por favor ingresa desde la sección Perfil");
                 }
             });
         }
@@ -442,7 +444,7 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
                 try {
                     Navigation.findNavController(anchorView).navigate(R.id.nav_registro);
                 } catch (Exception e) {
-                    Toast.makeText(context, "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(context, "Por favor registrate desde la sección Perfil");
                 }
             });
         }

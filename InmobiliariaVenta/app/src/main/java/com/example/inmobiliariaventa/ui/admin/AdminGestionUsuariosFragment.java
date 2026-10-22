@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -467,7 +469,7 @@ public class AdminGestionUsuariosFragment extends Fragment {
                     }
                 });
                 SupabaseClient.actualizarRolUsuario(usuario.id, nuevoRol, null);
-                Toast.makeText(requireContext(), "Rol de " + nombreDisplay + " actualizado a " + nuevoRolTexto, Toast.LENGTH_SHORT).show();
+                CartelUtils.mostrar(requireContext(), "Rol de " + nombreDisplay + " actualizado a " + nuevoRolTexto);
             });
         }
 
@@ -516,7 +518,7 @@ public class AdminGestionUsuariosFragment extends Fragment {
                     }
                 });
                 SupabaseClient.eliminarUsuario(usuario.id, null);
-                Toast.makeText(requireContext(), "Usuario " + nombreDisplay + " eliminado", Toast.LENGTH_SHORT).show();
+                CartelUtils.mostrar(requireContext(), "Usuario " + nombreDisplay + " eliminado");
             });
         }
 

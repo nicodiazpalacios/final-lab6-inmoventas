@@ -17,24 +17,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.domain.entity.Propiedad;
+import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import androidx.lifecycle.LiveData;
-import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
-import com.example.inmobiliariaventa.R;
-import com.example.inmobiliariaventa.domain.entity.Propiedad;
-import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class HomeUsuarioFragment extends Fragment {
 
@@ -99,12 +96,8 @@ public class HomeUsuarioFragment extends Fragment {
                 SharedPreferences prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
                 boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
                 if (isLoggedIn) {
-                    String userRol = prefs.getString("user_rol", "");
-                    if (userRol != null && userRol.trim().toUpperCase().contains("ADMIN")) {
-                        Navigation.findNavController(v).navigate(R.id.nav_admin_notificaciones);
-                    } else {
-                        Toast.makeText(getContext(), "No tienes nuevas notificaciones por el momento", Toast.LENGTH_SHORT).show();
-                    }
+                    // En modo vista de usuario, la campanita siempre abre el centro de notificaciones de clientes
+                    Navigation.findNavController(v).navigate(R.id.nav_cliente_notificaciones);
                 } else {
                     mostrarDialogoRequerirLogin(getContext(), v);
                 }
@@ -161,7 +154,6 @@ public class HomeUsuarioFragment extends Fragment {
         featuredRecyclerView.setItemViewCacheSize(20);
         featuredRecyclerView.setAdapter(featuredAdapter);
 
-        // Desplazamiento automático fluido sin botones
         if (homeNestedScrollView != null) {
             homeNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
                 if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
@@ -184,12 +176,10 @@ public class HomeUsuarioFragment extends Fragment {
     private void actualizarModoConexion(boolean isOnline, View rootView) {
         if (getContext() == null) return;
 
-        // Limpiar observador anterior para evitar fugas o listas cruzadas
         if (liveDataPropiedadesActual != null && observerPropiedades != null) {
             liveDataPropiedadesActual.removeObserver(observerPropiedades);
         }
 
-        // Si se restablece la conexión tras estar desconectado, notificar al usuario
         if (ultimoEstadoConexion != null && !ultimoEstadoConexion && isOnline) {
             mostrarSnackbarReconexion(rootView);
             if (viewModel != null) {
@@ -199,7 +189,6 @@ public class HomeUsuarioFragment extends Fragment {
         ultimoEstadoConexion = isOnline;
 
         if (isOnline) {
-            // ==================== MODO ONLINE ====================
             if (cardModoOffline != null) cardModoOffline.setVisibility(View.GONE);
             if (layoutOfflineVacio != null) layoutOfflineVacio.setVisibility(View.GONE);
             if (featuredRecyclerView != null) featuredRecyclerView.setVisibility(View.VISIBLE);
@@ -218,7 +207,6 @@ public class HomeUsuarioFragment extends Fragment {
             liveDataPropiedadesActual.observe(getViewLifecycleOwner(), observerPropiedades);
 
         } else {
-            // ==================== MODO OFFLINE (CATÁLOGO COMPLETO ROOM) ====================
             if (cardModoOffline != null) cardModoOffline.setVisibility(View.VISIBLE);
             if (tvTituloPropiedadesHome != null) tvTituloPropiedadesHome.setText("Propiedades guardadas (Modo sin conexión)");
 
@@ -345,7 +333,7 @@ public class HomeUsuarioFragment extends Fragment {
                 try {
                     Navigation.findNavController(anchorView).navigate(R.id.nav_login);
                 } catch (Exception e) {
-                    Toast.makeText(context, "Por favor ingresá desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    com.example.inmobiliariaventa.utils.CartelUtils.mostrar(anchorView, "Por favor ingresá desde la sección Perfil");
                 }
             });
         }
@@ -356,7 +344,7 @@ public class HomeUsuarioFragment extends Fragment {
                 try {
                     Navigation.findNavController(anchorView).navigate(R.id.nav_registro);
                 } catch (Exception e) {
-                    Toast.makeText(context, "Por favor registrate desde la sección Perfil", Toast.LENGTH_SHORT).show();
+                    com.example.inmobiliariaventa.utils.CartelUtils.mostrar(anchorView, "Por favor registrate desde la sección Perfil");
                 }
             });
         }

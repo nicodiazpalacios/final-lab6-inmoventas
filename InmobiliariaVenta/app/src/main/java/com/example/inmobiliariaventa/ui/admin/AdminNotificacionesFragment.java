@@ -1,12 +1,14 @@
 package com.example.inmobiliariaventa.ui.admin;
 
-import android.graphics.Typeface;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,69 +16,34 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.local.AppDatabase;
+import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.data.repository.ActividadRepository;
+import com.example.inmobiliariaventa.domain.entity.Notificacion;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
 public class AdminNotificacionesFragment extends Fragment {
 
-    private int currentPage = 1;
-    private int startPage = 1;
-    private final int maxPages = 6; // 48 notificaciones / 8 por página
-
-    private LinearLayout layoutPage1Notificaciones;
-    private LinearLayout layoutPage2Notificaciones;
-    private NestedScrollView scrollViewNotificaciones;
-
-    private MaterialCardView btnPagePrev, btnPageNext;
-    private MaterialCardView cardPage1, cardPage2, cardPage3, cardPage4;
-    private TextView tvPagePrev, tvPageNext;
-    private TextView tvPage1, tvPage2, tvPage3, tvPage4;
-
+    private LinearLayout layoutNotificacionesContainer;
+    private LinearLayout layoutEmptyNotificaciones;
+    private TextView tvSubtituloNotificaciones;
     private TextInputEditText etBuscarNotificacion;
     private ChipGroup chipGroupNotif;
     private TextView btnMarcarTodasLeidas;
 
-    private static class NotifItem {
-        final int cardId;
-        final int titleId;
-        final int descId;
-        final int categoryId;
-        final int statusId;
-        final int dismissId;
-
-        NotifItem(int cardId, int titleId, int descId, int categoryId, int statusId, int dismissId) {
-            this.cardId = cardId;
-            this.titleId = titleId;
-            this.descId = descId;
-            this.categoryId = categoryId;
-            this.statusId = statusId;
-            this.dismissId = dismissId;
-        }
-    }
-
-    private final NotifItem[] notifItems = new NotifItem[] {
-        new NotifItem(R.id.card_notif_1, R.id.tv_titulo_1, R.id.tv_desc_1, R.id.tv_categoria_1, R.id.tv_badge_estado_1, R.id.btn_dismiss_1),
-        new NotifItem(R.id.card_notif_2, R.id.tv_titulo_2, R.id.tv_desc_2, R.id.tv_categoria_2, R.id.tv_badge_estado_2, R.id.btn_dismiss_2),
-        new NotifItem(R.id.card_notif_3, R.id.tv_titulo_3, R.id.tv_desc_3, R.id.tv_categoria_3, R.id.tv_badge_estado_3, R.id.btn_dismiss_3),
-        new NotifItem(R.id.card_notif_4, R.id.tv_titulo_4, R.id.tv_desc_4, R.id.tv_categoria_4, R.id.tv_badge_estado_4, R.id.btn_dismiss_4),
-        new NotifItem(R.id.card_notif_5, R.id.tv_titulo_5, R.id.tv_desc_5, R.id.tv_categoria_5, R.id.tv_badge_estado_5, R.id.btn_dismiss_5),
-        new NotifItem(R.id.card_notif_6, R.id.tv_titulo_6, R.id.tv_desc_6, R.id.tv_categoria_6, R.id.tv_badge_estado_6, R.id.btn_dismiss_6),
-        new NotifItem(R.id.card_notif_7, R.id.tv_titulo_7, R.id.tv_desc_7, R.id.tv_categoria_7, R.id.tv_badge_estado_7, R.id.btn_dismiss_7),
-        new NotifItem(R.id.card_notif_8, R.id.tv_titulo_8, R.id.tv_desc_8, R.id.tv_categoria_8, R.id.tv_badge_estado_8, R.id.btn_dismiss_8),
-        new NotifItem(R.id.card_notif_9, R.id.tv_titulo_9, R.id.tv_desc_9, R.id.tv_categoria_9, R.id.tv_badge_estado_9, R.id.btn_dismiss_9),
-        new NotifItem(R.id.card_notif_10, R.id.tv_titulo_10, R.id.tv_desc_10, R.id.tv_categoria_10, R.id.tv_badge_estado_10, R.id.btn_dismiss_10),
-        new NotifItem(R.id.card_notif_11, R.id.tv_titulo_11, R.id.tv_desc_11, R.id.tv_categoria_11, R.id.tv_badge_estado_11, R.id.btn_dismiss_11),
-        new NotifItem(R.id.card_notif_12, R.id.tv_titulo_12, R.id.tv_desc_12, R.id.tv_categoria_12, R.id.tv_badge_estado_12, R.id.btn_dismiss_12),
-        new NotifItem(R.id.card_notif_13, R.id.tv_titulo_13, R.id.tv_desc_13, R.id.tv_categoria_13, R.id.tv_badge_estado_13, R.id.btn_dismiss_13),
-        new NotifItem(R.id.card_notif_14, R.id.tv_titulo_14, R.id.tv_desc_14, R.id.tv_categoria_14, R.id.tv_badge_estado_14, R.id.btn_dismiss_14),
-        new NotifItem(R.id.card_notif_15, R.id.tv_titulo_15, R.id.tv_desc_15, R.id.tv_categoria_15, R.id.tv_badge_estado_15, R.id.btn_dismiss_15),
-        new NotifItem(R.id.card_notif_16, R.id.tv_titulo_16, R.id.tv_desc_16, R.id.tv_categoria_16, R.id.tv_badge_estado_16, R.id.btn_dismiss_16)
-    };
+    private final List<Notificacion> listaCompleta = new ArrayList<>();
 
     public AdminNotificacionesFragment() {
         // Required empty public constructor
@@ -92,253 +59,394 @@ public class AdminNotificacionesFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        layoutPage1Notificaciones = view.findViewById(R.id.layout_page_1_notificaciones);
-        layoutPage2Notificaciones = view.findViewById(R.id.layout_page_2_notificaciones);
-        scrollViewNotificaciones = view.findViewById(R.id.scroll_view_notificaciones);
-
+        layoutNotificacionesContainer = view.findViewById(R.id.layout_notificaciones_container);
+        layoutEmptyNotificaciones = view.findViewById(R.id.layout_empty_notificaciones);
+        tvSubtituloNotificaciones = view.findViewById(R.id.tv_subtitulo_notificaciones);
         etBuscarNotificacion = view.findViewById(R.id.et_buscar_notificacion);
         chipGroupNotif = view.findViewById(R.id.chip_group_notif);
         btnMarcarTodasLeidas = view.findViewById(R.id.btn_marcar_todas_leidas);
 
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
-            btnBack.setOnClickListener(v -> {
-                androidx.navigation.Navigation.findNavController(view).popBackStack();
-            });
+            btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
         }
 
-        setupCardInteractions(view);
-        setupSearchAndFilter(view);
-        setupPagination(view);
+        View btnConfig = view.findViewById(R.id.btn_config_notificaciones);
+        if (btnConfig != null) {
+            btnConfig.setOnClickListener(v -> mostrarDialogoPreferenciasAdmin());
+        }
+
+        setupSearchAndFilter();
 
         if (btnMarcarTodasLeidas != null) {
-            btnMarcarTodasLeidas.setOnClickListener(v -> {
-                for (NotifItem item : notifItems) {
-                    TextView tvStatus = view.findViewById(item.statusId);
-                    if (tvStatus != null) {
-                        tvStatus.setText("LEÍDA");
-                        tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.colorSurfaceVariant));
-                        tvStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOutline));
-                    }
-                }
-                Toast.makeText(requireContext(), "Todas las notificaciones marcadas como leídas", Toast.LENGTH_SHORT).show();
-            });
+            btnMarcarTodasLeidas.setOnClickListener(v -> marcarTodasComoLeidas());
         }
+
+        AppDatabase db = AppDatabase.getInstance(requireContext());
+        db.notificacionDao().obtenerTodasLiveData().observe(getViewLifecycleOwner(), notificaciones -> {
+            listaCompleta.clear();
+            if (notificaciones != null) {
+                listaCompleta.addAll(notificaciones);
+            }
+            renderizarListaFiltrada();
+        });
+
+        ActividadRepository.getInstance(requireContext()).sincronizarNotificacionesYActividades(null);
     }
 
-    private void setupCardInteractions(View root) {
-        for (NotifItem item : notifItems) {
-            MaterialCardView card = root.findViewById(item.cardId);
-            TextView tvTitle = root.findViewById(item.titleId);
-            String title = tvTitle != null ? tvTitle.getText().toString() : "Notificación";
-
-            View btnDismiss = root.findViewById(item.dismissId);
-            if (btnDismiss != null && card != null) {
-                btnDismiss.setOnClickListener(v -> {
-                    card.setVisibility(View.GONE);
-                    Toast.makeText(requireContext(), "Notificación descartada", Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            if (card != null) {
-                card.setOnClickListener(v -> {
-                    TextView tvStatus = root.findViewById(item.statusId);
-                    if (tvStatus != null) {
-                        tvStatus.setText("LEÍDA");
-                        tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.colorSurfaceVariant));
-                        tvStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOutline));
-                    }
-                    Toast.makeText(requireContext(), title, Toast.LENGTH_SHORT).show();
-                });
-            }
-        }
-    }
-
-    private void setupSearchAndFilter(View root) {
+    private void setupSearchAndFilter() {
         if (etBuscarNotificacion != null) {
             etBuscarNotificacion.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    applyFilters(root);
+                    renderizarListaFiltrada();
                 }
 
                 @Override
-                public void afterTextChanged(Editable s) { }
+                public void afterTextChanged(Editable s) {}
             });
         }
 
         if (chipGroupNotif != null) {
-            chipGroupNotif.setOnCheckedChangeListener((group, checkedId) -> applyFilters(root));
+            chipGroupNotif.setOnCheckedChangeListener((group, checkedId) -> renderizarListaFiltrada());
         }
     }
 
-    private void applyFilters(View root) {
+    private void marcarTodasComoLeidas() {
+        if (getContext() == null) return;
+        android.content.Context appCtx = requireContext().getApplicationContext();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase.getInstance(appCtx).notificacionDao().marcarTodasComoLeidas();
+        });
+        SupabaseClient.marcarTodasNotificacionesLeidas(null);
+        com.example.inmobiliariaventa.utils.CartelUtils.mostrar(layoutNotificacionesContainer, "Todas las notificaciones marcadas como leídas");
+    }
+
+    private void renderizarListaFiltrada() {
+        if (!isAdded() || getContext() == null || layoutNotificacionesContainer == null) return;
+
         String query = "";
         if (etBuscarNotificacion != null && etBuscarNotificacion.getText() != null) {
-            query = etBuscarNotificacion.getText().toString().trim().toLowerCase();
+            query = etBuscarNotificacion.getText().toString().trim().toLowerCase(Locale.ROOT);
         }
 
         int checkedId = chipGroupNotif != null ? chipGroupNotif.getCheckedChipId() : R.id.chip_todas;
 
-        for (NotifItem item : notifItems) {
-            MaterialCardView card = root.findViewById(item.cardId);
-            if (card == null) continue;
+        List<Notificacion> filtradas = new ArrayList<>();
+        int noLeidasTotal = 0;
 
-            TextView tvTitle = root.findViewById(item.titleId);
-            TextView tvDesc = root.findViewById(item.descId);
-            TextView tvCat = root.findViewById(item.categoryId);
-            TextView tvStatus = root.findViewById(item.statusId);
+        for (Notificacion n : listaCompleta) {
+            if (!n.isLeida) noLeidasTotal++;
 
-            String title = tvTitle != null ? tvTitle.getText().toString().toLowerCase() : "";
-            String desc = tvDesc != null ? tvDesc.getText().toString().toLowerCase() : "";
-            String cat = tvCat != null ? tvCat.getText().toString().toUpperCase() : "";
-            String status = tvStatus != null ? tvStatus.getText().toString().toUpperCase() : "";
+            String cat = (n.categoria != null && !n.categoria.trim().isEmpty())
+                    ? n.categoria.trim().toUpperCase(Locale.ROOT)
+                    : inferirCategoria(n);
 
             boolean matchesCategory = true;
             if (checkedId == R.id.chip_no_leidas) {
-                matchesCategory = status.contains("NUEVA");
+                matchesCategory = !n.isLeida;
             } else if (checkedId == R.id.chip_contratos) {
-                matchesCategory = cat.contains("CONTRATOS");
+                matchesCategory = cat.contains("CONTRATO");
             } else if (checkedId == R.id.chip_propiedades) {
-                matchesCategory = cat.contains("PROPIEDADES");
+                matchesCategory = cat.contains("PROPIEDAD") || cat.contains("FAVORITO") || cat.contains("UBICACION");
             } else if (checkedId == R.id.chip_leads) {
-                matchesCategory = cat.contains("LEADS");
+                matchesCategory = cat.contains("LEAD") || cat.contains("MENSAJE") || cat.contains("CONSULTA");
             }
 
-            boolean matchesQuery = query.isEmpty() || title.contains(query) || desc.contains(query) || cat.toLowerCase().contains(query);
+            if (!matchesCategory) continue;
 
-            card.setVisibility(matchesCategory && matchesQuery ? View.VISIBLE : View.GONE);
-        }
-    }
-
-    private void setupPagination(View root) {
-        btnPagePrev = root.findViewById(R.id.btn_page_prev);
-        btnPageNext = root.findViewById(R.id.btn_page_next);
-        tvPagePrev = root.findViewById(R.id.tv_page_prev);
-        tvPageNext = root.findViewById(R.id.tv_page_next);
-
-        cardPage1 = root.findViewById(R.id.card_page_1);
-        cardPage2 = root.findViewById(R.id.card_page_2);
-        cardPage3 = root.findViewById(R.id.card_page_3);
-        cardPage4 = root.findViewById(R.id.card_page_4);
-
-        tvPage1 = root.findViewById(R.id.tv_page_1);
-        tvPage2 = root.findViewById(R.id.tv_page_2);
-        tvPage3 = root.findViewById(R.id.tv_page_3);
-        tvPage4 = root.findViewById(R.id.tv_page_4);
-
-        if (btnPagePrev != null) {
-            btnPagePrev.setOnClickListener(v -> {
-                if (currentPage > 1) {
-                    goToPage(currentPage - 1, root);
+            if (!query.isEmpty()) {
+                String t = n.titulo != null ? n.titulo.toLowerCase(Locale.ROOT) : "";
+                String m = n.mensaje != null ? n.mensaje.toLowerCase(Locale.ROOT) : "";
+                String c = cat.toLowerCase(Locale.ROOT);
+                if (!t.contains(query) && !m.contains(query) && !c.contains(query)) {
+                    continue;
                 }
-            });
+            }
+
+            filtradas.add(n);
         }
 
-        if (btnPageNext != null) {
-            btnPageNext.setOnClickListener(v -> {
-                if (currentPage < maxPages) {
-                    goToPage(currentPage + 1, root);
+        if (tvSubtituloNotificaciones != null) {
+            if (noLeidasTotal > 0) {
+                tvSubtituloNotificaciones.setText("Tienes " + noLeidasTotal + " alerta(s) sin leer • Total: " + listaCompleta.size());
+            } else {
+                tvSubtituloNotificaciones.setText("Al día • " + listaCompleta.size() + " notificación(es) registradas en el sistema");
+            }
+        }
+
+        layoutNotificacionesContainer.removeAllViews();
+
+        if (filtradas.isEmpty()) {
+            layoutNotificacionesContainer.setVisibility(View.GONE);
+            if (layoutEmptyNotificaciones != null) layoutEmptyNotificaciones.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        layoutNotificacionesContainer.setVisibility(View.VISIBLE);
+        if (layoutEmptyNotificaciones != null) layoutEmptyNotificaciones.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (Notificacion notif : filtradas) {
+            View itemView = inflater.inflate(R.layout.item_notificacion_card, layoutNotificacionesContainer, false);
+            bindNotificacionCard(itemView, notif);
+            layoutNotificacionesContainer.addView(itemView);
+        }
+    }
+
+    private String inferirCategoria(Notificacion n) {
+        String txt = ((n.titulo != null ? n.titulo : "") + " " + (n.mensaje != null ? n.mensaje : "")).toUpperCase(Locale.ROOT);
+        if (txt.contains("CONTRATO")) return "CONTRATOS";
+        if (txt.contains("CONSULTA") || txt.contains("MENSAJE") || txt.contains("LEAD")) return "LEADS";
+        return "PROPIEDADES";
+    }
+
+    private void bindNotificacionCard(View cardView, Notificacion notif) {
+        MaterialCardView cardRoot = cardView.findViewById(R.id.card_notificacion_root);
+        ImageView ivIcono = cardView.findViewById(R.id.iv_icono_notif);
+        TextView tvCategoria = cardView.findViewById(R.id.tv_notif_categoria);
+        TextView tvEstado = cardView.findViewById(R.id.tv_notif_estado);
+        TextView tvFecha = cardView.findViewById(R.id.tv_notif_fecha);
+        TextView tvTitulo = cardView.findViewById(R.id.tv_notif_titulo);
+        TextView tvMensaje = cardView.findViewById(R.id.tv_notif_mensaje);
+        View btnDismiss = cardView.findViewById(R.id.btn_notif_dismiss);
+
+        String cat = (notif.categoria != null && !notif.categoria.trim().isEmpty())
+                ? notif.categoria.trim().toUpperCase(Locale.ROOT)
+                : inferirCategoria(notif);
+
+        tvCategoria.setText(cat);
+        tvTitulo.setText(notif.titulo != null ? notif.titulo : "Notificación");
+        tvMensaje.setText(notif.mensaje != null ? notif.mensaje : "");
+        tvFecha.setText(formatearTiempoRelativo(notif.fecha));
+
+        if (cat.contains("CONTRATO")) {
+            ivIcono.setImageResource(R.drawable.ic_contratos);
+        } else if (cat.contains("LEAD") || cat.contains("CONSULTA") || cat.contains("MENSAJE")) {
+            ivIcono.setImageResource(R.drawable.ic_notifications);
+        } else {
+            ivIcono.setImageResource(R.drawable.ic_propiedades);
+        }
+
+        if (notif.isLeida) {
+            tvEstado.setText("LEÍDA");
+            tvEstado.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.colorSurfaceVariant));
+            tvEstado.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOutline));
+        } else {
+            tvEstado.setText("NUEVA");
+            tvEstado.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#d8f3e5")));
+            tvEstado.setTextColor(Color.parseColor("#005236"));
+        }
+
+        btnDismiss.setOnClickListener(v -> {
+            android.content.Context appCtx = requireContext().getApplicationContext();
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                AppDatabase.getInstance(appCtx).notificacionDao().eliminarPorId(notif.id);
+            });
+            SupabaseClient.eliminarNotificacion(notif.id, null);
+            com.example.inmobiliariaventa.utils.CartelUtils.mostrar(cardRoot, "Notificación eliminada");
+        });
+
+        cardRoot.setOnClickListener(v -> {
+            if (!notif.isLeida) {
+                android.content.Context appCtx = requireContext().getApplicationContext();
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    AppDatabase.getInstance(appCtx).notificacionDao().marcarComoLeida(notif.id);
+                });
+                SupabaseClient.marcarNotificacionLeida(notif.id, null);
+            }
+            try {
+                if (cat.contains("CONTRATO")) {
+                    Navigation.findNavController(v).navigate(R.id.nav_contratos);
+                } else if (cat.contains("LEAD") || cat.contains("CONSULTA")) {
+                    Navigation.findNavController(v).navigate(R.id.nav_admin_mensajes);
+                } else {
+                    Navigation.findNavController(v).navigate(R.id.nav_admin_propiedades);
                 }
-            });
-        }
-
-        if (cardPage1 != null) {
-            cardPage1.setOnClickListener(v -> goToPage(startPage, root));
-        }
-        if (cardPage2 != null) {
-            cardPage2.setOnClickListener(v -> goToPage(startPage + 1, root));
-        }
-        if (cardPage3 != null) {
-            cardPage3.setOnClickListener(v -> goToPage(startPage + 2, root));
-        }
-        if (cardPage4 != null) {
-            cardPage4.setOnClickListener(v -> goToPage(startPage + 3, root));
-        }
-
-        renderPagination(root, false);
+            } catch (Exception ignored) {}
+        });
     }
 
-    private void goToPage(int page, View root) {
-        if (page < 1) page = 1;
-        if (page > maxPages) page = maxPages;
-        if (page == currentPage && startPage == page) return;
-
-        currentPage = page;
-        startPage = currentPage;
-
-        if (currentPage == 1) {
-            if (layoutPage1Notificaciones != null) layoutPage1Notificaciones.setVisibility(View.VISIBLE);
-            if (layoutPage2Notificaciones != null) layoutPage2Notificaciones.setVisibility(View.GONE);
-        } else {
-            if (layoutPage1Notificaciones != null) layoutPage1Notificaciones.setVisibility(View.GONE);
-            if (layoutPage2Notificaciones != null) layoutPage2Notificaciones.setVisibility(View.VISIBLE);
-        }
-
-        if (scrollViewNotificaciones != null) {
-            scrollViewNotificaciones.smoothScrollTo(0, 0);
-        }
-
-        renderPagination(root, true);
+    private String formatearTiempoRelativo(Long timestamp) {
+        if (timestamp == null || timestamp <= 0) return "Reciente";
+        long diffMs = System.currentTimeMillis() - timestamp;
+        long min = diffMs / 60000L;
+        if (min < 1) return "Hace un momento";
+        if (min < 60) return "Hace " + min + " min";
+        long horas = min / 60L;
+        if (horas < 24) return "Hace " + horas + " h";
+        return new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date(timestamp));
     }
 
-    private void renderPagination(View root, boolean showToast) {
-        if (cardPage1 == null) return;
+    private void mostrarDialogoPreferenciasAdmin() {
+        if (!isAdded() || getContext() == null) return;
+        android.content.Context context = requireContext();
+        android.content.SharedPreferences prefs = context.getSharedPreferences(
+                ActividadRepository.PREF_NOTIF_SETTINGS, android.content.Context.MODE_PRIVATE);
 
-        int slot1 = startPage;
-        int slot2 = startPage + 1;
-        int slot3 = startPage + 2;
-        int slot4 = startPage + 3;
+        float density = context.getResources().getDisplayMetrics().density;
+        int pad22 = Math.round(22 * density);
+        int pad12 = Math.round(12 * density);
+        int margin16 = Math.round(16 * density);
 
-        tvPage1.setText(String.valueOf(slot1));
-        tvPage2.setText(String.valueOf(slot2));
-        tvPage3.setText(String.valueOf(slot3));
-        tvPage4.setText(String.valueOf(slot4));
+        android.widget.FrameLayout wrapper = new android.widget.FrameLayout(context);
+        MaterialCardView cardRoot = new MaterialCardView(context);
+        android.widget.FrameLayout.LayoutParams cardLp = new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardLp.setMargins(margin16, margin16, margin16, margin16);
+        cardRoot.setLayoutParams(cardLp);
+        cardRoot.setRadius(24 * density);
+        cardRoot.setCardElevation(8 * density);
+        cardRoot.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorSurfaceContainerLowest));
 
-        cardPage2.setVisibility(slot2 <= maxPages ? View.VISIBLE : View.GONE);
-        cardPage3.setVisibility(slot3 <= maxPages ? View.VISIBLE : View.GONE);
-        cardPage4.setVisibility(slot4 <= maxPages ? View.VISIBLE : View.GONE);
+        LinearLayout root = new LinearLayout(context);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(pad22, pad22, pad22, pad22);
 
-        // Slot 1 is always the selected page since startPage == currentPage
-        stylePageCard(cardPage1, tvPage1, true);
-        stylePageCard(cardPage2, tvPage2, false);
-        stylePageCard(cardPage3, tvPage3, false);
-        stylePageCard(cardPage4, tvPage4, false);
+        TextView tvTitle = new TextView(context);
+        tvTitle.setText("Recepción de Alertas");
+        tvTitle.setTextSize(20f);
+        tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitle.setTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+        root.addView(tvTitle);
 
-        boolean canGoPrev = currentPage > 1;
-        btnPagePrev.setEnabled(canGoPrev);
-        btnPagePrev.setAlpha(canGoPrev ? 1.0f : 0.35f);
+        TextView tvSub = new TextView(context);
+        tvSub.setText("Elegí qué alertas querés que te lleguen al panel (podés activar o pausar la recepción de cada tipo):");
+        tvSub.setTextSize(13f);
+        tvSub.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurfaceVariant));
+        LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        subLp.topMargin = Math.round(4 * density);
+        subLp.bottomMargin = pad12;
+        tvSub.setLayoutParams(subLp);
+        root.addView(tvSub);
 
-        boolean canGoNext = currentPage < maxPages;
-        btnPageNext.setEnabled(canGoNext);
-        btnPageNext.setAlpha(canGoNext ? 1.0f : 0.35f);
+        android.widget.ScrollView scrollView = new android.widget.ScrollView(context);
+        LinearLayout list = new LinearLayout(context);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scrollView.addView(list);
 
-        if (showToast) {
-            Toast.makeText(requireContext(), "Página " + currentPage + " de " + maxPages, Toast.LENGTH_SHORT).show();
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_NUEVO_CONTRATO,
+                "Nuevos contratos firmados",
+                "Alertas cuando se registra un contrato de compraventa.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_MODIF_CONTRATO,
+                "Cambios de situación en contratos",
+                "Avisos cuando un contrato pasa a Activo, Pendiente, Finalizado o Cancelado.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_NUEVO_LEAD,
+                "Consultas y leads de clientes",
+                "Notificaciones cuando un interesado envía una consulta.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_MENSAJE_VISTO,
+                "Confirmación de consultas leídas",
+                "Registro cuando un asesor marca como vista una consulta.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_NUEVA_PROPIEDAD,
+                "Nuevas propiedades publicadas",
+                "Avisos de ingreso de nuevos inmuebles al catálogo.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_CAMBIO_PRECIO,
+                "Aumentos y bajas de precio",
+                "Alertas cuando se actualiza el valor en USD de una propiedad.");
+
+        agregarFilaSwitch(context, list, prefs,
+                ActividadRepository.KEY_ADMIN_BAJA_PROPIEDAD,
+                "Bajas o pausas de propiedades",
+                "Avisos cuando un inmueble se pausa, reserva o retira del catálogo.");
+
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.round(350 * density));
+        root.addView(scrollView, scrollLp);
+
+        androidx.appcompat.app.AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                .setView(wrapper)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         }
+
+        com.google.android.material.button.MaterialButton btnListo =
+                new com.google.android.material.button.MaterialButton(context);
+        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.round(46 * density));
+        btnLp.topMargin = Math.round(14 * density);
+        btnListo.setLayoutParams(btnLp);
+        btnListo.setText("Listo");
+        btnListo.setTextSize(13f);
+        btnListo.setTypeface(null, android.graphics.Typeface.BOLD);
+        btnListo.setCornerRadius(Math.round(12 * density));
+        btnListo.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.colorPrimary));
+        btnListo.setTextColor(ContextCompat.getColor(context, R.color.colorOnPrimary));
+        btnListo.setOnClickListener(v -> dialog.dismiss());
+        root.addView(btnListo);
+
+        cardRoot.addView(root);
+        wrapper.addView(cardRoot);
+        dialog.show();
     }
 
-    private void stylePageCard(MaterialCardView card, TextView tv, boolean isSelected) {
-        if (card == null || tv == null || getContext() == null) return;
-        int dp1 = Math.round(1 * getResources().getDisplayMetrics().density);
-        int dp2 = Math.round(2 * getResources().getDisplayMetrics().density);
+    private void agregarFilaSwitch(
+            android.content.Context context,
+            LinearLayout parent,
+            android.content.SharedPreferences prefs,
+            String key,
+            String titulo,
+            String subtitulo) {
 
-        if (isSelected) {
-            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
-            card.setStrokeWidth(0);
-            card.setCardElevation(dp2);
-            tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnPrimary));
-            tv.setTypeface(null, Typeface.BOLD);
-        } else {
-            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colorSurfaceContainerLowest));
-            card.setStrokeColor(ContextCompat.getColor(requireContext(), R.color.colorOutlineVariant));
-            card.setStrokeWidth(dp1);
-            card.setCardElevation(dp1);
-            tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant));
-            tv.setTypeface(null, Typeface.NORMAL);
-        }
+        float density = context.getResources().getDisplayMetrics().density;
+        int padV = Math.round(10 * density);
+
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setPadding(0, padV, 0, padV);
+
+        LinearLayout textCol = new LinearLayout(context);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams colLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        colLp.setMarginEnd(Math.round(12 * density));
+        textCol.setLayoutParams(colLp);
+
+        TextView tvTit = new TextView(context);
+        tvTit.setText(titulo);
+        tvTit.setTextSize(14f);
+        tvTit.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTit.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurface));
+        textCol.addView(tvTit);
+
+        TextView tvSub = new TextView(context);
+        tvSub.setText(subtitulo);
+        tvSub.setTextSize(12f);
+        tvSub.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurfaceVariant));
+        textCol.addView(tvSub);
+
+        com.google.android.material.switchmaterial.SwitchMaterial sw =
+                new com.google.android.material.switchmaterial.SwitchMaterial(context);
+        sw.setChecked(prefs.getBoolean(key, true));
+        sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean(key, isChecked).apply();
+        });
+
+        row.addView(textCol);
+        row.addView(sw);
+        parent.addView(row);
+
+        View divider = new View(context);
+        divider.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, Math.round(density))));
+        divider.setBackgroundColor(ContextCompat.getColor(context, R.color.colorOutlineVariant));
+        parent.addView(divider);
     }
 }

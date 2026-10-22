@@ -10,6 +10,7 @@ import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
+import com.example.inmobiliariaventa.domain.entity.Notificacion;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.gson.ExclusionStrategy;
@@ -950,6 +951,174 @@ public class SupabaseClient {
                 } else {
                     if (callback != null) mainHandler.post(() -> callback.onError(new Exception("HTTP " + response.code())));
                 }
+            }
+        });
+    }
+
+    // ==========================================
+    // NOTIFICACIONES
+    // ==========================================
+
+    public static void obtenerNotificaciones(SupabaseCallback<List<Notificacion>> callback) {
+        Request request = buildBaseRequest("/rest/v1/notificaciones?select=*&order=fecha.desc").build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al obtener notificaciones desde Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String errorMsg = "HTTP Error " + response.code() + ": " + (response.body() != null ? response.body().string() : "");
+                    Log.e(TAG, "Error al obtener notificaciones de Supabase: " + errorMsg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorMsg)));
+                    return;
+                }
+                try {
+                    String body = response.body() != null ? response.body().string() : "[]";
+                    Type listType = new TypeToken<List<Notificacion>>() {}.getType();
+                    List<Notificacion> lista = gson.fromJson(body, listType);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(lista));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al deserializar notificaciones de Supabase: " + e.getMessage(), e);
+                    if (callback != null) mainHandler.post(() -> callback.onError(e));
+                }
+            }
+        });
+    }
+
+    public static void guardarNotificacion(Notificacion notif, SupabaseCallback<Boolean> callback) {
+        if (notif == null) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("Notificación nula")));
+            return;
+        }
+        enviarNotificacionInterno(notif, true, callback);
+    }
+
+    private static void enviarNotificacionInterno(Notificacion notif, boolean includeUsuarioId, SupabaseCallback<Boolean> callback) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", notif.id != null && !notif.id.isEmpty() ? notif.id : UUID.randomUUID().toString());
+        if (includeUsuarioId && notif.usuario_id != null && !notif.usuario_id.trim().isEmpty()
+                && !"ADMIN".equalsIgnoreCase(notif.usuario_id) && !"CLIENTE".equalsIgnoreCase(notif.usuario_id)) {
+            json.addProperty("usuario_id", notif.usuario_id.trim());
+        } else {
+            json.add("usuario_id", com.google.gson.JsonNull.INSTANCE);
+        }
+        json.addProperty("titulo", notif.titulo != null ? notif.titulo : "Notificación");
+        json.addProperty("mensaje", notif.mensaje != null ? notif.mensaje : "");
+        json.addProperty("fecha", notif.fecha > 0 ? notif.fecha : System.currentTimeMillis());
+        json.addProperty("isleida", notif.isLeida);
+        json.addProperty("categoria", notif.categoria != null ? notif.categoria : "GENERAL");
+        if (notif.referencia_id != null && !notif.referencia_id.isEmpty()) {
+            json.addProperty("referencia_id", notif.referencia_id);
+        } else {
+            json.add("referencia_id", com.google.gson.JsonNull.INSTANCE);
+        }
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/notificaciones")
+                .header("Prefer", "resolution=merge-duplicates,return=minimal")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al guardar notificación en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Notificación guardada en Supabase exitosamente: " + notif.id);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    if (includeUsuarioId && errorBody.contains("23503")) {
+                        enviarNotificacionInterno(notif, false, callback);
+                        return;
+                    }
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al guardar notificación en Supabase: " + msg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    public static void marcarNotificacionLeida(String id, SupabaseCallback<Boolean> callback) {
+        if (id == null || id.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+            return;
+        }
+        JsonObject json = new JsonObject();
+        json.addProperty("isleida", true);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/notificaciones?id=eq." + id)
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (callback != null) mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            }
+        });
+    }
+
+    public static void marcarTodasNotificacionesLeidas(SupabaseCallback<Boolean> callback) {
+        JsonObject json = new JsonObject();
+        json.addProperty("isleida", true);
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/notificaciones?isleida=eq.false")
+                .header("Prefer", "return=minimal")
+                .patch(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (callback != null) mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            }
+        });
+    }
+
+    public static void eliminarNotificacion(String id, SupabaseCallback<Boolean> callback) {
+        if (id == null || id.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+            return;
+        }
+        Request request = buildBaseRequest("/rest/v1/notificaciones?id=eq." + id)
+                .delete()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (callback != null) mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
             }
         });
     }

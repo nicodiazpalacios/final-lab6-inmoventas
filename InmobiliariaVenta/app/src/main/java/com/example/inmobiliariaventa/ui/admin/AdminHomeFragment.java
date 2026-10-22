@@ -177,6 +177,18 @@ public class AdminHomeFragment extends Fragment {
                 } catch (Exception ignored) {}
             });
             rvActividadReciente.setAdapter(actividadAdapter);
+
+            com.example.inmobiliariaventa.data.repository.ActividadRepository
+                    .getInstance(requireContext())
+                    .sincronizarNotificacionesYActividades(() -> {
+                        if (isAdded() && actividadAdapter != null && getContext() != null) {
+                            actividadAdapter.setActividades(
+                                    com.example.inmobiliariaventa.data.repository.ActividadRepository
+                                            .getInstance(requireContext())
+                                            .getActividades()
+                            );
+                        }
+                    });
         }
     }
 

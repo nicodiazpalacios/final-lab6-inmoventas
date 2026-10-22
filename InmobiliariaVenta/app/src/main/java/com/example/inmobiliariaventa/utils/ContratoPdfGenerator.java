@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.utils;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -67,7 +69,7 @@ public class ContratoPdfGenerator {
 
         File pdfFile = generarPdf(context, contrato);
         if (pdfFile == null || !pdfFile.exists()) {
-            Toast.makeText(context, "No se pudo generar el PDF del contrato", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "No se pudo generar el PDF del contrato");
             return;
         }
 
@@ -156,9 +158,9 @@ public class ContratoPdfGenerator {
             btnDescargar.setOnClickListener(v -> {
                 String savedName = guardarEnDescargas(context, pdfFile);
                 if (savedName != null) {
-                    Toast.makeText(context, "PDF guardado en Descargas: " + savedName, Toast.LENGTH_LONG).show();
+                    CartelUtils.mostrarLargo(context, "PDF guardado en Descargas: " + savedName);
                 } else {
-                    Toast.makeText(context, "Error al guardar el PDF en Descargas", Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(context, "Error al guardar el PDF en Descargas");
                 }
             });
         }
@@ -195,7 +197,7 @@ public class ContratoPdfGenerator {
         try {
             PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
             if (printManager == null) {
-                Toast.makeText(context, "Servicio de impresión no disponible", Toast.LENGTH_SHORT).show();
+                CartelUtils.mostrar(context, "Servicio de impresión no disponible");
                 return;
             }
             String jobName = pdfFile.getName();
@@ -235,7 +237,7 @@ public class ContratoPdfGenerator {
                 }
             }, null);
         } catch (Exception e) {
-            Toast.makeText(context, "No se pudo iniciar la impresión", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "No se pudo iniciar la impresión");
         }
     }
 
@@ -670,7 +672,7 @@ public class ContratoPdfGenerator {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(chooser);
         } catch (Exception e) {
-            Toast.makeText(context, "No se pudo abrir el menú para compartir", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "No se pudo abrir el menú para compartir");
         }
     }
 
@@ -679,7 +681,7 @@ public class ContratoPdfGenerator {
         if (context == null) return;
         File pdfFile = generarReporteVentasPdf(context, periodoLabel, contratos, totalVentas, totalVendidas, totalClientes);
         if (pdfFile == null || !pdfFile.exists()) {
-            Toast.makeText(context, "No se pudo generar el reporte PDF de ventas", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "No se pudo generar el reporte PDF de ventas");
             return;
         }
         mostrarVisorArchivoPdf(
@@ -890,7 +892,7 @@ public class ContratoPdfGenerator {
                 fos.write(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
             guardarEnDescargas(context, csvFile);
-            Toast.makeText(context, "Guardado en Descargas: Reporte_Ventas.csv", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "Guardado en Descargas: Reporte_Ventas.csv");
             compartirArchivo(
                     context,
                     csvFile,
@@ -899,7 +901,7 @@ public class ContratoPdfGenerator {
                     "Adjuntamos la planilla CSV compatible con Excel de las ventas del período: " + periodoLabel
             );
         } catch (Exception e) {
-            Toast.makeText(context, "No se pudo exportar el archivo CSV", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(context, "No se pudo exportar el archivo CSV");
         }
     }
 

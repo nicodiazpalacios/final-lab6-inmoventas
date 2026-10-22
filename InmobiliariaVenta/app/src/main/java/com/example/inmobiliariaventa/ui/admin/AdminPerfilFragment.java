@@ -319,32 +319,82 @@ public class AdminPerfilFragment extends Fragment {
         if (getContext() == null) return;
         boolean tieneFoto = tieneFotoPerfilPersonalizada();
 
-        String[] opciones = tieneFoto ?
-                new String[]{"Elegir de la galería", "Tomar una foto", "Quitar foto de perfil"} :
-                new String[]{"Elegir de la galería", "Tomar una foto"};
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_seleccion_foto_perfil, null);
+        View cardGaleria = dialogView.findViewById(R.id.card_opcion_galeria);
+        View cardCamara = dialogView.findViewById(R.id.card_opcion_camara);
+        View cardQuitar = dialogView.findViewById(R.id.card_opcion_quitar_foto);
+        View btnCerrar = dialogView.findViewById(R.id.btn_foto_dialog_cerrar);
+        View btnCancelar = dialogView.findViewById(R.id.btn_foto_dialog_cancelar);
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Foto de perfil")
-                .setItems(opciones, (dialog, which) -> {
-                    if (which == 0) {
-                        galleryLauncher.launch("image/*");
-                    } else if (which == 1) {
-                        cameraLauncher.launch(null);
-                    } else if (which == 2) {
-                        confirmarQuitarFoto();
-                    }
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+        if (cardQuitar != null) {
+            cardQuitar.setVisibility(tieneFoto ? View.VISIBLE : View.GONE);
+        }
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (cardGaleria != null) {
+            cardGaleria.setOnClickListener(v -> {
+                dialog.dismiss();
+                galleryLauncher.launch("image/*");
+            });
+        }
+        if (cardCamara != null) {
+            cardCamara.setOnClickListener(v -> {
+                dialog.dismiss();
+                cameraLauncher.launch(null);
+            });
+        }
+        if (cardQuitar != null) {
+            cardQuitar.setOnClickListener(v -> {
+                dialog.dismiss();
+                confirmarQuitarFoto();
+            });
+        }
+        if (btnCerrar != null) btnCerrar.setOnClickListener(v -> dialog.dismiss());
+        if (btnCancelar != null) btnCancelar.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void confirmarQuitarFoto() {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Quitar foto")
-                .setMessage("¿Estás seguro de que deseas quitar tu foto de perfil?")
-                .setPositiveButton("Sí, quitar", (dialog, which) -> eliminarFotoPerfil())
-                .setNegativeButton("Cancelar", null)
-                .show();
+        if (getContext() == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_cerrar_sesion, null);
+        TextView tvTitulo = dialogView.findViewById(R.id.tv_dialog_logout_titulo);
+        TextView tvMensaje = dialogView.findViewById(R.id.tv_dialog_logout_mensaje);
+        MaterialButton btnNo = dialogView.findViewById(R.id.btn_dialog_logout_no);
+        MaterialButton btnSi = dialogView.findViewById(R.id.btn_dialog_logout_si);
+
+        if (tvTitulo != null) tvTitulo.setText("¿Quitar foto de perfil?");
+        if (tvMensaje != null) tvMensaje.setText("¿Estás seguro de que deseas eliminar tu foto de perfil actual y volver al avatar predeterminado?");
+        if (btnNo != null) btnNo.setText("Cancelar");
+        if (btnSi != null) btnSi.setText("Sí, quitar");
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        if (btnNo != null) btnNo.setOnClickListener(v -> dialog.dismiss());
+        if (btnSi != null) {
+            btnSi.setOnClickListener(v -> {
+                dialog.dismiss();
+                eliminarFotoPerfil();
+            });
+        }
+
+        dialog.show();
     }
 
     private void eliminarFotoPerfil() {

@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -140,7 +142,7 @@ public class AdminConfiguracionFragment extends Fragment {
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     if (getContext() != null) {
                         btnGuardar.setText("Guardado");
-                        Toast.makeText(getContext(), "Datos de la empresa guardados correctamente", Toast.LENGTH_SHORT).show();
+                        CartelUtils.mostrar(getContext(), "Datos de la empresa guardados correctamente");
                         
                         new Handler(Looper.getMainLooper()).postDelayed(() -> {
                             btnGuardar.setText("Guardar Cambios");
@@ -190,7 +192,7 @@ public class AdminConfiguracionFragment extends Fragment {
                 button.setText("Exportar " + format + " (" + startDateStr + " - " + endDateStr + ")");
                 
                 if (getContext() != null) {
-                    Toast.makeText(getContext(), "Descargando " + format + "...", Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(getContext(), "Descargando " + format + "...");
                 }
             }
         });

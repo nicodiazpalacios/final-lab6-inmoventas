@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -107,7 +109,7 @@ public class AdminContratosFragment extends Fragment {
                     currentPage = 1;
                     startPage = 1;
                     renderContractsList();
-                    Toast.makeText(requireContext(), "Filtro: " + currentStatusFilter, Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), "Filtro: " + currentStatusFilter);
                     return true;
                 });
                 popup.show();
@@ -127,7 +129,7 @@ public class AdminContratosFragment extends Fragment {
                     currentPage = 1;
                     startPage = 1;
                     renderContractsList();
-                    Toast.makeText(requireContext(), "Orden: " + currentSortOrder, Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), "Orden: " + currentSortOrder);
                     return true;
                 });
                 popup.show();
@@ -445,7 +447,7 @@ public class AdminContratosFragment extends Fragment {
                 darDeBajaContrato(contrato);
                 ActividadRepository.getInstance(requireContext())
                         .registrarModificacionContrato(clienteName, propiedadName, monto, "Cancelado (Baja)");
-                Toast.makeText(requireContext(), "Contrato de " + clienteName + " cancelado", Toast.LENGTH_SHORT).show();
+                CartelUtils.mostrar(requireContext(), "Contrato de " + clienteName + " cancelado");
             });
         }
 
@@ -605,7 +607,7 @@ public class AdminContratosFragment extends Fragment {
         currentPage = page;
         startPage = currentPage;
         renderContractsList();
-        Toast.makeText(requireContext(), "Página " + currentPage + " de " + maxPages, Toast.LENGTH_SHORT).show();
+        CartelUtils.mostrar(requireContext(), "Página " + currentPage + " de " + maxPages);
     }
 
     private void renderPagination(boolean showToast) {
@@ -639,7 +641,7 @@ public class AdminContratosFragment extends Fragment {
         btnPageNext.setAlpha(canGoNext ? 1.0f : 0.35f);
 
         if (showToast) {
-            Toast.makeText(requireContext(), "Página " + currentPage + " de " + maxPages, Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "Página " + currentPage + " de " + maxPages);
         }
     }
 

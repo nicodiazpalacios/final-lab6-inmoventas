@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -816,7 +818,7 @@ public class AdminAgregarContratoFragment extends Fragment {
         }
 
         if (hasError) {
-            Toast.makeText(requireContext(), "Por favor, complete correctamente los campos obligatorios", Toast.LENGTH_SHORT).show();
+            CartelUtils.mostrar(requireContext(), "Por favor, complete correctamente los campos obligatorios");
             return;
         }
 
@@ -938,7 +940,7 @@ public class AdminAgregarContratoFragment extends Fragment {
         String msgExito = esEdicion
                 ? "Contrato actualizado exitosamente para " + firstName + " " + lastName
                 : "Contrato guardado exitosamente para " + firstName + " " + lastName;
-        Toast.makeText(requireContext(), msgExito, Toast.LENGTH_LONG).show();
+        CartelUtils.mostrarLargo(requireContext(), msgExito);
 
         Navigation.findNavController(root).popBackStack();
     }

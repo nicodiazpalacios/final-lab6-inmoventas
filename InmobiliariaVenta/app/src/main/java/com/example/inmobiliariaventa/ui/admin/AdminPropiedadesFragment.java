@@ -1,5 +1,7 @@
 package com.example.inmobiliariaventa.ui.admin;
 
+import com.example.inmobiliariaventa.utils.CartelUtils;
+
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -112,7 +114,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                     selectedFilter = item.getTitle().toString();
                     actualizarEstiloBotonFiltros();
                     aplicarFiltrosYOrden();
-                    Toast.makeText(requireContext(), "Filtro: " + selectedFilter, Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), "Filtro: " + selectedFilter);
                     return true;
                 });
                 popup.show();
@@ -131,7 +133,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                     selectedSort = item.getTitle().toString();
                     actualizarEstiloBotonOrden();
                     aplicarFiltrosYOrden();
-                    Toast.makeText(requireContext(), "Orden: " + selectedSort, Toast.LENGTH_SHORT).show();
+                    CartelUtils.mostrar(requireContext(), "Orden: " + selectedSort);
                     return true;
                 });
                 popup.show();

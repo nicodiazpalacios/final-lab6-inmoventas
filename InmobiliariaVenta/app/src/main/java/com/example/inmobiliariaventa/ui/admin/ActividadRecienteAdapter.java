@@ -25,12 +25,14 @@ public class ActividadRecienteAdapter extends RecyclerView.Adapter<ActividadReci
         void onActividadClick(ActividadAdmin actividad);
     }
 
+    private static final int MAX_ACTIVIDADES_HOME = 5;
     private final List<ActividadAdmin> items = new ArrayList<>();
     private final OnActividadClickListener listener;
 
     public ActividadRecienteAdapter(List<ActividadAdmin> lista, OnActividadClickListener listener) {
         if (lista != null) {
-            this.items.addAll(lista);
+            int limit = Math.min(MAX_ACTIVIDADES_HOME, lista.size());
+            this.items.addAll(lista.subList(0, limit));
         }
         this.listener = listener;
     }
@@ -38,7 +40,8 @@ public class ActividadRecienteAdapter extends RecyclerView.Adapter<ActividadReci
     public void setActividades(List<ActividadAdmin> nuevas) {
         this.items.clear();
         if (nuevas != null) {
-            this.items.addAll(nuevas);
+            int limit = Math.min(MAX_ACTIVIDADES_HOME, nuevas.size());
+            this.items.addAll(nuevas.subList(0, limit));
         }
         notifyDataSetChanged();
     }

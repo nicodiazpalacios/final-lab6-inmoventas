@@ -243,4 +243,10 @@
         android:label="Mensajes de Clientes"
         tools:layout="@layout/fragment_admin_mensajes" />
 
+    <fragment
+        android:id="@+id/nav_cliente_notificaciones"
+        android:name="com.example.inmobiliariaventa.ui.home.ClienteNotificacionesFragment"
+        android:label="Mis Notificaciones"
+        tools:layout="@layout/fragment_cliente_notificaciones" />
+
 </navigation>

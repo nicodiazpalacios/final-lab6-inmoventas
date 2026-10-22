@@ -317,19 +317,142 @@ public class MisFavoritosFragment extends Fragment {
 
     private void mostrarDialogoOrdenamiento() {
         if (getContext() == null) return;
+        Context context = requireContext();
+        float density = context.getResources().getDisplayMetrics().density;
+        int pad24 = Math.round(24 * density);
+        int pad14 = Math.round(14 * density);
+        int margin20 = Math.round(20 * density);
 
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Ordenar propiedades por")
-                .setSingleChoiceItems(opcionesOrden, criterioOrdenActual, (dialog, which) -> {
-                    criterioOrdenActual = which;
-                    if (tvOrdenarLabel != null) {
-                        tvOrdenarLabel.setText("Ordenar por: " + opcionesOrden[which]);
-                    }
-                    actualizarVistaFavoritos();
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+        android.widget.FrameLayout wrapper = new android.widget.FrameLayout(context);
+        com.google.android.material.card.MaterialCardView cardRoot =
+                new com.google.android.material.card.MaterialCardView(context);
+        android.widget.FrameLayout.LayoutParams cardLp = new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardLp.setMargins(margin20, margin20, margin20, margin20);
+        cardRoot.setLayoutParams(cardLp);
+        cardRoot.setRadius(24 * density);
+        cardRoot.setCardElevation(8 * density);
+        cardRoot.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorSurfaceContainerLowest));
+
+        LinearLayout inner = new LinearLayout(context);
+        inner.setOrientation(LinearLayout.VERTICAL);
+        inner.setPadding(pad24, pad24, pad24, pad24);
+
+        LinearLayout headerRow = new LinearLayout(context);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        headerLp.bottomMargin = Math.round(16 * density);
+        headerRow.setLayoutParams(headerLp);
+
+        com.google.android.material.card.MaterialCardView iconCircle =
+                new com.google.android.material.card.MaterialCardView(context);
+        int s44 = Math.round(44 * density);
+        iconCircle.setLayoutParams(new LinearLayout.LayoutParams(s44, s44));
+        iconCircle.setRadius(s44 / 2f);
+        iconCircle.setCardElevation(0f);
+        iconCircle.setCardBackgroundColor(ContextCompat.getColor(context, R.color.colorPrimaryFixed));
+
+        ImageView ivIcon = new ImageView(context);
+        int s22 = Math.round(22 * density);
+        android.widget.FrameLayout.LayoutParams ivLp = new android.widget.FrameLayout.LayoutParams(
+                s22, s22, android.view.Gravity.CENTER);
+        ivIcon.setLayoutParams(ivLp);
+        ivIcon.setImageResource(R.drawable.ic_tune);
+        ivIcon.setColorFilter(ContextCompat.getColor(context, R.color.colorPrimary));
+        iconCircle.addView(ivIcon);
+        headerRow.addView(iconCircle);
+
+        LinearLayout titleCol = new LinearLayout(context);
+        titleCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams titleColLp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        titleColLp.setMarginStart(pad14);
+        titleCol.setLayoutParams(titleColLp);
+
+        TextView tvTitle = new TextView(context);
+        tvTitle.setText("Ordenar favoritos");
+        tvTitle.setTextSize(19f);
+        tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTitle.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurface));
+        titleCol.addView(tvTitle);
+
+        TextView tvSub = new TextView(context);
+        tvSub.setText("Elegí cómo organizar tus propiedades guardadas");
+        tvSub.setTextSize(12f);
+        tvSub.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurfaceVariant));
+        titleCol.addView(tvSub);
+        headerRow.addView(titleCol);
+        inner.addView(headerRow);
+
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(context)
+                .setView(wrapper)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        for (int i = 0; i < opcionesOrden.length; i++) {
+            final int index = i;
+            boolean isSelected = (i == criterioOrdenActual);
+
+            com.google.android.material.card.MaterialCardView optCard =
+                    new com.google.android.material.card.MaterialCardView(context);
+            LinearLayout.LayoutParams optLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            optLp.bottomMargin = Math.round(8 * density);
+            optCard.setLayoutParams(optLp);
+            optCard.setRadius(12 * density);
+            optCard.setCardElevation(0f);
+            optCard.setStrokeWidth(Math.max(1, Math.round((isSelected ? 1.5f : 1f) * density)));
+            optCard.setStrokeColor(ContextCompat.getColor(context,
+                    isSelected ? R.color.colorPrimary : R.color.colorOutlineVariant));
+            optCard.setCardBackgroundColor(ContextCompat.getColor(context,
+                    isSelected ? R.color.colorPrimaryFixed : R.color.colorSurface));
+
+            TextView tvOpt = new TextView(context);
+            tvOpt.setPadding(pad14, Math.round(12 * density), pad14, Math.round(12 * density));
+            tvOpt.setText((isSelected ? "✓  " : "") + opcionesOrden[i]);
+            tvOpt.setTextSize(14f);
+            tvOpt.setTypeface(null, isSelected ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            tvOpt.setTextColor(ContextCompat.getColor(context,
+                    isSelected ? R.color.colorOnPrimaryFixed : R.color.colorOnSurface));
+            optCard.addView(tvOpt);
+
+            optCard.setOnClickListener(v -> {
+                criterioOrdenActual = index;
+                if (tvOrdenarLabel != null) {
+                    tvOrdenarLabel.setText("Ordenar por: " + opcionesOrden[index]);
+                }
+                actualizarVistaFavoritos();
+                dialog.dismiss();
+            });
+            inner.addView(optCard);
+        }
+
+        MaterialButton btnCancelar = new MaterialButton(context, null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.round(46 * density));
+        btnLp.topMargin = Math.round(8 * density);
+        btnCancelar.setLayoutParams(btnLp);
+        btnCancelar.setText("Cancelar");
+        btnCancelar.setTextSize(13f);
+        btnCancelar.setTypeface(null, android.graphics.Typeface.BOLD);
+        btnCancelar.setCornerRadius(Math.round(12 * density));
+        btnCancelar.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.colorSurfaceContainerHigh));
+        btnCancelar.setTextColor(ContextCompat.getColor(context, R.color.colorOnSurface));
+        btnCancelar.setStrokeWidth(0);
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        inner.addView(btnCancelar);
+
+        cardRoot.addView(inner);
+        wrapper.addView(cardRoot);
+        dialog.show();
     }
 
     private void ordenarLista(List<Propiedad> lista, int criterio) {
