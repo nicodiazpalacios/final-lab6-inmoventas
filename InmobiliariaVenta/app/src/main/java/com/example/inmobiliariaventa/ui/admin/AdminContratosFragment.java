@@ -3,6 +3,9 @@ package com.example.inmobiliariaventa.ui.admin;
 import com.example.inmobiliariaventa.utils.CartelUtils;
 
 import android.graphics.Color;
+import android.content.res.ColorStateList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -13,6 +16,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.AutoCompleteTextView;
+import android.widget.ArrayAdapter;
+import com.google.android.material.textfield.TextInputEditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,6 +33,7 @@ import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
+import com.example.inmobiliariaventa.domain.entity.Pago;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -37,6 +44,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.Locale;
 
 public class AdminContratosFragment extends Fragment {
@@ -98,9 +106,9 @@ public class AdminContratosFragment extends Fragment {
             btnFilterStatus.setOnClickListener(v -> {
                 android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnFilterStatus);
                 popup.getMenu().add("Todos");
-                popup.getMenu().add("Activo");
-                popup.getMenu().add("Pendiente");
-                popup.getMenu().add("Cancelado");
+                popup.getMenu().add(Contrato.ESTADO_PENDIENTE);
+                popup.getMenu().add(Contrato.ESTADO_COMPLETADO);
+                popup.getMenu().add(Contrato.ESTADO_RECHAZADO);
                 popup.setOnMenuItemClickListener(item -> {
                     currentStatusFilter = item.getTitle().toString();
                     btnFilterStatus.setText("Todos".equalsIgnoreCase(currentStatusFilter)
@@ -149,7 +157,14 @@ public class AdminContratosFragment extends Fragment {
                 allContratos.addAll(contratos);
                 sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(contratos));
             }
-            renderContractsList();
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                for (Contrato c : allContratos) {
+                    c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
+                }
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> renderContractsList());
+                }
+            });
         });
         sincronizarContratosConSupabase();
     }
@@ -199,11 +214,55 @@ public class AdminContratosFragment extends Fragment {
                         }
                     }
                     db.contratoDao().insertarTodos(remotos);
+                    for (Contrato c : allContratos) {
+                        c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
+                    }
+                    if (getActivity() != null) {
+                        requireActivity().runOnUiThread(() -> renderContractsList());
+                    }
                 });
             }
 
             @Override
             public void onError(Exception e) { }
+        });
+
+        // 3. Descargar pagos desde Supabase
+        SupabaseClient.obtenerPagos(new SupabaseClient.SupabaseCallback<List<Pago>>() {
+            @Override
+            public void onSuccess(List<Pago> remotos) {
+                if (remotos == null || remotos.isEmpty()) return;
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    db.pagoDao().insertarTodos(remotos);
+                    for (Contrato c : allContratos) {
+                        c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
+                    }
+                    if (getActivity() != null) {
+                        requireActivity().runOnUiThread(() -> renderContractsList());
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) { }
+        });
+
+        // 4. Subir pagos pendientes de sincronizar
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<Pago> pendientes = db.pagoDao().obtenerPendientesDeSubir();
+            if (pendientes != null) {
+                for (Pago p : pendientes) {
+                    SupabaseClient.guardarPago(p, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            p.estadoSincronizacion = "SINCRONIZADO";
+                            AppDatabase.databaseWriteExecutor.execute(() -> db.pagoDao().insertar(p));
+                        }
+                        @Override
+                        public void onError(Exception e) { }
+                    });
+                }
+            }
         });
     }
 
@@ -217,12 +276,25 @@ public class AdminContratosFragment extends Fragment {
 
             com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl repo = null;
             for (Contrato c : contratos) {
-                if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                String est = c.getEstadoNormalizado();
+                if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(est)) {
                     for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
                         boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
                         boolean matchTitulo = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
-                        if ((matchId || matchTitulo) && !p.isPausada()) {
+                        if ((matchId || matchTitulo) && !p.isPausada() && !"Vendida".equalsIgnoreCase(p.estado)) {
                             p.estado = "Pausado";
+                            if (repo == null) {
+                                repo = new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext);
+                            }
+                            repo.update(p);
+                        }
+                    }
+                } else if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(est)) {
+                    for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
+                        boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
+                        boolean matchTitulo = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
+                        if ((matchId || matchTitulo) && !"Vendida".equalsIgnoreCase(p.estado)) {
+                            p.estado = "Vendida";
                             if (repo == null) {
                                 repo = new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext);
                             }
@@ -240,10 +312,7 @@ public class AdminContratosFragment extends Fragment {
         List<Contrato> filtered = new ArrayList<>();
         for (Contrato c : allContratos) {
             if (!"Todos".equalsIgnoreCase(currentStatusFilter)) {
-                String est = c.estado != null ? c.estado : "";
-                if ("Rechazado".equalsIgnoreCase(est) || "Finalizado".equalsIgnoreCase(est)) {
-                    est = "Cancelado";
-                }
+                String est = c.getEstadoNormalizado();
                 if (!est.equalsIgnoreCase(currentStatusFilter)) {
                     continue;
                 }
@@ -322,9 +391,14 @@ public class AdminContratosFragment extends Fragment {
             MaterialCardView badgeWrapper = cardView.findViewById(R.id.badge_wrapper);
             TextView tvBadgeStatus = cardView.findViewById(R.id.tv_badge_status);
             TextView tvMonto = cardView.findViewById(R.id.tv_monto);
-            TextView tvLabelVencimiento = cardView.findViewById(R.id.tv_label_vencimiento);
-            TextView tvVencimiento = cardView.findViewById(R.id.tv_vencimiento);
+            TextView tvAbonado = cardView.findViewById(R.id.tv_abonado);
+            TextView tvAdeuda = cardView.findViewById(R.id.tv_adeuda);
             TextView tvPlan = cardView.findViewById(R.id.tv_plan);
+            TextView tvVencimiento = cardView.findViewById(R.id.tv_vencimiento);
+            com.google.android.material.progressindicator.LinearProgressIndicator progressCobranza = cardView.findViewById(R.id.progress_cobranza);
+            TextView tvProgresoCuotas = cardView.findViewById(R.id.tv_progreso_cuotas);
+
+            MaterialButton btnCobranzas = cardView.findViewById(R.id.btn_cobranzas);
             MaterialButton btnPdf = cardView.findViewById(R.id.btn_pdf);
             MaterialButton btnModificar = cardView.findViewById(R.id.btn_modificar);
             MaterialButton btnBaja = cardView.findViewById(R.id.btn_baja);
@@ -335,44 +409,63 @@ public class AdminContratosFragment extends Fragment {
                     : contrato.propiedadId;
 
             double montoVal = contrato.montoTotal != null ? contrato.montoTotal : 0.0;
-            String montoFormatted = "$ " + currencyFormat.format(montoVal);
+            double abonadoVal = contrato.calcularTotalAbonado();
+            double adeudaVal = contrato.calcularSaldoAdeudado();
+            String estadoActual = contrato.getEstadoNormalizado();
 
             tvCliente.setText(clienteFullName);
             tvPropiedad.setText(propiedadName);
-            tvMonto.setText(montoFormatted);
+            tvMonto.setText("$ " + currencyFormat.format(montoVal));
+            if (tvAbonado != null) tvAbonado.setText("$ " + currencyFormat.format(abonadoVal));
 
-            String estadoActual = contrato.estado != null ? contrato.estado : "Activo";
-            if ("Rechazado".equalsIgnoreCase(estadoActual) || "Finalizado".equalsIgnoreCase(estadoActual)) {
-                estadoActual = "Cancelado";
+            if (tvAdeuda != null) {
+                if (adeudaVal <= 0.001) {
+                    tvAdeuda.setText("Saldado");
+                    tvAdeuda.setTextColor(Color.parseColor("#006C49"));
+                } else {
+                    tvAdeuda.setText("$ " + currencyFormat.format(adeudaVal));
+                    tvAdeuda.setTextColor(Color.parseColor("#B45309"));
+                }
             }
 
-            int cuotasVal = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
-            double seniaVal = contrato.seniaMonto != null ? contrato.seniaMonto : 0.0;
-            double saldoRestante = Math.max(0.0, montoVal - seniaVal);
+            int pct = (montoVal > 0) ? (int) Math.min(100, Math.round((abonadoVal / montoVal) * 100)) : 100;
+            if (progressCobranza != null) progressCobranza.setProgress(pct);
 
-            if (!"Crédito".equalsIgnoreCase(contrato.metodoPago)) {
-                String metodo = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
-                if ("Pendiente".equalsIgnoreCase(estadoActual) && seniaVal > 0 && saldoRestante > 0) {
-                    tvPlan.setText("Resta $ " + currencyFormat.format(saldoRestante));
-                } else {
-                    tvPlan.setText("Contado (" + metodo + ")");
-                }
-                if (tvLabelVencimiento != null) tvLabelVencimiento.setText("FECHA FIRMA");
-                tvVencimiento.setText(contrato.fechaInicio != null && !contrato.fechaInicio.isEmpty() ? contrato.fechaInicio : "-");
-            } else {
-                double valorCuota = saldoRestante / cuotasVal;
-                tvPlan.setText(cuotasVal + (cuotasVal == 1 ? " cuota ($ " : " cuotas ($ ") + currencyFormat.format(valorCuota) + ")");
-                if (tvLabelVencimiento != null) tvLabelVencimiento.setText("VENCIMIENTO");
-                tvVencimiento.setText(contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
+            int cuotasVal = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
+            int cuotasPagadas = contrato.getCuotasPagadasCount();
+
+            if ("Crédito".equalsIgnoreCase(contrato.metodoPago)) {
+                double saldoFinanciado = Math.max(0.0, montoVal - (contrato.seniaMonto != null ? contrato.seniaMonto : 0.0));
+                double valorCuota = saldoFinanciado / cuotasVal;
+                tvPlan.setText(cuotasVal + (cuotasVal == 1 ? " Cuota ($ " : " Cuotas ($ ") + currencyFormat.format(valorCuota) + ")");
+                tvVencimiento.setText("Vence: " + (contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
                         ? contrato.fechaVencimiento
-                        : (contrato.fechaInicio != null ? contrato.fechaInicio : "-"));
+                        : (contrato.fechaInicio != null ? contrato.fechaInicio : "-")));
+                if (tvProgresoCuotas != null) {
+                    tvProgresoCuotas.setText(cuotasPagadas + " de " + cuotasVal + " cuotas cobradas (" + pct + "%)");
+                }
+            } else {
+                String metodo = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
+                tvPlan.setText("Contado (" + metodo + ")");
+                tvVencimiento.setText("Fecha: " + (contrato.fechaInicio != null && !contrato.fechaInicio.isEmpty() ? contrato.fechaInicio : "-"));
+                if (tvProgresoCuotas != null) {
+                    if (adeudaVal <= 0.001) {
+                        tvProgresoCuotas.setText("100% abonado • Sin saldo pendiente");
+                    } else {
+                        tvProgresoCuotas.setText("Seña abonada • Saldo restante pendiente (" + pct + "%)");
+                    }
+                }
             }
 
             actualizarBadgeSituacion(badgeWrapper, tvBadgeStatus, estadoActual);
 
             final String finalClienteName = clienteFullName;
             final String finalPropiedadName = propiedadName;
-            final String finalMonto = montoFormatted;
+            final String finalMonto = "$ " + currencyFormat.format(montoVal);
+
+            if (btnCobranzas != null) {
+                btnCobranzas.setOnClickListener(v -> mostrarDialogoCobranzas(contrato));
+            }
 
             if (btnPdf != null) {
                 btnPdf.setOnClickListener(v ->
@@ -380,22 +473,26 @@ public class AdminContratosFragment extends Fragment {
                 );
             }
 
-            btnModificar.setOnClickListener(v -> {
-                Bundle args = new Bundle();
-                args.putString("contrato_id", contrato.id);
-                Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato, args);
-            });
+            if (btnModificar != null) {
+                btnModificar.setOnClickListener(v -> {
+                    Bundle args = new Bundle();
+                    args.putString("contrato_id", contrato.id);
+                    Navigation.findNavController(v).navigate(R.id.action_nav_contratos_to_nav_admin_agregar_contrato, args);
+                });
+            }
 
-            if ("Cancelado".equalsIgnoreCase(estadoActual)) {
-                btnBaja.setEnabled(false);
-                btnBaja.setAlpha(0.55f);
-                btnBaja.setText("Cancelado");
-                btnBaja.setOnClickListener(null);
-            } else {
-                btnBaja.setEnabled(true);
-                btnBaja.setAlpha(1.0f);
-                btnBaja.setText("Dar de baja");
-                btnBaja.setOnClickListener(v -> mostrarDialogoConfirmarBaja(contrato, finalClienteName, finalPropiedadName, finalMonto));
+            if (btnBaja != null) {
+                if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estadoActual)) {
+                    btnBaja.setEnabled(false);
+                    btnBaja.setAlpha(0.55f);
+                    btnBaja.setText("Rechazado");
+                    btnBaja.setOnClickListener(null);
+                } else {
+                    btnBaja.setEnabled(true);
+                    btnBaja.setAlpha(1.0f);
+                    btnBaja.setText("Rechazar");
+                    btnBaja.setOnClickListener(v -> mostrarDialogoConfirmarBaja(contrato, finalClienteName, finalPropiedadName, finalMonto));
+                }
             }
 
             layoutContractsContainer.addView(cardView);
@@ -405,6 +502,320 @@ public class AdminContratosFragment extends Fragment {
             layoutPagination.setVisibility(maxPages > 1 ? View.VISIBLE : View.GONE);
         }
         renderPagination(false);
+    }
+
+    private void mostrarDialogoCobranzas(Contrato contrato) {
+        if (getContext() == null || contrato == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_gestion_cobranzas, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvSubtitulo = dialogView.findViewById(R.id.dialog_tv_contrato_subtitulo);
+        TextView tvTotal = dialogView.findViewById(R.id.dialog_tv_resumen_total);
+        TextView tvAbonado = dialogView.findViewById(R.id.dialog_tv_resumen_abonado);
+        TextView tvAdeuda = dialogView.findViewById(R.id.dialog_tv_resumen_adeuda);
+        com.google.android.material.progressindicator.LinearProgressIndicator progressBar = dialogView.findViewById(R.id.dialog_progress_cobranza);
+        TextView tvPorcentaje = dialogView.findViewById(R.id.dialog_tv_progreso_porcentaje);
+        TextView tvEstadoBadge = dialogView.findViewById(R.id.dialog_tv_estado_badge);
+        LinearLayout layoutCuotas = dialogView.findViewById(R.id.dialog_layout_cuotas_container);
+        View btnCerrarIcono = dialogView.findViewById(R.id.dialog_cobranzas_btn_cerrar);
+        View btnCerrarPrincipal = dialogView.findViewById(R.id.dialog_btn_cerrar_principal);
+
+        btnCerrarIcono.setOnClickListener(v -> dialog.dismiss());
+        btnCerrarPrincipal.setOnClickListener(v -> dialog.dismiss());
+
+        String propTitulo = contrato.propiedadTitulo != null ? contrato.propiedadTitulo : "Propiedad";
+        tvSubtitulo.setText(contrato.getNombreCompletoCliente() + " • " + propTitulo);
+
+        Runnable refrescarVista = new Runnable() {
+            @Override
+            public void run() {
+                NumberFormat cf = NumberFormat.getNumberInstance(Locale.US);
+                cf.setMaximumFractionDigits(0);
+
+                double total = contrato.montoTotal != null ? contrato.montoTotal : 0.0;
+                double abonado = contrato.calcularTotalAbonado();
+                double adeuda = contrato.calcularSaldoAdeudado();
+                int pct = total > 0 ? (int) Math.min(100, Math.round((abonado / total) * 100)) : 100;
+
+                tvTotal.setText("$ " + cf.format(total));
+                tvAbonado.setText("$ " + cf.format(abonado));
+                if (adeuda <= 0.001) {
+                    tvAdeuda.setText("Saldado ($ 0)");
+                    tvAdeuda.setTextColor(Color.parseColor("#006C49"));
+                } else {
+                    tvAdeuda.setText("$ " + cf.format(adeuda));
+                    tvAdeuda.setTextColor(Color.parseColor("#B45309"));
+                }
+
+                progressBar.setProgress(pct);
+                tvPorcentaje.setText(pct + "% abonado ($ " + cf.format(abonado) + " de $ " + cf.format(total) + ")");
+
+                String estadoNorm = contrato.getEstadoNormalizado();
+                tvEstadoBadge.setText(estadoNorm.toUpperCase(Locale.ROOT));
+                if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(estadoNorm)) {
+                    tvEstadoBadge.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#D1F8DF")));
+                    tvEstadoBadge.setTextColor(Color.parseColor("#006C49"));
+                } else if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estadoNorm)) {
+                    tvEstadoBadge.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFDAD6")));
+                    tvEstadoBadge.setTextColor(Color.parseColor("#BA1A1A"));
+                } else {
+                    tvEstadoBadge.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FEF3C7")));
+                    tvEstadoBadge.setTextColor(Color.parseColor("#B45309"));
+                }
+
+                layoutCuotas.removeAllViews();
+                LayoutInflater li = LayoutInflater.from(requireContext());
+
+                // 1. Fila de Seña o Anticipo inicial
+                double seniaVal = contrato.seniaMonto != null ? contrato.seniaMonto : 0.0;
+                if (seniaVal > 0) {
+                    View rowSeña = li.inflate(R.layout.item_cuota_cobranza, layoutCuotas, false);
+                    TextView tvNum = rowSeña.findViewById(R.id.tv_cuota_numero);
+                    TextView tvConcepto = rowSeña.findViewById(R.id.tv_cuota_concepto);
+                    TextView tvSub = rowSeña.findViewById(R.id.tv_cuota_subtitulo);
+                    TextView tvMonto = rowSeña.findViewById(R.id.tv_cuota_monto);
+                    View btnCobrar = rowSeña.findViewById(R.id.btn_cuota_cobrar);
+                    TextView tvPagada = rowSeña.findViewById(R.id.tv_cuota_estado_pagado);
+
+                    tvNum.setText("S");
+                    tvConcepto.setText("Seña / Anticipo Inicial");
+                    tvSub.setText("Abonado al momento de la firma");
+                    tvMonto.setText("$ " + cf.format(seniaVal));
+                    btnCobrar.setVisibility(View.GONE);
+                    tvPagada.setVisibility(View.VISIBLE);
+                    layoutCuotas.addView(rowSeña);
+                }
+
+                // 2. Si es Crédito (Cuotas)
+                if ("Crédito".equalsIgnoreCase(contrato.metodoPago)) {
+                    int cantCuotas = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
+                    double saldoFinanciado = Math.max(0.0, total - seniaVal);
+                    double valorCuotaEstimado = saldoFinanciado / cantCuotas;
+
+                    for (int i = 1; i <= cantCuotas; i++) {
+                        final int nroCuota = i;
+                        View row = li.inflate(R.layout.item_cuota_cobranza, layoutCuotas, false);
+                        TextView tvNum = row.findViewById(R.id.tv_cuota_numero);
+                        TextView tvConcepto = row.findViewById(R.id.tv_cuota_concepto);
+                        TextView tvSub = row.findViewById(R.id.tv_cuota_subtitulo);
+                        TextView tvMonto = row.findViewById(R.id.tv_cuota_monto);
+                        MaterialButton btnCobrar = row.findViewById(R.id.btn_cuota_cobrar);
+                        TextView tvPagada = row.findViewById(R.id.tv_cuota_estado_pagado);
+
+                        tvNum.setText(String.valueOf(nroCuota));
+                        tvConcepto.setText("Cuota " + nroCuota + " de " + cantCuotas);
+
+                        Pago pago = contrato.obtenerPagoDeCuota(nroCuota);
+                        if (pago != null) {
+                            tvMonto.setText("$ " + cf.format(pago.monto));
+                            tvSub.setText("Cobrado el " + pago.fecha + " • " + pago.metodoPago);
+                            btnCobrar.setVisibility(View.GONE);
+                            tvPagada.setVisibility(View.VISIBLE);
+                        } else {
+                            tvMonto.setText("$ " + cf.format(valorCuotaEstimado));
+                            tvSub.setText("Pendiente de cobro");
+                            tvPagada.setVisibility(View.GONE);
+                            btnCobrar.setVisibility(View.VISIBLE);
+                            btnCobrar.setOnClickListener(v -> {
+                                mostrarDialogoRegistrarCobro(contrato, nroCuota, valorCuotaEstimado, "Cuota " + nroCuota + " de " + cantCuotas, this);
+                            });
+                        }
+                        layoutCuotas.addView(row);
+                    }
+                } else {
+                    // Contado / Transferencia / Efectivo
+                    double saldoRestante = Math.max(0.0, total - seniaVal);
+                    Pago pagoSaldo = null;
+                    for (Pago p : contrato.getListaPagos()) {
+                        if (p.nroCuota == 0) {
+                            pagoSaldo = p;
+                            break;
+                        }
+                    }
+
+                    View row = li.inflate(R.layout.item_cuota_cobranza, layoutCuotas, false);
+                    TextView tvNum = row.findViewById(R.id.tv_cuota_numero);
+                    TextView tvConcepto = row.findViewById(R.id.tv_cuota_concepto);
+                    TextView tvSub = row.findViewById(R.id.tv_cuota_subtitulo);
+                    TextView tvMonto = row.findViewById(R.id.tv_cuota_monto);
+                    MaterialButton btnCobrar = row.findViewById(R.id.btn_cuota_cobrar);
+                    TextView tvPagada = row.findViewById(R.id.tv_cuota_estado_pagado);
+
+                    tvNum.setText("1");
+                    tvConcepto.setText("Saldo restante de Contado");
+
+                    if (adeuda <= 0.001 || pagoSaldo != null) {
+                        double montoPagado = pagoSaldo != null ? pagoSaldo.monto : saldoRestante;
+                        String fechaP = (pagoSaldo != null && pagoSaldo.fecha != null) ? pagoSaldo.fecha : (contrato.fechaInicio != null ? contrato.fechaInicio : "-");
+                        String metodoP = (pagoSaldo != null && pagoSaldo.metodoPago != null) ? pagoSaldo.metodoPago : (contrato.metodoPago != null ? contrato.metodoPago : "Efectivo");
+                        tvMonto.setText("$ " + cf.format(montoPagado));
+                        tvSub.setText("Liquidado el " + fechaP + " • " + metodoP);
+                        btnCobrar.setVisibility(View.GONE);
+                        tvPagada.setVisibility(View.VISIBLE);
+                    } else {
+                        tvMonto.setText("$ " + cf.format(saldoRestante));
+                        tvSub.setText("Pendiente de liquidación");
+                        tvPagada.setVisibility(View.GONE);
+                        btnCobrar.setVisibility(View.VISIBLE);
+                        btnCobrar.setText("Liquidar Saldo");
+                        btnCobrar.setOnClickListener(v -> {
+                            mostrarDialogoRegistrarCobro(contrato, 0, saldoRestante, "Liquidación saldo restante", this);
+                        });
+                    }
+                    layoutCuotas.addView(row);
+                }
+            }
+        };
+
+        refrescarVista.run();
+        dialog.show();
+    }
+
+    private void mostrarDialogoRegistrarCobro(Contrato contrato, int nroCuota, double montoSugerido, String conceptoDefecto, Runnable onPagoRegistrado) {
+        if (getContext() == null || contrato == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_registrar_pago_cuota, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitulo = dialogView.findViewById(R.id.dialog_pago_tv_titulo);
+        TextView tvSubtitulo = dialogView.findViewById(R.id.dialog_pago_tv_subtitulo);
+        TextInputEditText etMonto = dialogView.findViewById(R.id.et_pago_monto);
+        AutoCompleteTextView actvMedio = dialogView.findViewById(R.id.actv_pago_medio);
+        TextInputEditText etFecha = dialogView.findViewById(R.id.et_pago_fecha);
+        TextInputEditText etConcepto = dialogView.findViewById(R.id.et_pago_concepto);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_pago_btn_cancelar);
+        MaterialButton btnConfirmar = dialogView.findViewById(R.id.dialog_pago_btn_confirmar);
+
+        tvTitulo.setText("Registrar Cobro");
+        tvSubtitulo.setText(conceptoDefecto + " • " + contrato.getNombreCompletoCliente());
+
+        NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
+        nf.setGroupingUsed(false);
+        nf.setMaximumFractionDigits(2);
+        etMonto.setText(nf.format(montoSugerido));
+
+        String[] medios = {"Efectivo", "Transferencia", "Tarjeta de Débito", "Tarjeta de Crédito", "Cheque"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, medios);
+        actvMedio.setAdapter(adapter);
+        actvMedio.setText(medios[0], false);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        etFecha.setText(sdf.format(new Date()));
+
+        etConcepto.setText(conceptoDefecto);
+
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirmar.setOnClickListener(v -> {
+            String montoStr = etMonto.getText() != null ? etMonto.getText().toString().trim() : "";
+            if (montoStr.isEmpty()) {
+                etMonto.setError("Ingrese un monto");
+                return;
+            }
+            double monto;
+            try {
+                monto = Double.parseDouble(montoStr.replace(",", "."));
+            } catch (Exception e) {
+                etMonto.setError("Monto inválido");
+                return;
+            }
+
+            String medio = actvMedio.getText().toString().trim();
+            if (medio.isEmpty()) medio = "Efectivo";
+
+            String fecha = etFecha.getText() != null && !etFecha.getText().toString().trim().isEmpty()
+                    ? etFecha.getText().toString().trim()
+                    : sdf.format(new Date());
+
+            String concepto = etConcepto.getText() != null && !etConcepto.getText().toString().trim().isEmpty()
+                    ? etConcepto.getText().toString().trim()
+                    : conceptoDefecto;
+
+            Pago nuevoPago = new Pago(
+                    UUID.randomUUID().toString(),
+                    contrato.id,
+                    nroCuota,
+                    monto,
+                    fecha,
+                    medio,
+                    concepto
+            );
+
+            if (getActivity() != null) {
+                android.app.Application app = requireActivity().getApplication();
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    AppDatabase db = AppDatabase.getInstance(app);
+                    db.pagoDao().insertar(nuevoPago);
+
+                    List<Pago> todosPagos = db.pagoDao().obtenerPorContratoSync(contrato.id);
+                    contrato.setListaPagos(todosPagos);
+                    contrato.actualizarEstadoSegunSaldo();
+                    contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
+                    db.contratoDao().actualizar(contrato);
+
+                    if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)) {
+                        List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+                        if (todas != null) {
+                            for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
+                                boolean matchId = contrato.propiedadId != null && contrato.propiedadId.equals(p.id);
+                                boolean matchTitulo = contrato.propiedadTitulo != null && p.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
+                                if (matchId || matchTitulo) {
+                                    p.estado = "Vendida";
+                                    new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(app).update(p);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Sincronizar pago en Supabase (tabla pagos)
+                    SupabaseClient.guardarPago(nuevoPago, new SupabaseClient.SupabaseCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            nuevoPago.estadoSincronizacion = "SINCRONIZADO";
+                            AppDatabase.databaseWriteExecutor.execute(() -> db.pagoDao().insertar(nuevoPago));
+                        }
+                        @Override
+                        public void onError(Exception e) {}
+                    });
+
+                    // Sincronizar contrato actualizado en Supabase
+                    SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
+                });
+            }
+
+            dialog.dismiss();
+            if (onPagoRegistrado != null) {
+                onPagoRegistrado.run();
+            }
+            renderContractsList();
+
+            String msg = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
+                    ? "¡Pago registrado! El contrato ha sido COMPLETADO al 100%."
+                    : "Pago registrado con éxito.";
+            CartelUtils.mostrar(requireContext(), msg);
+        });
+
+        dialog.show();
     }
 
     private void mostrarDialogoConfirmarBaja(Contrato contrato, String clienteName, String propiedadName, String monto) {
@@ -428,26 +839,26 @@ public class AdminContratosFragment extends Fragment {
         MaterialButton btnConfirmar = dialogView.findViewById(R.id.btn_dialog_aviso_ver_contratos);
 
         if (tvTitulo != null) {
-            tvTitulo.setText("¿Dar de baja el contrato?");
+            tvTitulo.setText("¿Rechazar el contrato?");
         }
         if (tvMensaje != null) {
-            tvMensaje.setText("¿Estás seguro de que deseas dar de baja el contrato de " + clienteName
-                    + " para \"" + propiedadName + "\"?\n\nEl contrato pasará a estado Cancelado y la propiedad volverá a publicarse en el catálogo.");
+            tvMensaje.setText("¿Estás seguro de que deseas rechazar el contrato de " + clienteName
+                    + " para \"" + propiedadName + "\"?\n\nEl contrato pasará a estado Rechazado y la propiedad volverá a publicarse en el catálogo.");
         }
         if (btnCancelar != null) {
             btnCancelar.setText("No, volver");
             btnCancelar.setOnClickListener(v -> dialog.dismiss());
         }
         if (btnConfirmar != null) {
-            btnConfirmar.setText("Sí, dar de baja");
+            btnConfirmar.setText("Sí, rechazar");
             btnConfirmar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#BA1A1A")));
             btnConfirmar.setTextColor(Color.WHITE);
             btnConfirmar.setOnClickListener(v -> {
                 dialog.dismiss();
                 darDeBajaContrato(contrato);
                 ActividadRepository.getInstance(requireContext())
-                        .registrarModificacionContrato(clienteName, propiedadName, monto, "Cancelado (Baja)");
-                CartelUtils.mostrar(requireContext(), "Contrato de " + clienteName + " cancelado");
+                        .registrarModificacionContrato(clienteName, propiedadName, monto, "Rechazado (Baja)");
+                CartelUtils.mostrar(requireContext(), "Contrato de " + clienteName + " rechazado");
             });
         }
 
@@ -455,7 +866,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void darDeBajaContrato(Contrato contrato) {
-        contrato.estado = "Cancelado";
+        contrato.estado = Contrato.ESTADO_RECHAZADO;
         contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
         if (getActivity() == null) return;
         android.app.Application appContext = requireActivity().getApplication();
@@ -474,7 +885,7 @@ public class AdminContratosFragment extends Fragment {
 
                 @Override
                 public void onError(Exception e) {
-                    SupabaseClient.actualizarEstadoContrato(contrato.id, "Cancelado", null);
+                    SupabaseClient.actualizarEstadoContrato(contrato.id, Contrato.ESTADO_RECHAZADO, null);
                 }
             });
 
@@ -489,7 +900,7 @@ public class AdminContratosFragment extends Fragment {
                         if (todosContratos != null) {
                             for (Contrato c : todosContratos) {
                                 if (!c.id.equals(contrato.id) && c.estado != null
-                                        && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+                                        && (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(c.estado) || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(c.estado))) {
                                     boolean mId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
                                     boolean mTit = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
                                     if (mId || mTit) {
@@ -516,12 +927,15 @@ public class AdminContratosFragment extends Fragment {
         if (badgeWrapper != null) {
             int color;
             switch (situacion) {
+                case Contrato.ESTADO_COMPLETADO:
                 case "Activo":
+                case "Finalizado":
                     color = android.graphics.Color.parseColor("#006C49");
                     break;
-                case "Pendiente":
-                    color = android.graphics.Color.parseColor("#BA8400");
+                case Contrato.ESTADO_PENDIENTE:
+                    color = android.graphics.Color.parseColor("#B45309");
                     break;
+                case Contrato.ESTADO_RECHAZADO:
                 case "Cancelado":
                 default:
                     color = android.graphics.Color.parseColor("#BA1A1A");

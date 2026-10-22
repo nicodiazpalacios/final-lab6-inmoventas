@@ -79,7 +79,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Hero Section idéntica a fragment_home_usuario -->
+            <!-- Hero Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -89,37 +89,23 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Gestiona tu"
+                    android:text="Controla tu"
                     android:textColor="@color/colorOnSurface"
                     android:textSize="36sp"
                     android:textStyle="bold" />
 
-                <LinearLayout
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="portafolio "
-                        android:textColor="@color/colorOnSurface"
-                        android:textSize="36sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="inmobiliario"
-                        android:textColor="@color/colorPrimary"
-                        android:textSize="36sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                    android:text="negocio"
+                    android:textColor="@color/colorOnSurface"
+                    android:textSize="36sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="y ventas."
+                    android:text="inmobiliario."
                     android:textColor="@color/colorPrimary"
                     android:textSize="36sp"
                     android:textStyle="bold" />

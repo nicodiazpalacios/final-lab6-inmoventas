@@ -34,6 +34,7 @@ import com.example.inmobiliariaventa.data.remote.SupabaseClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
+import com.example.inmobiliariaventa.domain.entity.Pago;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -186,7 +187,7 @@ public class AdminAgregarContratoFragment extends Fragment {
         actualizarVisibilidadCuotas(paymentMethods[0]);
 
         // Status Dropdown
-        String[] statusOptions = {"Activo", "Pendiente", "Cancelado"};
+        String[] statusOptions = {Contrato.ESTADO_PENDIENTE, Contrato.ESTADO_COMPLETADO, Contrato.ESTADO_RECHAZADO};
         ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
@@ -322,7 +323,7 @@ public class AdminAgregarContratoFragment extends Fragment {
             if (excludeContratoId != null && excludeContratoId.equals(c.id)) {
                 continue;
             }
-            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+            if (c.estado != null && (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(c.estado) || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(c.estado) || "Activo".equalsIgnoreCase(c.estado))) {
                 boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(prop.id);
                 boolean matchTitulo = c.propiedadTitulo != null && prop.titulo != null
                         && c.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
@@ -387,10 +388,8 @@ public class AdminAgregarContratoFragment extends Fragment {
             etEndDate.setText(c.fechaVencimiento);
         }
 
-        if (actvStatus != null && c.estado != null && !c.estado.isEmpty()) {
-            String estadoNorm = ("Rechazado".equalsIgnoreCase(c.estado) || "Finalizado".equalsIgnoreCase(c.estado))
-                    ? "Cancelado" : c.estado;
-            actvStatus.setText(estadoNorm, false);
+        if (actvStatus != null) {
+            actvStatus.setText(c.getEstadoNormalizado(), false);
         }
 
         if (etDescription != null && c.descripcion != null) {
@@ -407,7 +406,7 @@ public class AdminAgregarContratoFragment extends Fragment {
     private boolean tieneContratoVigenteEnLista(Propiedad prop, List<Contrato> lista) {
         if (prop == null || lista == null) return false;
         for (Contrato c : lista) {
-            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+            if (c.estado != null && (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(c.estado) || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(c.estado) || "Activo".equalsIgnoreCase(c.estado))) {
                 boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(prop.id);
                 boolean matchTitulo = c.propiedadTitulo != null && prop.titulo != null
                         && c.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
@@ -778,7 +777,7 @@ public class AdminAgregarContratoFragment extends Fragment {
 
         String situacion = actvStatus != null && actvStatus.getText() != null && !actvStatus.getText().toString().isEmpty()
                 ? actvStatus.getText().toString().trim()
-                : "Activo";
+                : Contrato.ESTADO_PENDIENTE;
 
         boolean esEdicion = (contratoEnEdicion != null);
         String contratoId = esEdicion ? contratoEnEdicion.id : UUID.randomUUID().toString();
@@ -790,7 +789,7 @@ public class AdminAgregarContratoFragment extends Fragment {
             if (propSeleccionada == null) {
                 tilProperty.setError("Seleccione una propiedad existente del catálogo");
                 hasError = true;
-            } else if ("Activo".equalsIgnoreCase(situacion) || "Pendiente".equalsIgnoreCase(situacion)) {
+            } else if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(situacion) || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(situacion) || "Activo".equalsIgnoreCase(situacion)) {
                 Contrato otroVigente = buscarOtroContratoVigente(propSeleccionada, contratoId);
                 if (otroVigente != null) {
                     tilProperty.setError("Esta propiedad ya posee un contrato " + otroVigente.estado
@@ -860,6 +859,21 @@ public class AdminAgregarContratoFragment extends Fragment {
             AppDatabase db = AppDatabase.getInstance(appContext);
             db.contratoDao().insertar(contratoGuardado);
 
+            // Si hay seña inicial en un contrato nuevo, registrar el Pago en la tabla 'pagos'
+            if (!esEdicion && contratoGuardado.seniaMonto != null && contratoGuardado.seniaMonto > 0) {
+                Pago pagoSenia = new Pago(
+                        UUID.randomUUID().toString(),
+                        contratoGuardado.id,
+                        0,
+                        contratoGuardado.seniaMonto,
+                        startDate,
+                        paymentMethod,
+                        "Seña / Anticipo Inicial"
+                );
+                db.pagoDao().insertar(pagoSenia);
+                SupabaseClient.guardarPago(pagoSenia, null);
+            }
+
             SupabaseClient.guardarContrato(contratoGuardado, new SupabaseClient.SupabaseCallback<Boolean>() {
                 @Override
                 public void onSuccess(Boolean result) {
@@ -910,12 +924,17 @@ public class AdminAgregarContratoFragment extends Fragment {
             }
 
             if (propAfectada != null) {
-                if ("Activo".equalsIgnoreCase(situacion) || "Pendiente".equalsIgnoreCase(situacion)) {
-                    if (!propAfectada.isPausada()) {
+                if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(situacion)) {
+                    if (!propAfectada.isPausada() && !"Vendida".equalsIgnoreCase(propAfectada.estado)) {
                         propAfectada.estado = "Pausado";
                         repo.update(propAfectada);
                     }
-                } else if ("Cancelado".equalsIgnoreCase(situacion)) {
+                } else if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(situacion)) {
+                    if (!"Vendida".equalsIgnoreCase(propAfectada.estado)) {
+                        propAfectada.estado = "Vendida";
+                        repo.update(propAfectada);
+                    }
+                } else if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(situacion) || "Cancelado".equalsIgnoreCase(situacion)) {
                     if (propAfectada.isPausada() && !tieneContratoVigenteEnLista(propAfectada, todosContratos)) {
                         propAfectada.estado = "Publicado";
                         repo.update(propAfectada);

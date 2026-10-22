@@ -255,8 +255,8 @@ public class AdminVentasFragment extends Fragment {
         Set<String> clientesUnicos = new HashSet<>();
 
         for (Contrato c : allContratos) {
-            String est = c.estado != null ? c.estado : "Activo";
-            if ("Cancelado".equalsIgnoreCase(est) || "Rechazado".equalsIgnoreCase(est) || "Finalizado".equalsIgnoreCase(est)) {
+            String est = c.getEstadoNormalizado();
+            if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(est)) {
                 continue;
             }
             if (!estaEnRango(c)) {

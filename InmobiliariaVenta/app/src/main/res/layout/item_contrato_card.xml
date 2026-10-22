@@ -105,7 +105,7 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="4dp"
-                    android:text="Activo"
+                    android:text="Pendiente"
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -119,11 +119,11 @@
             android:layout_marginVertical="10dp"
             android:background="@color/colorOutlineVariant" />
 
-        <!-- Details Grid -->
+        <!-- Details Grid (Monto, Abonado, Adeuda) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             android:orientation="horizontal"
             android:baselineAligned="false">
 
@@ -148,33 +148,7 @@
                     android:layout_marginTop="2dp"
                     android:text="$ 150,000"
                     android:textColor="@color/colorPrimary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tv_label_vencimiento"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VENCIMIENTO"
-                    android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_vencimiento"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="15 Ene 2026"
-                    android:textColor="@color/colorOnSurface"
-                    android:textSize="14sp"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -187,24 +161,136 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="PLAN / PAGO"
-                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:text="ABONADO"
+                    android:textColor="@color/colorSecondary"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/tv_plan"
+                    android:id="@+id/tv_abonado"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="24 Cuotas"
-                    android:textColor="@color/colorOnSurface"
-                    android:textSize="14sp"
+                    android:text="$ 50,000"
+                    android:textColor="@color/colorSecondary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ADEUDA PAGAR"
+                    android:textColor="#B45309"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_adeuda"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="$ 100,000"
+                    android:textColor="#B45309"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Action Buttons -->
+        <!-- Barra de Progreso y Datos del Plan -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            app:cardBackgroundColor="@color/colorSurfaceContainerLow"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/colorOutlineVariant"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp">
+
+                    <TextView
+                        android:id="@+id/tv_plan"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:text="12 Cuotas ($ 5,000)"
+                        android:textColor="@color/colorOnSurface"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_vencimiento"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:text="Vence: 15 Ene 2026"
+                        android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="11sp" />
+                </RelativeLayout>
+
+                <!-- Hidden label to preserve compatibility if referenced -->
+                <TextView
+                    android:id="@+id/tv_label_vencimiento"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progress_cobranza"
+                    android:layout_width="match_parent"
+                    android:layout_height="6dp"
+                    android:progress="35"
+                    app:indicatorColor="@color/colorSecondary"
+                    app:trackColor="@color/colorSurfaceContainerHighest"
+                    app:trackCornerRadius="3dp" />
+
+                <TextView
+                    android:id="@+id/tv_progreso_cuotas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="3 de 12 cuotas cobradas (25%)"
+                    android:textColor="@color/colorOnSurfaceVariant"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Botón Principal de Cobranzas -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cobranzas"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginBottom="8dp"
+            android:text="Ver Cobranzas y Cuotas"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/ic_contratos"
+            app:iconSize="16dp"
+            app:iconGravity="textStart"
+            app:backgroundTint="@color/colorPrimary"
+            android:textColor="@color/colorOnPrimary"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
+
+        <!-- Action Buttons: PDF + Modificar + Rechazar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -215,42 +301,50 @@
                 android:id="@+id/btn_pdf"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="38dp"
                 android:layout_weight="0.85"
                 android:layout_marginEnd="6dp"
                 android:text="PDF"
-                android:textSize="12sp"
+                android:textSize="11.5sp"
                 android:textStyle="bold"
                 app:icon="@drawable/ic_contratos"
-                app:iconSize="16dp"
+                app:iconSize="14dp"
                 app:iconGravity="textStart"
                 app:iconTint="@color/colorPrimary"
                 app:strokeColor="@color/colorPrimary"
-                app:cornerRadius="12dp"
-                android:textColor="@color/colorPrimary" />
+                app:cornerRadius="10dp"
+                android:textColor="@color/colorPrimary"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_modificar"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="38dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:text="Modificar"
-                android:textSize="12sp"
-                app:cornerRadius="12dp"
-                app:backgroundTint="@color/colorPrimary"
-                android:textColor="@color/colorOnPrimary" />
+                android:textSize="11.5sp"
+                app:strokeColor="@color/colorOutline"
+                app:cornerRadius="10dp"
+                android:textColor="@color/colorOnSurface"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_baja"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="38dp"
                 android:layout_weight="1"
-                android:text="Dar de baja"
-                android:textSize="12sp"
-                app:cornerRadius="12dp"
+                android:text="Rechazar"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                app:cornerRadius="10dp"
                 app:backgroundTint="#FFDAD6"
-                android:textColor="#BA1A1A" />
+                android:textColor="#BA1A1A"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

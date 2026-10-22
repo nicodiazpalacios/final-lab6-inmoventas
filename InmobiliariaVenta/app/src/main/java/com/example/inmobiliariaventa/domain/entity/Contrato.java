@@ -7,7 +7,11 @@ import androidx.room.ColumnInfo;
 import androidx.room.Index;
 import androidx.annotation.NonNull;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 
@@ -16,6 +20,33 @@ import com.google.gson.annotations.SerializedName;
     indices = {@Index("propiedadId"), @Index("clienteId")}
 )
 public class Contrato {
+
+    public static final String ESTADO_PENDIENTE = "Pendiente";
+    public static final String ESTADO_COMPLETADO = "Completado";
+    public static final String ESTADO_RECHAZADO = "Rechazado";
+
+    public static class PagoRegistro {
+        public String id;
+        public double monto;
+        public String fecha; // DD/MM/YYYY
+        public int nroCuota; // 1..N o 0 para saldo contado/seña
+        public String metodoPago; // Efectivo, Transferencia, etc.
+        public String concepto; // "Seña inicial", "Cuota 1 de 12", "Saldo restante"
+
+        public PagoRegistro() {}
+
+        public PagoRegistro(String id, double monto, String fecha, int nroCuota, String metodoPago, String concepto) {
+            this.id = id;
+            this.monto = monto;
+            this.fecha = fecha;
+            this.nroCuota = nroCuota;
+            this.metodoPago = metodoPago;
+            this.concepto = concepto;
+        }
+    }
+
+    @Ignore
+    public List<Pago> listaPagos = new ArrayList<>();
     @PrimaryKey
     @NonNull
     @SerializedName("id")
@@ -164,6 +195,98 @@ public class Contrato {
         if (this.timestamp <= 0) {
             this.timestamp = System.currentTimeMillis();
         }
+        this.estado = getEstadoNormalizado();
         this.estadoSincronizacion = "SINCRONIZADO";
+    }
+
+    public void setListaPagos(List<Pago> pagos) {
+        this.listaPagos = pagos != null ? pagos : new ArrayList<>();
+        actualizarEstadoSegunSaldo();
+    }
+
+    public List<Pago> getListaPagos() {
+        return this.listaPagos != null ? this.listaPagos : new ArrayList<>();
+    }
+
+    public double calcularTotalAbonado() {
+        if (listaPagos != null && !listaPagos.isEmpty()) {
+            double total = 0.0;
+            boolean incluyeSenia = false;
+            for (Pago p : listaPagos) {
+                total += p.monto;
+                if (p.nroCuota == 0) {
+                    incluyeSenia = true;
+                }
+            }
+            if (!incluyeSenia && this.seniaMonto != null && this.seniaMonto > 0) {
+                total += this.seniaMonto;
+            }
+            return total;
+        }
+        return this.seniaMonto != null ? this.seniaMonto : 0.0;
+    }
+
+    public double calcularSaldoAdeudado() {
+        double monto = this.montoTotal != null ? this.montoTotal : 0.0;
+        double abonado = calcularTotalAbonado();
+        return Math.max(0.0, monto - abonado);
+    }
+
+    public int getCuotasPagadasCount() {
+        if (listaPagos != null && !listaPagos.isEmpty()) {
+            int count = 0;
+            for (Pago p : listaPagos) {
+                if (p.nroCuota > 0) {
+                    count++;
+                }
+            }
+            return count;
+        }
+        return 0;
+    }
+
+    public boolean esCuotaPagada(int nroCuota) {
+        if (nroCuota <= 0 || listaPagos == null) return false;
+        for (Pago p : listaPagos) {
+            if (p.nroCuota == nroCuota) return true;
+        }
+        return false;
+    }
+
+    public Pago obtenerPagoDeCuota(int nroCuota) {
+        if (nroCuota <= 0 || listaPagos == null) return null;
+        for (Pago p : listaPagos) {
+            if (p.nroCuota == nroCuota) return p;
+        }
+        return null;
+    }
+
+    public String getEstadoNormalizado() {
+        if (this.estado == null || this.estado.trim().isEmpty()) {
+            return (calcularSaldoAdeudado() <= 0.001) ? ESTADO_COMPLETADO : ESTADO_PENDIENTE;
+        }
+        String est = this.estado.trim();
+        if ("Activo".equalsIgnoreCase(est)) {
+            return (calcularSaldoAdeudado() <= 0.001) ? ESTADO_COMPLETADO : ESTADO_PENDIENTE;
+        }
+        if ("Cancelado".equalsIgnoreCase(est) || "Rechazado".equalsIgnoreCase(est)) {
+            return ESTADO_RECHAZADO;
+        }
+        if ("Finalizado".equalsIgnoreCase(est) || "Completado".equalsIgnoreCase(est)) {
+            return ESTADO_COMPLETADO;
+        }
+        return ESTADO_PENDIENTE;
+    }
+
+    public void actualizarEstadoSegunSaldo() {
+        if (ESTADO_RECHAZADO.equalsIgnoreCase(this.estado) || "Cancelado".equalsIgnoreCase(this.estado)) {
+            this.estado = ESTADO_RECHAZADO;
+            return;
+        }
+        if (calcularSaldoAdeudado() <= 0.001) {
+            this.estado = ESTADO_COMPLETADO;
+        } else {
+            this.estado = ESTADO_PENDIENTE;
+        }
     }
 }

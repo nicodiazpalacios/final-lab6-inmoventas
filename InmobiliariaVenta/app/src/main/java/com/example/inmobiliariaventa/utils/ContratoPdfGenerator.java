@@ -290,7 +290,7 @@ public class ContratoPdfGenerator {
 
         // 2. Meta bar: Fecha de emisión & Estado del contrato
         String fechaEmision = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date());
-        String estado = contrato.estado != null && !contrato.estado.isEmpty() ? contrato.estado : "Activo";
+        String estado = contrato.getEstadoNormalizado();
         String codigoRef = contrato.id != null && contrato.id.length() >= 8
                 ? contrato.id.substring(0, 8).toUpperCase(Locale.ROOT)
                 : "CNT-001";
@@ -306,9 +306,9 @@ public class ContratoPdfGenerator {
 
         // Estado badge on right
         int badgeColor = Color.parseColor("#006C49");
-        if ("Pendiente".equalsIgnoreCase(estado)) {
+        if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(estado)) {
             badgeColor = Color.parseColor("#BA8400");
-        } else if ("Cancelado".equalsIgnoreCase(estado)) {
+        } else if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estado) || "Cancelado".equalsIgnoreCase(estado)) {
             badgeColor = Color.parseColor("#BA1A1A");
         }
         paint.setColor(badgeColor);
@@ -378,10 +378,10 @@ public class ContratoPdfGenerator {
         String metodoPago = contrato.metodoPago != null && !contrato.metodoPago.isEmpty() ? contrato.metodoPago : "Efectivo";
         int cuotas = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
         boolean esCredito = "Crédito".equalsIgnoreCase(metodoPago);
-        boolean esPendiente = "Pendiente".equalsIgnoreCase(estado);
-        boolean esCancelado = "Cancelado".equalsIgnoreCase(estado)
-                || "Rechazado".equalsIgnoreCase(estado)
-                || "Finalizado".equalsIgnoreCase(estado);
+        boolean esPendiente = Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(estado);
+        boolean esCancelado = Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estado)
+                || "Cancelado".equalsIgnoreCase(estado);
+
 
         paint.setColor(Color.parseColor("#FFFFFF"));
         RectF paymentBox = new RectF(MARGIN, y, PAGE_WIDTH - MARGIN, y + 130);

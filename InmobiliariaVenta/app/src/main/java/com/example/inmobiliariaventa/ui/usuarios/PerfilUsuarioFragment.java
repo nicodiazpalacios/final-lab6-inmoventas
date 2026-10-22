@@ -201,7 +201,11 @@ public class PerfilUsuarioFragment extends Fragment {
         View btnNotificaciones = view.findViewById(R.id.btn_perfil_notificaciones);
         if (btnNotificaciones != null) {
             btnNotificaciones.setOnClickListener(v -> {
-                mostrarSnackbarElegante("Notificaciones del sistema activadas.");
+                try {
+                    Navigation.findNavController(v).navigate(R.id.action_nav_perfil_to_nav_cliente_notificaciones);
+                } catch (Exception e) {
+                    Navigation.findNavController(v).navigate(R.id.nav_cliente_notificaciones);
+                }
             });
         }
 

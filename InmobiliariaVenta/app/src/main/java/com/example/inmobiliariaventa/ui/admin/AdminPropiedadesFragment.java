@@ -290,7 +290,8 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
     private Contrato buscarContratoActivoOPendiente(Propiedad propiedad) {
         for (Contrato c : allContracts) {
-            if (c.estado != null && ("Activo".equalsIgnoreCase(c.estado) || "Pendiente".equalsIgnoreCase(c.estado))) {
+            String est = c.getEstadoNormalizado();
+            if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(est) || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(est)) {
                 boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(propiedad.id);
                 boolean matchTitulo = c.propiedadTitulo != null && propiedad.titulo != null
                         && c.propiedadTitulo.trim().equalsIgnoreCase(propiedad.titulo.trim());
@@ -323,7 +324,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
         if (tvMensaje != null) {
             String cliente = contrato.getNombreCompletoCliente();
-            String estadoContrato = contrato.estado != null ? contrato.estado : "Activo";
+            String estadoContrato = contrato.getEstadoNormalizado();
             String instruccion;
             if ("eliminar".equalsIgnoreCase(accion)) {
                 instruccion = "Para poder eliminarla del sistema, primero debés dar de baja el contrato.";

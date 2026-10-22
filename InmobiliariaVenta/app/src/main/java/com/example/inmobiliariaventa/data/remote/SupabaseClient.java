@@ -11,6 +11,7 @@ import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.Favorito;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Notificacion;
+import com.example.inmobiliariaventa.domain.entity.Pago;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.gson.ExclusionStrategy;
@@ -999,7 +1000,7 @@ public class SupabaseClient {
         json.addProperty("fechaventa", contrato.fechaVencimiento != null && !contrato.fechaVencimiento.isEmpty()
                 ? contrato.fechaVencimiento
                 : (contrato.fechaInicio != null ? contrato.fechaInicio : ""));
-        json.addProperty("estado", contrato.estado != null ? contrato.estado : "Activo");
+        json.addProperty("estado", contrato.estado != null ? contrato.estado : Contrato.ESTADO_PENDIENTE);
         json.addProperty("descripcion", contrato.descripcion != null ? contrato.descripcion : "");
 
         return json;
@@ -1242,6 +1243,114 @@ public class SupabaseClient {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (callback != null) mainHandler.post(() -> callback.onSuccess(response.isSuccessful()));
+            }
+        });
+    }
+
+    // ==========================================
+    // PAGOS
+    // ==========================================
+
+    public static void obtenerPagos(SupabaseCallback<List<Pago>> callback) {
+        Request request = buildBaseRequest("/rest/v1/pagos?select=*&order=nro_cuota.asc").build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al obtener pagos de Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String errorMsg = "HTTP Error " + response.code() + ": " + (response.body() != null ? response.body().string() : "");
+                    Log.e(TAG, "Error al obtener pagos de Supabase: " + errorMsg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(errorMsg)));
+                    return;
+                }
+                try {
+                    String body = response.body() != null ? response.body().string() : "[]";
+                    Type listType = new TypeToken<List<Pago>>() {}.getType();
+                    List<Pago> lista = gson.fromJson(body, listType);
+                    if (lista != null) {
+                        for (Pago p : lista) {
+                            p.estadoSincronizacion = "SINCRONIZADO";
+                        }
+                    }
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(lista));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al deserializar pagos de Supabase: " + e.getMessage(), e);
+                    if (callback != null) mainHandler.post(() -> callback.onError(e));
+                }
+            }
+        });
+    }
+
+    public static void guardarPago(Pago pago, SupabaseCallback<Boolean> callback) {
+        if (pago == null) {
+            if (callback != null) mainHandler.post(() -> callback.onError(new IllegalArgumentException("Pago nulo")));
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("id", pago.id != null && !pago.id.isEmpty() ? pago.id : UUID.randomUUID().toString());
+        json.addProperty("contrato_id", pago.contratoId);
+        json.addProperty("nro_cuota", pago.nroCuota);
+        json.addProperty("monto", pago.monto);
+        json.addProperty("fecha", pago.fecha != null ? pago.fecha : "");
+        json.addProperty("metodo_pago", pago.metodoPago != null ? pago.metodoPago : "Efectivo");
+        json.addProperty("concepto", pago.concepto != null ? pago.concepto : "");
+
+        RequestBody requestBody = RequestBody.create(json.toString(), JSON);
+
+        Request request = buildBaseRequest("/rest/v1/pagos")
+                .header("Prefer", "resolution=merge-duplicates,return=minimal")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al guardar pago en Supabase: " + e.getMessage());
+                if (callback != null) mainHandler.post(() -> callback.onError(e));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Pago guardado/actualizado en Supabase: " + pago.id);
+                    if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    String msg = "HTTP " + response.code() + ": " + errorBody;
+                    Log.e(TAG, "Error al guardar pago en Supabase: " + msg);
+                    if (callback != null) mainHandler.post(() -> callback.onError(new Exception(msg)));
+                }
+            }
+        });
+    }
+
+    public static void eliminarPago(String pagoId, SupabaseCallback<Boolean> callback) {
+        if (pagoId == null || pagoId.isEmpty()) {
+            if (callback != null) mainHandler.post(() -> callback.onSuccess(true));
+            return;
+        }
+
+        Request request = buildBaseRequest("/rest/v1/pagos?id=eq." + pagoId)
+                .delete()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Error de red al eliminar pago en Supabase: " + e.getMessage());
                 if (callback != null) mainHandler.post(() -> callback.onError(e));
             }
 
