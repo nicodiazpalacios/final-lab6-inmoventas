@@ -7,8 +7,6 @@ import androidx.room.ColumnInfo;
 import androidx.room.Index;
 import androidx.annotation.NonNull;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,25 +23,6 @@ public class Contrato {
     public static final String ESTADO_COMPLETADO = "Completado";
     public static final String ESTADO_RECHAZADO = "Rechazado";
 
-    public static class PagoRegistro {
-        public String id;
-        public double monto;
-        public String fecha; // DD/MM/YYYY
-        public int nroCuota; // 1..N o 0 para saldo contado/seña
-        public String metodoPago; // Efectivo, Transferencia, etc.
-        public String concepto; // "Seña inicial", "Cuota 1 de 12", "Saldo restante"
-
-        public PagoRegistro() {}
-
-        public PagoRegistro(String id, double monto, String fecha, int nroCuota, String metodoPago, String concepto) {
-            this.id = id;
-            this.monto = monto;
-            this.fecha = fecha;
-            this.nroCuota = nroCuota;
-            this.metodoPago = metodoPago;
-            this.concepto = concepto;
-        }
-    }
 
     @Ignore
     public List<Pago> listaPagos = new ArrayList<>();

@@ -226,11 +226,11 @@
         android:textSize="12sp"
         android:textStyle="bold" />
 
-    <!-- Lista de Cuotas con ScrollView con altura máxima -->
+    <!-- Lista de Cuotas con ScrollView -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/dialog_scroll_cuotas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxHeight="320dp"
         android:fadeScrollbars="false"
         android:scrollbars="vertical">
 
@@ -241,17 +241,32 @@
             android:orientation="vertical" />
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Botón Inferior de Cierre -->
+    <!-- Botón Dinámico para Cobrar Selección Múltiple -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/dialog_btn_cerrar_principal"
+        android:id="@+id/dialog_btn_cobrar_seleccionadas"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="16dp"
-        android:text="Listo"
+        android:text="Cobrar Cuotas Seleccionadas"
         android:textSize="14sp"
         android:textStyle="bold"
         app:cornerRadius="12dp"
         app:backgroundTint="@color/colorPrimary"
-        android:textColor="@color/colorOnPrimary" />
+        android:textColor="@color/colorOnPrimary"
+        android:visibility="gone" />
+
+    <!-- Botón Inferior de Cierre -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/dialog_btn_cerrar_principal"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:layout_marginTop="8dp"
+        android:text="Cerrar"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp"
+        app:strokeColor="@color/colorOutline"
+        android:textColor="@color/colorOnSurfaceVariant" />
 
 </LinearLayout>

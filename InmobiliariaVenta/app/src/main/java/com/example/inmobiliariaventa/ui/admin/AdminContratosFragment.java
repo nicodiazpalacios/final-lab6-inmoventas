@@ -35,6 +35,10 @@ import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.Pago;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.checkbox.MaterialCheckBox;
+import java.util.Collections;
+import java.util.Set;
+import java.util.HashSet;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -529,6 +533,9 @@ public class AdminContratosFragment extends Fragment {
         LinearLayout layoutCuotas = dialogView.findViewById(R.id.dialog_layout_cuotas_container);
         View btnCerrarIcono = dialogView.findViewById(R.id.dialog_cobranzas_btn_cerrar);
         View btnCerrarPrincipal = dialogView.findViewById(R.id.dialog_btn_cerrar_principal);
+        MaterialButton btnCobrarSeleccionadas = dialogView.findViewById(R.id.dialog_btn_cobrar_seleccionadas);
+
+        final Set<Integer> cuotasSeleccionadas = new HashSet<>();
 
         btnCerrarIcono.setOnClickListener(v -> dialog.dismiss());
         btnCerrarPrincipal.setOnClickListener(v -> dialog.dismiss());
@@ -545,7 +552,7 @@ public class AdminContratosFragment extends Fragment {
                 double total = contrato.montoTotal != null ? contrato.montoTotal : 0.0;
                 double abonado = contrato.calcularTotalAbonado();
                 double adeuda = contrato.calcularSaldoAdeudado();
-                int pct = total > 0 ? (int) Math.min(100, Math.round((abonado / total) * 100)) : 100;
+                int pct = (total > 0) ? (int) Math.min(100, Math.round((abonado / total) * 100)) : 100;
 
                 tvTotal.setText("$ " + cf.format(total));
                 tvAbonado.setText("$ " + cf.format(abonado));
@@ -586,7 +593,9 @@ public class AdminContratosFragment extends Fragment {
                     TextView tvMonto = rowSeña.findViewById(R.id.tv_cuota_monto);
                     View btnCobrar = rowSeña.findViewById(R.id.btn_cuota_cobrar);
                     TextView tvPagada = rowSeña.findViewById(R.id.tv_cuota_estado_pagado);
+                    MaterialCheckBox cb = rowSeña.findViewById(R.id.cb_cuota_seleccion);
 
+                    if (cb != null) cb.setVisibility(View.GONE);
                     tvNum.setText("S");
                     tvConcepto.setText("Seña / Anticipo Inicial");
                     tvSub.setText("Abonado al momento de la firma");
@@ -602,6 +611,40 @@ public class AdminContratosFragment extends Fragment {
                     double saldoFinanciado = Math.max(0.0, total - seniaVal);
                     double valorCuotaEstimado = saldoFinanciado / cantCuotas;
 
+                    // Limpiar de cuotasSeleccionadas las que ya estén pagadas
+                    java.util.Iterator<Integer> it = cuotasSeleccionadas.iterator();
+                    while (it.hasNext()) {
+                        int n = it.next();
+                        if (contrato.esCuotaPagada(n)) it.remove();
+                    }
+
+                    Runnable actualizarBotonSeleccionadas = () -> {
+                        if (btnCobrarSeleccionadas == null) return;
+                        if (cuotasSeleccionadas.isEmpty()) {
+                            btnCobrarSeleccionadas.setVisibility(View.GONE);
+                        } else {
+                            btnCobrarSeleccionadas.setVisibility(View.VISIBLE);
+                            double totalSel = cuotasSeleccionadas.size() * valorCuotaEstimado;
+                            if (cuotasSeleccionadas.size() == 1) {
+                                btnCobrarSeleccionadas.setText("Cobrar 1 Cuota Seleccionada ($ " + cf.format(totalSel) + ")");
+                            } else {
+                                btnCobrarSeleccionadas.setText("Cobrar " + cuotasSeleccionadas.size() + " Cuotas Seleccionadas ($ " + cf.format(totalSel) + ")");
+                            }
+                        }
+                    };
+                    actualizarBotonSeleccionadas.run();
+
+                    if (btnCobrarSeleccionadas != null) {
+                        btnCobrarSeleccionadas.setOnClickListener(v -> {
+                            List<Integer> ordenadas = new ArrayList<>(cuotasSeleccionadas);
+                            Collections.sort(ordenadas);
+                            mostrarDialogoRegistrarCobroMultiple(contrato, ordenadas, valorCuotaEstimado, () -> {
+                                cuotasSeleccionadas.clear();
+                                run();
+                            });
+                        });
+                    }
+
                     for (int i = 1; i <= cantCuotas; i++) {
                         final int nroCuota = i;
                         View row = li.inflate(R.layout.item_cuota_cobranza, layoutCuotas, false);
@@ -611,6 +654,7 @@ public class AdminContratosFragment extends Fragment {
                         TextView tvMonto = row.findViewById(R.id.tv_cuota_monto);
                         MaterialButton btnCobrar = row.findViewById(R.id.btn_cuota_cobrar);
                         TextView tvPagada = row.findViewById(R.id.tv_cuota_estado_pagado);
+                        MaterialCheckBox cb = row.findViewById(R.id.cb_cuota_seleccion);
 
                         tvNum.setText(String.valueOf(nroCuota));
                         tvConcepto.setText("Cuota " + nroCuota + " de " + cantCuotas);
@@ -621,11 +665,33 @@ public class AdminContratosFragment extends Fragment {
                             tvSub.setText("Cobrado el " + pago.fecha + " • " + pago.metodoPago);
                             btnCobrar.setVisibility(View.GONE);
                             tvPagada.setVisibility(View.VISIBLE);
+                            if (cb != null) cb.setVisibility(View.GONE);
                         } else {
                             tvMonto.setText("$ " + cf.format(valorCuotaEstimado));
                             tvSub.setText("Pendiente de cobro");
                             tvPagada.setVisibility(View.GONE);
                             btnCobrar.setVisibility(View.VISIBLE);
+
+                            if (cb != null) {
+                                cb.setVisibility(View.VISIBLE);
+                                cb.setOnCheckedChangeListener(null);
+                                cb.setChecked(cuotasSeleccionadas.contains(nroCuota));
+                                cb.setOnCheckedChangeListener((btn, isChecked) -> {
+                                    if (isChecked) {
+                                        cuotasSeleccionadas.add(nroCuota);
+                                    } else {
+                                        cuotasSeleccionadas.remove(nroCuota);
+                                    }
+                                    actualizarBotonSeleccionadas.run();
+                                });
+                            }
+
+                            row.setOnClickListener(v -> {
+                                if (cb != null) {
+                                    cb.setChecked(!cb.isChecked());
+                                }
+                            });
+
                             btnCobrar.setOnClickListener(v -> {
                                 mostrarDialogoRegistrarCobro(contrato, nroCuota, valorCuotaEstimado, "Cuota " + nroCuota + " de " + cantCuotas, this);
                             });
@@ -633,6 +699,8 @@ public class AdminContratosFragment extends Fragment {
                         layoutCuotas.addView(row);
                     }
                 } else {
+                    if (btnCobrarSeleccionadas != null) btnCobrarSeleccionadas.setVisibility(View.GONE);
+
                     // Contado / Transferencia / Efectivo
                     double saldoRestante = Math.max(0.0, total - seniaVal);
                     Pago pagoSaldo = null;
@@ -650,7 +718,9 @@ public class AdminContratosFragment extends Fragment {
                     TextView tvMonto = row.findViewById(R.id.tv_cuota_monto);
                     MaterialButton btnCobrar = row.findViewById(R.id.btn_cuota_cobrar);
                     TextView tvPagada = row.findViewById(R.id.tv_cuota_estado_pagado);
+                    MaterialCheckBox cb = row.findViewById(R.id.cb_cuota_seleccion);
 
+                    if (cb != null) cb.setVisibility(View.GONE);
                     tvNum.setText("1");
                     tvConcepto.setText("Saldo restante de Contado");
 
@@ -679,6 +749,184 @@ public class AdminContratosFragment extends Fragment {
 
         refrescarVista.run();
         dialog.show();
+
+        androidx.core.widget.NestedScrollView scrollCuotas = dialogView.findViewById(R.id.dialog_scroll_cuotas);
+        if (scrollCuotas != null) {
+            int maxScrollH = (int) (300 * getResources().getDisplayMetrics().density);
+            scrollCuotas.post(() -> {
+                if (scrollCuotas.getHeight() > maxScrollH) {
+                    android.view.ViewGroup.LayoutParams lp = scrollCuotas.getLayoutParams();
+                    lp.height = maxScrollH;
+                    scrollCuotas.setLayoutParams(lp);
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int maxWidth = (int) (520 * getResources().getDisplayMetrics().density);
+            int margin = (int) (32 * getResources().getDisplayMetrics().density);
+            dialog.getWindow().setLayout(
+                Math.min(screenWidth - margin, maxWidth),
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
+    }
+
+    private void mostrarDialogoRegistrarCobroMultiple(Contrato contrato, List<Integer> cuotasSeleccionadas, double valorUnitarioCuota, Runnable onPagosRegistrados) {
+        if (getContext() == null || contrato == null || cuotasSeleccionadas == null || cuotasSeleccionadas.isEmpty()) return;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_registrar_pago_cuota, null);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitulo = dialogView.findViewById(R.id.dialog_pago_tv_titulo);
+        TextView tvSubtitulo = dialogView.findViewById(R.id.dialog_pago_tv_subtitulo);
+        TextInputEditText etMonto = dialogView.findViewById(R.id.et_pago_monto);
+        AutoCompleteTextView actvMedio = dialogView.findViewById(R.id.actv_pago_medio);
+        TextInputEditText etFecha = dialogView.findViewById(R.id.et_pago_fecha);
+        TextInputEditText etConcepto = dialogView.findViewById(R.id.et_pago_concepto);
+        MaterialButton btnCancelar = dialogView.findViewById(R.id.dialog_pago_btn_cancelar);
+        MaterialButton btnConfirmar = dialogView.findViewById(R.id.dialog_pago_btn_confirmar);
+
+        StringBuilder sbCuotas = new StringBuilder();
+        for (int i = 0; i < cuotasSeleccionadas.size(); i++) {
+            if (i > 0) sbCuotas.append(", ");
+            sbCuotas.append("Cuota ").append(cuotasSeleccionadas.get(i));
+        }
+        String textoCuotas = sbCuotas.toString();
+        double totalAcumulado = cuotasSeleccionadas.size() * valorUnitarioCuota;
+
+        if (tvTitulo != null) tvTitulo.setText("Cobrar " + cuotasSeleccionadas.size() + " Cuotas");
+        if (tvSubtitulo != null) tvSubtitulo.setText("Registrando: " + textoCuotas);
+        if (etMonto != null) {
+            etMonto.setText(String.format(Locale.US, "%.2f", totalAcumulado));
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        if (etFecha != null) etFecha.setText(sdf.format(new Date()));
+        if (etConcepto != null) etConcepto.setText("Cobro simultáneo (" + textoCuotas + ")");
+
+        if (actvMedio != null) {
+            String[] medios = {"Efectivo", "Transferencia", "Depósito Bancario", "Cheque", "Tarjeta de Débito"};
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, medios);
+            actvMedio.setAdapter(adapter);
+            actvMedio.setText(contrato.metodoPago != null ? contrato.metodoPago : "Efectivo", false);
+        }
+
+        if (btnCancelar != null) btnCancelar.setOnClickListener(v -> dialog.dismiss());
+
+        if (btnConfirmar != null) {
+            btnConfirmar.setText("Confirmar (" + cuotasSeleccionadas.size() + " cuotas)");
+            btnConfirmar.setOnClickListener(v -> {
+                double montoIngresado = totalAcumulado;
+                try {
+                    if (etMonto != null && etMonto.getText() != null) {
+                        montoIngresado = Double.parseDouble(etMonto.getText().toString().trim());
+                    }
+                } catch (Exception ignored) {}
+
+                String medio = actvMedio != null ? actvMedio.getText().toString().trim() : "Efectivo";
+                if (medio.isEmpty()) medio = "Efectivo";
+
+                String fecha = (etFecha != null && etFecha.getText() != null && !etFecha.getText().toString().trim().isEmpty())
+                        ? etFecha.getText().toString().trim()
+                        : sdf.format(new Date());
+
+                double montoPorCuota = montoIngresado / cuotasSeleccionadas.size();
+                List<Pago> nuevosPagos = new ArrayList<>();
+                int totalCuotas = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : cuotasSeleccionadas.size();
+
+                for (int nro : cuotasSeleccionadas) {
+                    Pago p = new Pago(
+                            UUID.randomUUID().toString(),
+                            contrato.id,
+                            nro,
+                            montoPorCuota,
+                            fecha,
+                            medio,
+                            "Cuota " + nro + " de " + totalCuotas
+                    );
+                    nuevosPagos.add(p);
+                }
+
+                if (getActivity() != null) {
+                    android.app.Application app = requireActivity().getApplication();
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        AppDatabase db = AppDatabase.getInstance(app);
+                        db.pagoDao().insertarTodos(nuevosPagos);
+
+                        List<Pago> todosPagos = db.pagoDao().obtenerPorContratoSync(contrato.id);
+                        contrato.setListaPagos(todosPagos);
+                        contrato.actualizarEstadoSegunSaldo();
+                        contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
+                        db.contratoDao().actualizar(contrato);
+
+                        if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)) {
+                            List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
+                            if (todas != null) {
+                                for (com.example.inmobiliariaventa.domain.entity.Propiedad prop : todas) {
+                                    boolean matchId = contrato.propiedadId != null && contrato.propiedadId.equals(prop.id);
+                                    boolean matchTitulo = contrato.propiedadTitulo != null && prop.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
+                                    if (matchId || matchTitulo) {
+                                        prop.estado = "Vendida";
+                                        new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(app).update(prop);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Sincronizar cada uno de los pagos en la tabla 'pagos' de Supabase
+                        for (Pago nuevoPago : nuevosPagos) {
+                            SupabaseClient.guardarPago(nuevoPago, new SupabaseClient.SupabaseCallback<Boolean>() {
+                                @Override
+                                public void onSuccess(Boolean result) {
+                                    nuevoPago.estadoSincronizacion = "SINCRONIZADO";
+                                    AppDatabase.databaseWriteExecutor.execute(() -> db.pagoDao().insertar(nuevoPago));
+                                }
+
+                                @Override
+                                public void onError(Exception e) { }
+                            });
+                        }
+
+                        SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
+                    });
+                }
+
+                dialog.dismiss();
+                if (onPagosRegistrados != null) {
+                    onPagosRegistrados.run();
+                }
+                renderContractsList();
+
+                String msgExito = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
+                        ? "¡" + cuotasSeleccionadas.size() + " cuotas cobradas! El contrato ha sido COMPLETADO al 100%."
+                        : "¡Se registraron " + cuotasSeleccionadas.size() + " cuotas con éxito!";
+                CartelUtils.mostrar(requireContext(), msgExito);
+            });
+        }
+
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int maxWidth = (int) (480 * getResources().getDisplayMetrics().density);
+            int margin = (int) (32 * getResources().getDisplayMetrics().density);
+            dialog.getWindow().setLayout(
+                Math.min(screenWidth - margin, maxWidth),
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
     }
 
     private void mostrarDialogoRegistrarCobro(Contrato contrato, int nroCuota, double montoSugerido, String conceptoDefecto, Runnable onPagoRegistrado) {
@@ -816,6 +1064,16 @@ public class AdminContratosFragment extends Fragment {
         });
 
         dialog.show();
+
+        if (dialog.getWindow() != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int maxWidth = (int) (480 * getResources().getDisplayMetrics().density);
+            int margin = (int) (32 * getResources().getDisplayMetrics().density);
+            dialog.getWindow().setLayout(
+                Math.min(screenWidth - margin, maxWidth),
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
     }
 
     private void mostrarDialogoConfirmarBaja(Contrato contrato, String clienteName, String propiedadName, String monto) {

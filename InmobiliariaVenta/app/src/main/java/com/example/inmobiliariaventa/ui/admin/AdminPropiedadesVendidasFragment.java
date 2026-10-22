@@ -235,12 +235,13 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
             double senia = c.seniaMonto != null ? c.seniaMonto : 0.0;
             double saldo = Math.max(0.0, montoTotal - senia);
             int cuotas = c.cuotas != null && c.cuotas > 0 ? c.cuotas : 1;
+            boolean esPendiente = Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(c.getEstadoNormalizado());
 
             String modalidadStr;
             if ("Crédito".equalsIgnoreCase(c.metodoPago)) {
                 double valorCuota = saldo / cuotas;
                 modalidadStr = "Crédito • " + cuotas + (cuotas == 1 ? " cuota ($ " : " cuotas ($ ") + currencyFormat.format(valorCuota) + ")";
-            } else if ("Pendiente".equalsIgnoreCase(c.estado) && senia > 0 && saldo > 0) {
+            } else if (esPendiente && senia > 0 && saldo > 0) {
                 modalidadStr = "Reserva (" + c.metodoPago + ") • Resta $ " + currencyFormat.format(saldo);
             } else if ("Transferencia".equalsIgnoreCase(c.metodoPago)) {
                 modalidadStr = "Transferencia";
@@ -254,7 +255,7 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
             tvFecha.setText(c.fechaInicio != null && !c.fechaInicio.isEmpty() ? c.fechaInicio : "-");
             tvModalidad.setText(modalidadStr);
 
-            if ("Pendiente".equalsIgnoreCase(c.estado)) {
+            if (esPendiente) {
                 cardBadge.setCardBackgroundColor(Color.parseColor("#FFDEA8"));
                 tvBadge.setText("Reservado");
                 tvBadge.setTextColor(Color.parseColor("#7A5300"));

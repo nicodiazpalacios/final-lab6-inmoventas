@@ -149,7 +149,9 @@
                     android:text="$ 150,000"
                     android:textColor="@color/colorPrimary"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
             </LinearLayout>
 
             <LinearLayout
@@ -174,7 +176,9 @@
                     android:text="$ 50,000"
                     android:textColor="@color/colorSecondary"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
             </LinearLayout>
 
             <LinearLayout
@@ -199,7 +203,9 @@
                     android:text="$ 100,000"
                     android:textColor="#B45309"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
             </LinearLayout>
         </LinearLayout>
 
@@ -245,12 +251,6 @@
                         android:textSize="11sp" />
                 </RelativeLayout>
 
-                <!-- Hidden label to preserve compatibility if referenced -->
-                <TextView
-                    android:id="@+id/tv_label_vencimiento"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
 
                 <com.google.android.material.progressindicator.LinearProgressIndicator
                     android:id="@+id/progress_cobranza"
