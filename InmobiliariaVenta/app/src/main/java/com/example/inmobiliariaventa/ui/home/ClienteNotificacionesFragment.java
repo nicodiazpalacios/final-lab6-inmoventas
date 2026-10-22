@@ -402,7 +402,8 @@ public class ClienteNotificacionesFragment extends Fragment {
             });
             listaNotificaciones.remove(notif);
             renderizarListaFiltrada();
-            CartelUtils.mostrar(cardRoot, "Notificación eliminada");
+            SupabaseClient.eliminarNotificacion(notif.id, null);
+            CartelUtils.mostrar(this, "Notificación eliminada");
         });
 
         cardRoot.setOnClickListener(v -> {

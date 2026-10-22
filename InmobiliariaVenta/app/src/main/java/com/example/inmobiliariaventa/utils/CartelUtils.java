@@ -74,13 +74,16 @@ public class CartelUtils {
             targetView = findSuitableParent(anchorView);
         }
 
-        if (targetView == null && fallbackContext != null) {
-            context = fallbackContext;
-            Activity activity = findActivity(fallbackContext);
-            if (activity != null) {
-                targetView = activity.findViewById(android.R.id.content);
-                if (targetView == null) {
-                    targetView = activity.getWindow().getDecorView();
+        if (targetView == null) {
+            Context ctx = (anchorView != null) ? anchorView.getContext() : fallbackContext;
+            if (ctx != null) {
+                context = ctx;
+                Activity activity = findActivity(ctx);
+                if (activity != null) {
+                    targetView = activity.findViewById(android.R.id.content);
+                    if (targetView == null) {
+                        targetView = activity.getWindow().getDecorView();
+                    }
                 }
             }
         }
