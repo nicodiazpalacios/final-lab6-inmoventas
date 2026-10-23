@@ -3,6 +3,9 @@ package com.example.inmobiliariaventa.ui;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.TextView;
 import android.view.View;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -30,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<String[]> locationPermissionLauncher;
     private boolean isUpdatingMenuFromNav = false;
+    private View layoutSplashOverlay;
+    private TextView splashStatusText;
+    private boolean isSplashDismissed = false;
+    private final Handler splashHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -251,6 +258,104 @@ public class MainActivity extends AppCompatActivity {
         });
 
         rootLayout.post(() -> procesarIntentNotificacion(getIntent()));
+
+        layoutSplashOverlay = findViewById(R.id.layout_splash_overlay);
+        splashStatusText = findViewById(R.id.splash_status_text);
+        iniciarCargaCompletaConReloj();
+    }
+
+    private void iniciarCargaCompletaConReloj() {
+        if (layoutSplashOverlay == null) return;
+
+        long startTime = System.currentTimeMillis();
+        final long MIN_SPLASH_TIME = 900; // Tiempo mínimo para apreciar la animación de inicio suave
+        final long MAX_SPLASH_TIMEOUT = 3500; // Límite máximo de espera de seguridad
+
+        // Watchdog de seguridad: Si en 3.5 segundos la conexión es lenta, entra a la app con caché local
+        splashHandler.postDelayed(() -> {
+            ocultarRelojDeCarga("¡Bienvenido a HomeFinder!");
+        }, MAX_SPLASH_TIMEOUT);
+
+        boolean isOnline = com.example.inmobiliariaventa.utils.NetworkUtils.isNetworkAvailable(this);
+
+        if (!isOnline) {
+            if (splashStatusText != null) {
+                splashStatusText.setText("Modo sin conexión • Cargando datos locales...");
+            }
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                try {
+                    AppDatabase.getInstance(getApplicationContext()).propiedadDao().obtenerTodasSync();
+                } catch (Exception ignored) {}
+
+                long elapsed = System.currentTimeMillis() - startTime;
+                long delay = Math.max(0, 500 - elapsed);
+                splashHandler.postDelayed(() -> {
+                    ocultarRelojDeCarga("Modo sin conexión listo");
+                }, delay);
+            });
+            return;
+        }
+
+        // Modo Online: Sincronizar catálogo y precargar portadas de imágenes en memoria
+        if (splashStatusText != null) {
+            splashStatusText.setText("Sincronizando catálogo de propiedades...");
+        }
+
+        new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(getApplication())
+                .sincronizarConNube(() -> {
+                    splashHandler.post(() -> {
+                        if (splashStatusText != null && !isSplashDismissed) {
+                            splashStatusText.setText("Preparando imágenes y favoritos...");
+                        }
+                    });
+
+                    // Precargar portadas de las primeras propiedades para que se muestren de inmediato
+                    AppDatabase.databaseWriteExecutor.execute(() -> {
+                        try {
+                            List<com.example.inmobiliariaventa.domain.entity.Propiedad> props =
+                                    AppDatabase.getInstance(getApplicationContext()).propiedadDao().obtenerTodasSync();
+                            if (props != null) {
+                                int count = 0;
+                                for (com.example.inmobiliariaventa.domain.entity.Propiedad p : props) {
+                                    if (p != null && p.imagenes != null && !p.imagenes.isEmpty()) {
+                                        String img = p.imagenes.get(0);
+                                        if (img != null && !img.trim().isEmpty()) {
+                                            com.example.inmobiliariaventa.utils.ImageLoader.preload(getApplicationContext(), img);
+                                            count++;
+                                            if (count >= 8) break;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+
+                        long elapsed = System.currentTimeMillis() - startTime;
+                        long remainingDelay = Math.max(0, MIN_SPLASH_TIME - elapsed);
+                        splashHandler.postDelayed(() -> {
+                            ocultarRelojDeCarga("¡Todo listo!");
+                        }, remainingDelay);
+                    });
+                });
+    }
+
+    private void ocultarRelojDeCarga(String mensajeFinal) {
+        if (isSplashDismissed || layoutSplashOverlay == null) return;
+        isSplashDismissed = true;
+
+        if (splashStatusText != null && mensajeFinal != null) {
+            splashStatusText.setText(mensajeFinal);
+        }
+
+        // Animación suave de desvanecimiento (Fade Out)
+        layoutSplashOverlay.animate()
+                .alpha(0f)
+                .setDuration(400)
+                .withEndAction(() -> {
+                    if (layoutSplashOverlay != null) {
+                        layoutSplashOverlay.setVisibility(View.GONE);
+                    }
+                })
+                .start();
     }
 
     private void solicitarPermisosIniciales() {

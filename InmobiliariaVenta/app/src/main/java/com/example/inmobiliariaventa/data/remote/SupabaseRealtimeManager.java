@@ -317,6 +317,9 @@ public class SupabaseRealtimeManager {
                                     ? db.mensajeContactoDao().getMensajePorRemoteId(m.remoteId) : null;
                             if (exist != null) {
                                 m.id = exist.id;
+                                if (exist.timestamp > 0 && m.timestamp <= 0) {
+                                    m.timestamp = exist.timestamp;
+                                }
                                 db.mensajeContactoDao().update(m);
                             } else {
                                 db.mensajeContactoDao().insert(m);

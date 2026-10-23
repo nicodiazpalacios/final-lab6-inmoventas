@@ -22,6 +22,18 @@ public class PropiedadRepositoryImpl implements PropiedadRepository {
 
     private static long ultimaSincronizacion = 0;
     private static final long INTERVALO_MIN_SYNC_MS = 60_000; // 1 minuto
+    private static volatile PropiedadRepositoryImpl INSTANCE;
+
+    public static PropiedadRepositoryImpl getInstance(Application application) {
+        if (INSTANCE == null) {
+            synchronized (PropiedadRepositoryImpl.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new PropiedadRepositoryImpl(application);
+                }
+            }
+        }
+        return INSTANCE;
+    }
 
     public PropiedadRepositoryImpl(Application application) {
         AppDatabase database = AppDatabase.getInstance(application);

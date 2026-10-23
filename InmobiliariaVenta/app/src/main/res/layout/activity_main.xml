@@ -35,4 +35,81 @@
         app:layout_constraintRight_toRightOf="parent"
         app:menu="@menu/menu_usuario" />
 
+    <!-- Overlay de Pantalla de Carga / Inicialización -->
+    <LinearLayout
+        android:id="@+id/layout_splash_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorSurfaceContainerLowest"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="60dp"
+        android:padding="32dp"
+        android:visibility="visible">
+
+        <!-- Logo e Icono Principal -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="@color/colorOutlineVariant"
+            app:cardBackgroundColor="@color/colorPrimaryFixed">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_propiedades"
+                app:tint="@color/colorPrimary" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Nombre de la App -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="HomeFinder"
+            android:textColor="@color/colorPrimary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.01" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Tu próximo hogar perfecto"
+            android:textColor="@color/colorOnSurfaceVariant"
+            android:textSize="14sp" />
+
+        <!-- Espaciador -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+        <!-- Reloj / Spinner de carga -->
+        <ProgressBar
+            android:id="@+id/splash_progress"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/colorPrimary" />
+
+        <!-- Texto de estado de carga dinámico -->
+        <TextView
+            android:id="@+id/splash_status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Iniciando catálogo..."
+            android:textColor="@color/colorOutline"
+            android:textSize="13sp"
+            android:gravity="center" />
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

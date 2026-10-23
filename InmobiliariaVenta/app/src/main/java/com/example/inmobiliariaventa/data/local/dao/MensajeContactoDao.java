@@ -27,10 +27,10 @@ public interface MensajeContactoDao {
     @Delete
     void delete(MensajeContacto mensaje);
 
-    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC, id DESC")
+    @Query("SELECT * FROM mensajes_contacto ORDER BY (CASE WHEN remote_id IS NOT NULL AND TRIM(remote_id) != '' AND cliente_email NOT IN ('lucas.m@gmail.com', 'sofi.benitez@hotmail.com', 'gonzalo.f@gmail.com', 'valen.rossi@yahoo.com', 'camilag@gmail.com', 'mateo.rod@gmail.com', 'flor.diaz@outlook.com', 'emiliano.m@gmail.com', 'lucia.navarro@gmail.com', 'diego.castro@gmail.com', 'martu.lopez@gmail.com', 'agustin.silva@gmail.com') THEN 1 ELSE 0 END) DESC, timestamp DESC, id DESC")
     LiveData<List<MensajeContacto>> getAllMensajesLiveData();
 
-    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC, id DESC")
+    @Query("SELECT * FROM mensajes_contacto ORDER BY (CASE WHEN remote_id IS NOT NULL AND TRIM(remote_id) != '' AND cliente_email NOT IN ('lucas.m@gmail.com', 'sofi.benitez@hotmail.com', 'gonzalo.f@gmail.com', 'valen.rossi@yahoo.com', 'camilag@gmail.com', 'mateo.rod@gmail.com', 'flor.diaz@outlook.com', 'emiliano.m@gmail.com', 'lucia.navarro@gmail.com', 'diego.castro@gmail.com', 'martu.lopez@gmail.com', 'agustin.silva@gmail.com') THEN 1 ELSE 0 END) DESC, timestamp DESC, id DESC")
     List<MensajeContacto> getAllMensajesSync();
 
     @Query("UPDATE mensajes_contacto SET timestamp = :timestamp WHERE id = :id")

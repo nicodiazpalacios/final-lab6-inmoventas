@@ -37,6 +37,45 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
         this.appContext = context != null ? context.getApplicationContext() : null;
         AppDatabase db = AppDatabase.getInstance(context);
         this.dao = db.mensajeContactoDao();
+        sanearMensajesLocales();
+    }
+
+    public void sanearMensajesLocales() {
+        AppDatabase.databaseWriteExecutor.execute(this::sanearMensajesLocalesSync);
+    }
+
+    public void sanearMensajesLocalesSync() {
+        try {
+            List<MensajeContacto> todos = dao.getAllMensajesSync();
+            if (todos != null) {
+                long now = System.currentTimeMillis();
+                for (MensajeContacto m : todos) {
+                    if (m == null) continue;
+                    if (m.isDemoMessage()) {
+                        if ("PENDIENTE_SUBIR".equals(m.estadoSincronizacion)) {
+                            dao.actualizarEstadoSincronizacion(m.id, "DEMO");
+                        }
+                        // Asegurar que los mensajes demo queden siempre en el pasado (3 a 15 días atrás)
+                        long minPast = now - (3L * 86400000L);
+                        if (m.timestamp > minPast || m.timestamp <= 0) {
+                            long offset = (3L + (Math.abs(m.id) % 15)) * 86400000L + (Math.abs(m.id) * 3600000L);
+                            m.timestamp = now - offset;
+                            dao.actualizarTimestamp(m.id, m.timestamp);
+                        }
+                    } else {
+                        // Mensaje real de cliente: asegurar timestamp válido
+                        if (m.timestamp <= 0) {
+                            m.calcularTimestampSiEsNecesario();
+                            if (m.timestamp > 0) {
+                                dao.actualizarTimestamp(m.id, m.timestamp);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error saneando mensajes locales: " + e.getMessage());
+        }
     }
 
     @Override
@@ -47,6 +86,9 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
             mensaje.remoteId = UUID.randomUUID().toString();
         }
         mensaje.estadoSincronizacion = "PENDIENTE_SUBIR";
+        if (mensaje.timestamp <= 0) {
+            mensaje.timestamp = System.currentTimeMillis();
+        }
         mensaje.calcularTimestampSiEsNecesario();
 
         // Notificar en Actividad Reciente del Administrador
@@ -84,10 +126,14 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
     @Override
     public void sincronizarConNube(Runnable onComplete) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // 1. Subir mensajes pendientes locales a Supabase
+            // 1. Subir mensajes pendientes locales a Supabase (omitiendo mensajes de prueba/demo)
             List<MensajeContacto> pendientes = dao.getPendientesDeSubir();
             if (pendientes != null && !pendientes.isEmpty()) {
                 for (MensajeContacto p : pendientes) {
+                    if (p.isDemoMessage()) {
+                        dao.actualizarEstadoSincronizacion(p.id, "DEMO");
+                        continue;
+                    }
                     SupabaseClient.enviarMensajeContacto(p, new SupabaseClient.SupabaseCallback<Boolean>() {
                         @Override
                         public void onSuccess(Boolean result) {
@@ -112,12 +158,24 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         if (remotos != null && !remotos.isEmpty()) {
                             List<String> remoteIds = new java.util.ArrayList<>();
+                            // Calcular la hora real de llegada de cada mensaje (created_at de Supabase)
                             for (MensajeContacto r : remotos) {
+                                if (r != null) r.timestamp = 0;
+                            }
+                            List<MensajeContacto> ordenados = new java.util.ArrayList<>();
+                            for (MensajeContacto r : remotos) {
+                                if (r == null) continue;
                                 MensajeContacto local = r.remoteId != null ? dao.getMensajePorRemoteId(r.remoteId) : null;
-                                if (local != null && local.timestamp > 0 && r.timestamp <= 0) {
+                                boolean ok = r.recalcularTimestampDesdeOrigen();
+                                if (!ok && local != null && local.timestamp > 0) {
                                     r.timestamp = local.timestamp;
                                 }
-                                r.calcularTimestampSiEsNecesario();
+                                ordenados.add(r);
+                            }
+                            // Insertar del más antiguo al más nuevo: así el último en llegar recibe el ID local más alto
+                            java.util.Collections.sort(ordenados, (a, b) -> Long.compare(a.timestamp, b.timestamp));
+                            for (MensajeContacto r : ordenados) {
+                                MensajeContacto local = r.remoteId != null ? dao.getMensajePorRemoteId(r.remoteId) : null;
                                 r.estadoSincronizacion = "SINCRONIZADO";
 
                                 if (local != null) {
@@ -132,24 +190,16 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
                                 }
                             }
 
-                            // Reparar timestamps de mensajes locales existentes si tuvieran timestamp <= 0
-                            List<MensajeContacto> existentes = dao.getAllMensajesSync();
-                            if (existentes != null) {
-                                for (MensajeContacto m : existentes) {
-                                    if (m != null && m.timestamp <= 0) {
-                                        m.calcularTimestampSiEsNecesario();
-                                        if (m.timestamp > 0) {
-                                            dao.actualizarTimestamp(m.id, m.timestamp);
-                                        }
-                                    }
-                                }
-                            }
+                            // Sanear y consolidar timestamps
+                            sanearMensajesLocalesSync();
+
                             if (!remoteIds.isEmpty()) {
                                 dao.eliminarNoEnServidor(remoteIds);
                             }
                             Log.d(TAG, "Sincronizados " + remotos.size() + " mensajes desde Supabase a Room.");
                         } else {
                             dao.eliminarTodosSincronizados();
+                            sanearMensajesLocalesSync();
                         }
 
                         if (onComplete != null) {
@@ -161,6 +211,7 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
                 @Override
                 public void onError(Exception error) {
                     Log.w(TAG, "No se pudieron obtener mensajes desde Supabase (modo offline): " + error.getMessage());
+                    sanearMensajesLocalesSync();
                     if (onComplete != null) {
                         onComplete.run();
                     }

@@ -96,64 +96,143 @@ public class MensajeContacto {
         this.estadoSincronizacion = "PENDIENTE_SUBIR";
     }
 
-    public void calcularTimestampSiEsNecesario() {
-        if (this.timestamp > 0) return;
-
-        // 1. Intentar desde createdAt si fue provisto por Supabase
-        if (this.createdAt != null && !this.createdAt.trim().isEmpty()) {
-            try {
-                long ts = com.example.inmobiliariaventa.data.remote.SupabaseClient.parseTimestampFlexible(
-                        new com.google.gson.JsonPrimitive(this.createdAt));
-                if (ts > 0) {
-                    this.timestamp = ts;
-                    return;
-                }
-            } catch (Exception ignored) {}
+    public boolean isDemoMessage() {
+        if (this.remoteId == null || this.remoteId.trim().isEmpty()) {
+            return true;
         }
-
-        // 2. Intentar parsear fecha y hora
-        if (this.fecha != null && !this.fecha.trim().isEmpty()) {
-            String fechaLimpia = this.fecha.trim();
-            String horaLimpia = this.hora != null ? this.hora.trim() : "";
-
-            // Normalizar hora en español (a. m. / p. m. -> AM / PM)
-            horaLimpia = horaLimpia.replace("a. m.", "AM")
-                                   .replace("p. m.", "PM")
-                                   .replace("a.m.", "AM")
-                                   .replace("p.m.", "PM")
-                                   .replace("a. m", "AM")
-                                   .replace("p. m", "PM")
-                                   .toUpperCase(Locale.ENGLISH);
-
-            String combined = (fechaLimpia + (horaLimpia.isEmpty() ? "" : " " + horaLimpia)).trim();
-
-            String[] patterns = new String[] {
-                    "dd/MM/yyyy hh:mm a",
-                    "dd/MM/yyyy HH:mm",
-                    "dd/MM/yyyy h:mm a",
-                    "dd-MM-yyyy HH:mm",
-                    "yyyy-MM-dd HH:mm",
-                    "dd/MM/yyyy"
-            };
-
-            for (String pattern : patterns) {
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
-                    Date d = sdf.parse(combined);
-                    if (d != null) {
-                        this.timestamp = d.getTime();
-                        return;
-                    }
-                } catch (Exception ignored) {}
-            }
+        if ("lucas.m@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "sofi.benitez@hotmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "gonzalo.f@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "valen.rossi@yahoo.com".equalsIgnoreCase(this.clienteEmail)
+                || "camilag@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "mateo.rod@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "flor.diaz@outlook.com".equalsIgnoreCase(this.clienteEmail)
+                || "emiliano.m@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "lucia.navarro@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "diego.castro@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "martu.lopez@gmail.com".equalsIgnoreCase(this.clienteEmail)
+                || "agustin.silva@gmail.com".equalsIgnoreCase(this.clienteEmail)) {
+            return true;
         }
+        return false;
+    }
 
-        if (this.timestamp <= 0) {
-            this.timestamp = System.currentTimeMillis();
+    private static final long DIA_MS = 86400000L;
+
+    /** Mantiene los mensajes demo siempre en el pasado (3+ días atrás) para que nunca tapen consultas reales. */
+    private void ajustarTimestampDemo() {
+        long now = System.currentTimeMillis();
+        if (this.timestamp > now - (3L * DIA_MS) || this.timestamp <= 0) {
+            long offset = (3L + (Math.abs(this.id) % 15)) * DIA_MS + (Math.abs(this.id) * 3600000L);
+            this.timestamp = now - offset;
         }
     }
 
+    public void calcularTimestampSiEsNecesario() {
+        if (isDemoMessage()) {
+            ajustarTimestampDemo();
+            return;
+        }
+        if (this.timestamp > 0) return;
+        recalcularTimestampDesdeOrigen();
+    }
+
+    /**
+     * Recalcula SIEMPRE el timestamp a partir de los datos de origen (created_at de Supabase
+     * o fecha/hora del mensaje), ignorando el valor actual. Devuelve true si se pudo calcular.
+     */
+    public boolean recalcularTimestampDesdeOrigen() {
+        // 1. created_at de Supabase (hora exacta en que el mensaje llegó al servidor)
+        long ts = parseIsoUtc(this.createdAt);
+        if (ts > 0) {
+            this.timestamp = ts;
+            return true;
+        }
+        // 2. fecha + hora guardadas en el mensaje
+        long previo = this.timestamp;
+        long desdeFecha = parseFechaHora(this.fecha, this.hora);
+        if (desdeFecha > 0) {
+            this.timestamp = desdeFecha;
+            return true;
+        }
+        this.timestamp = previo > 0 ? previo : System.currentTimeMillis();
+        return false;
+    }
+
+    /** Parser ISO-8601 tolerante (T o espacio, fracciones de cualquier largo, Z / +00 / +00:00 / +0000). Devuelve 0 si falla. */
+    public static long parseIsoUtc(String raw) {
+        if (raw == null) return 0L;
+        String s = raw.trim();
+        if (s.isEmpty()) return 0L;
+        try {
+            if (s.matches("^\\d{11,}$")) return Long.parseLong(s);
+            java.util.regex.Matcher mt = java.util.regex.Pattern.compile(
+                    "^(\\d{4})-(\\d{2})-(\\d{2})[T ](\\d{2}):(\\d{2})(?::(\\d{2}))?(?:\\.(\\d+))?\\s*(Z|[+-]\\d{2}(?::?\\d{2})?)?$")
+                    .matcher(s);
+            if (!mt.matches()) return 0L;
+            java.util.Calendar c = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+            c.clear();
+            c.set(Integer.parseInt(mt.group(1)), Integer.parseInt(mt.group(2)) - 1, Integer.parseInt(mt.group(3)),
+                    Integer.parseInt(mt.group(4)), Integer.parseInt(mt.group(5)),
+                    mt.group(6) != null ? Integer.parseInt(mt.group(6)) : 0);
+            long millis = c.getTimeInMillis();
+            if (mt.group(7) != null) {
+                String frac = (mt.group(7) + "000").substring(0, 3);
+                millis += Integer.parseInt(frac);
+            }
+            String tz = mt.group(8);
+            if (tz != null && !tz.equalsIgnoreCase("Z")) {
+                int sign = tz.charAt(0) == '-' ? -1 : 1;
+                String digits = tz.substring(1).replace(":", "");
+                int h = Integer.parseInt(digits.substring(0, 2));
+                int m = digits.length() >= 4 ? Integer.parseInt(digits.substring(2, 4)) : 0;
+                millis -= sign * (h * 3600000L + m * 60000L);
+            }
+            return millis;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    /** Parsea fecha "dd/MM/yyyy" + hora ("09:30 PM", "09:30 p. m.", "21:30"). Devuelve 0 si falla. */
+    public static long parseFechaHora(String fecha, String hora) {
+        if (fecha == null || fecha.trim().isEmpty()) return 0L;
+        String fechaLimpia = fecha.trim();
+        String horaLimpia = hora != null ? hora.trim() : "";
+
+        // Reemplazar espacios no separables de Unicode por espacio normal
+        horaLimpia = horaLimpia.replaceAll("[\\s\\u00A0\\u202F]+", " ").trim();
+        // Normalizar variaciones de a. m. / p. m. a AM / PM
+        horaLimpia = horaLimpia.replaceAll("(?i)a\\.?\\s*m\\.?", "AM")
+                               .replaceAll("(?i)p\\.?\\s*m\\.?", "PM");
+
+        String combined = (fechaLimpia + (horaLimpia.isEmpty() ? "" : " " + horaLimpia)).trim();
+        boolean tieneAmPm = combined.endsWith("AM") || combined.endsWith("PM");
+
+        String[] patterns = tieneAmPm
+                ? new String[] {"dd/MM/yyyy hh:mm a", "dd/MM/yyyy h:mm a", "dd-MM-yyyy hh:mm a"}
+                : new String[] {"dd/MM/yyyy HH:mm", "dd/MM/yyyy H:mm", "dd-MM-yyyy HH:mm",
+                                "yyyy-MM-dd HH:mm", "dd/MM/yyyy", "dd-MM-yyyy", "yyyy-MM-dd"};
+
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.US);
+                sdf.setLenient(false);
+                java.text.ParsePosition pos = new java.text.ParsePosition(0);
+                Date d = sdf.parse(combined, pos);
+                if (d != null && pos.getIndex() == combined.length()) {
+                    return d.getTime();
+                }
+            } catch (Exception ignored) {}
+        }
+        return 0L;
+    }
+
     public long getEfectiveTimestamp() {
+        if (isDemoMessage()) {
+            ajustarTimestampDemo();
+            return this.timestamp;
+        }
         if (this.timestamp > 0) return this.timestamp;
         calcularTimestampSiEsNecesario();
         return this.timestamp > 0 ? this.timestamp : System.currentTimeMillis();

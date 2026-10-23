@@ -78,6 +78,17 @@ public class ImageLoader {
         }
     }
 
+    public static void preload(Context context, String url) {
+        if (context == null || url == null || url.trim().isEmpty()) return;
+        try {
+            String optimizedUrl = optimizeUrl(url.trim());
+            Glide.with(context.getApplicationContext())
+                    .load(optimizedUrl)
+                    .apply(CARD_OPTIONS)
+                    .preload(600, 360);
+        } catch (Exception ignored) {}
+    }
+
     public static void clear(ImageView imageView) {
         if (imageView == null) return;
         try {

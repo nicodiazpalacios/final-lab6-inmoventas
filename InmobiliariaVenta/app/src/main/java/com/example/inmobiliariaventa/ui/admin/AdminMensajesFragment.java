@@ -79,6 +79,13 @@ public class AdminMensajesFragment extends Fragment {
     private String selectedDateFilter = null; // null o formato "dd/MM/yyyy"
     private List<MensajeContacto> listaMensajes = new ArrayList<>();
     private List<MensajeContacto> listaFiltrada = new ArrayList<>();
+    private String ultimoTopKey = null;
+    private int ultimoTotal = 0;
+
+    private static String claveMensaje(MensajeContacto m) {
+        if (m == null) return null;
+        return (m.remoteId != null && !m.remoteId.isEmpty()) ? m.remoteId : ("local_" + m.id);
+    }
 
     public AdminMensajesFragment() {
         // Constructor público vacío requerido
@@ -135,7 +142,24 @@ public class AdminMensajesFragment extends Fragment {
             if (mensajes != null) {
                 listaMensajes = new ArrayList<>(mensajes);
                 ordenarMensajesPorMasRecientes(listaMensajes);
+
+                // Si llegó un mensaje nuevo (cambió el primero de la lista), volver a la página 1 y al tope
+                String nuevoTopKey = !listaMensajes.isEmpty() ? claveMensaje(listaMensajes.get(0)) : null;
+                boolean llegoNuevo = ultimoTopKey != null && nuevoTopKey != null
+                        && !nuevoTopKey.equals(ultimoTopKey)
+                        && listaMensajes.size() > ultimoTotal;
+                ultimoTopKey = nuevoTopKey;
+                ultimoTotal = listaMensajes.size();
+                if (llegoNuevo) {
+                    currentPage = 1;
+                    startPage = 1;
+                }
+
                 applyFilters(root);
+
+                if (llegoNuevo && scrollViewMensajes != null) {
+                    scrollViewMensajes.post(() -> scrollViewMensajes.smoothScrollTo(0, 0));
+                }
             }
         });
 
@@ -151,80 +175,86 @@ public class AdminMensajesFragment extends Fragment {
         });
     }
 
-    private static long parseDemoTimestamp(String fecha, String hora) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.ENGLISH);
-            Date d = sdf.parse(fecha + " " + hora);
-            if (d != null) return d.getTime();
-        } catch (Exception ignored) {}
-        return 0L;
-    }
-
     private List<MensajeContacto> createInitialDemoMessages() {
         List<MensajeContacto> list = new ArrayList<>();
-        list.add(new MensajeContacto("Lucas Martínez", "+54 9 11 4821-3390", "lucas.m@gmail.com",
-                "1", "Villa Los Laureles (San Isidro)", "San Isidro, Buenos Aires",
+        long now = System.currentTimeMillis();
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+        SimpleDateFormat tf = new SimpleDateFormat("hh:mm a", Locale.US);
+
+        long[] offsets = new long[] {
+                86400000L * 3 + 3600000L * 2,
+                86400000L * 3 + 3600000L * 4,
+                86400000L * 3 + 3600000L * 6,
+                86400000L * 4 + 3600000L * 1,
+                86400000L * 4 + 3600000L * 3,
+                86400000L * 4 + 3600000L * 5,
+                86400000L * 5 + 3600000L * 2,
+                86400000L * 5 + 3600000L * 4,
+                86400000L * 6 + 3600000L * 2,
+                86400000L * 6 + 3600000L * 5,
+                86400000L * 7 + 3600000L * 3,
+                86400000L * 7 + 3600000L * 6
+        };
+
+        String[] nombres = new String[] {
+                "Lucas Martínez", "Sofía Benítez", "Gonzalo Fernández", "Valentina Rossi",
+                "Camila Gómez", "Mateo Rodríguez", "Florencia Díaz", "Emiliano Morales",
+                "Lucía Navarro", "Diego Castro", "Martina López", "Agustín Silva"
+        };
+        String[] tels = new String[] {
+                "+54 9 11 4821-3390", "+54 9 11 6729-1144", "+54 9 11 3902-8812", "+54 9 11 5519-7032",
+                "+54 9 11 2341-9980", "+54 9 11 7890-4421", "+54 9 11 8912-3301", "+54 9 11 4110-8765",
+                "+54 9 11 5022-7711", "+54 9 11 3198-4455", "+54 9 11 6201-9933", "+54 9 11 7734-2210"
+        };
+        String[] emails = new String[] {
+                "lucas.m@gmail.com", "sofi.benitez@hotmail.com", "gonzalo.f@gmail.com", "valen.rossi@yahoo.com",
+                "camilag@gmail.com", "mateo.rod@gmail.com", "flor.diaz@outlook.com", "emiliano.m@gmail.com",
+                "lucia.navarro@gmail.com", "diego.castro@gmail.com", "martu.lopez@gmail.com", "agustin.silva@gmail.com"
+        };
+        String[] titulos = new String[] {
+                "Villa Los Laureles (San Isidro)", "Penthouse Lumina (Puerto Madero)", "Torre Bellini Dpto 14B (Palermo)",
+                "Casa Moderna con Piscina (Pilar)", "Dúplex de Diseño (Belgrano R)", "Residencia Quinta Real (Tigre)",
+                "Loft Industrial Tech (Colegiales)", "Semipiso con Terraza (Recoleta)", "Casa Country Club (Nordelta)",
+                "Departamento 3 Ambientes (Caballito)", "Chalet Tradicional (Olivos)", "Monoambiente Premium (Palermo Soho)"
+        };
+        String[] ubicaciones = new String[] {
+                "San Isidro, Buenos Aires", "Puerto Madero, Buenos Aires", "Palermo, Buenos Aires",
+                "Pilar, Buenos Aires", "Belgrano R, Buenos Aires", "Tigre, Buenos Aires",
+                "Colegiales, Buenos Aires", "Recoleta, Buenos Aires", "Nordelta, Buenos Aires",
+                "Caballito, Buenos Aires", "Olivos, Buenos Aires", "Palermo Soho, Buenos Aires"
+        };
+        String[] textos = new String[] {
                 "Hola, me interesa conocer las condiciones de financiación y si aceptan propiedad menor valor en parte de pago. Quisiera coordinar una visita para este sábado por la mañana.",
-                "14/10/2026", "11:45 AM", parseDemoTimestamp("14/10/2026", "11:45 AM"), false));
-
-        list.add(new MensajeContacto("Sofía Benítez", "+54 9 11 6729-1144", "sofi.benitez@hotmail.com",
-                "2", "Penthouse Lumina (Puerto Madero)", "Puerto Madero, Buenos Aires",
                 "Buenos días, quería consultar las expensas mensuales y si cuenta con dos cocheras cubiertas. Tengo disponibilidad para visitarlo esta semana.",
-                "14/10/2026", "10:20 AM", parseDemoTimestamp("14/10/2026", "10:20 AM"), false));
-
-        list.add(new MensajeContacto("Gonzalo Fernández", "+54 9 11 3902-8812", "gonzalo.f@gmail.com",
-                "3", "Torre Bellini Dpto 14B (Palermo)", "Palermo, Buenos Aires",
                 "Hola! ¿El departamento es apto crédito hipotecario bancario? Estoy muy interesado y con pre-aprobación del Banco Nación lista.",
-                "14/10/2026", "09:15 AM", parseDemoTimestamp("14/10/2026", "09:15 AM"), false));
-
-        list.add(new MensajeContacto("Valentina Rossi", "+54 9 11 5519-7032", "valen.rossi@yahoo.com",
-                "4", "Casa Moderna con Piscina (Pilar)", "Pilar, Buenos Aires",
                 "Buenas tardes, quisiera saber el costo aproximado de mantenimiento del jardín y piscina, y si el barrio cerrado cuenta con amenities habilitados.",
-                "13/10/2026", "06:40 PM", parseDemoTimestamp("13/10/2026", "06:40 PM"), false));
-
-        list.add(new MensajeContacto("Camila Gómez", "+54 9 11 2341-9980", "camilag@gmail.com",
-                "5", "Dúplex de Diseño (Belgrano R)", "Belgrano R, Buenos Aires",
                 "Hola, me gustaría saber si la posesión es inmediata o si actualmente se encuentra alquilado. Saludos.",
-                "13/10/2026", "04:10 PM", parseDemoTimestamp("13/10/2026", "04:10 PM"), true));
-
-        list.add(new MensajeContacto("Mateo Rodríguez", "+54 9 11 7890-4421", "mateo.rod@gmail.com",
-                "6", "Residencia Quinta Real (Tigre)", "Tigre, Buenos Aires",
                 "Hola! ¿Tiene amarra propia para embarcación? Me gustaría agendar una visita presencial con mi familia.",
-                "13/10/2026", "02:00 PM", parseDemoTimestamp("13/10/2026", "02:00 PM"), true));
-
-        list.add(new MensajeContacto("Florencia Díaz", "+54 9 11 8912-3301", "flor.diaz@outlook.com",
-                "7", "Loft Industrial Tech (Colegiales)", "Colegiales, Buenos Aires",
                 "Hola, ¿es apto profesional? Busco un espacio para estudio de arquitectura y vivienda combinada.",
-                "12/10/2026", "11:30 AM", parseDemoTimestamp("12/10/2026", "11:30 AM"), false));
-
-        list.add(new MensajeContacto("Emiliano Morales", "+54 9 11 4110-8765", "emiliano.m@gmail.com",
-                "8", "Semipiso con Terraza (Recoleta)", "Recoleta, Buenos Aires",
                 "Buen día, quisiera recibir el plano detallado de la propiedad y saber la orientación solar de la terraza.",
-                "12/10/2026", "09:45 AM", parseDemoTimestamp("12/10/2026", "09:45 AM"), true));
-
-        list.add(new MensajeContacto("Lucía Navarro", "+54 9 11 5022-7711", "lucia.navarro@gmail.com",
-                "9", "Casa Country Club (Nordelta)", "Nordelta, Buenos Aires",
                 "Hola, ¿aceptan permuta por departamento en Vicente López? Quisiéramos mudarnos antes de fin de año.",
-                "11/10/2026", "05:50 PM", parseDemoTimestamp("11/10/2026", "05:50 PM"), false));
-
-        list.add(new MensajeContacto("Diego Castro", "+54 9 11 3198-4455", "diego.castro@gmail.com",
-                "10", "Departamento 3 Ambientes (Caballito)", "Caballito, Buenos Aires",
                 "Hola, ¿las expensas incluyen el agua de Aysa? Me interesa coordinar visita para este viernes por la tarde.",
-                "11/10/2026", "03:20 PM", parseDemoTimestamp("11/10/2026", "03:20 PM"), true));
-
-        list.add(new MensajeContacto("Martina López", "+54 9 11 6201-9933", "martu.lopez@gmail.com",
-                "11", "Chalet Tradicional (Olivos)", "Olivos, Buenos Aires",
                 "Buenas tardes, ¿la casa tiene calefacción central por radiadores? Estamos buscando mudarnos a zona norte.",
-                "10/10/2026", "01:15 PM", parseDemoTimestamp("10/10/2026", "01:15 PM"), true));
+                "¿Está permitido el alquiler temporal tipo Airbnb en el reglamento de copropiedad? Busco para inversión."
+        };
+        boolean[] leidos = new boolean[] {
+                false, false, false, false, true, true, false, true, false, true, true, false
+        };
 
-        list.add(new MensajeContacto("Agustín Silva", "+54 9 11 7734-2210", "agustin.silva@gmail.com",
-                "12", "Monoambiente Premium (Palermo Soho)", "Palermo Soho, Buenos Aires",
-                "¿Está permitido el alquiler temporal tipo Airbnb en el reglamento de copropiedad? Busco para inversión.",
-                "10/10/2026", "10:00 AM", parseDemoTimestamp("10/10/2026", "10:00 AM"), false));
+        for (int i = 0; i < 12; i++) {
+            long itemTs = now - offsets[i];
+            Date itemDate = new Date(itemTs);
+            MensajeContacto item = new MensajeContacto(
+                    nombres[i], tels[i], emails[i],
+                    String.valueOf(i + 1), titulos[i], ubicaciones[i],
+                    textos[i], df.format(itemDate), tf.format(itemDate), itemTs, leidos[i]
+            );
+            item.estadoSincronizacion = "DEMO";
+            list.add(item);
+        }
 
         return list;
     }
-
     private void renderMensajesList(View root) {
         if (getContext() == null || layoutPage1Mensajes == null) return;
 
@@ -580,12 +610,24 @@ public class AdminMensajesFragment extends Fragment {
             if (m1 == null && m2 == null) return 0;
             if (m1 == null) return 1;
             if (m2 == null) return -1;
+
+            boolean isDemo1 = m1.isDemoMessage();
+            boolean isDemo2 = m2.isDemoMessage();
+
+            // 1. Mensajes reales de clientes siempre van primero antes que cualquier mensaje demo
+            if (isDemo1 != isDemo2) {
+                return isDemo1 ? 1 : -1;
+            }
+
+            // 2. Ordenar por timestamp más reciente primero (DESC)
             long t1 = m1.getEfectiveTimestamp();
             long t2 = m2.getEfectiveTimestamp();
             if (t1 != t2) {
                 return Long.compare(t2, t1); // DESC: Más reciente primero
             }
-            return Long.compare(m2.id, m1.id); // Fallback: ID autoincremental más alto primero
+
+            // 3. Fallback: ID autoincremental más alto primero
+            return Long.compare(m2.id, m1.id);
         });
     }
 
