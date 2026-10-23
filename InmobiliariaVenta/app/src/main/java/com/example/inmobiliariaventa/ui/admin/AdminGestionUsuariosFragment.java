@@ -39,7 +39,9 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AdminGestionUsuariosFragment extends Fragment {
 
@@ -51,6 +53,7 @@ public class AdminGestionUsuariosFragment extends Fragment {
     private TextInputEditText etBuscarUsuario;
     private ChipGroup chipGroupRoles;
 
+    private static volatile List<Usuario> cachedUsuariosGlobal = null;
     private final List<Usuario> allUsers = new ArrayList<>();
 
     public AdminGestionUsuariosFragment() {
@@ -83,6 +86,14 @@ public class AdminGestionUsuariosFragment extends Fragment {
         }
 
         setupSearchAndFilter();
+
+        // Precarga instantánea en memoria (0 ms) para evitar parpadeos
+        if (cachedUsuariosGlobal != null && !cachedUsuariosGlobal.isEmpty()) {
+            allUsers.clear();
+            allUsers.addAll(cachedUsuariosGlobal);
+            renderUsers();
+        }
+
         observarYSincronizarUsuarios();
     }
 
@@ -92,10 +103,13 @@ public class AdminGestionUsuariosFragment extends Fragment {
 
         // Observar usuarios registrados en la base de datos local (Room)
         db.usuarioDao().obtenerTodos().observe(getViewLifecycleOwner(), usuarios -> {
-            allUsers.clear();
-            if (usuarios != null) {
-                allUsers.addAll(usuarios);
+            if (usuarios == null) return;
+            if (sonListasUsuariosIguales(allUsers, usuarios)) {
+                return;
             }
+            allUsers.clear();
+            allUsers.addAll(usuarios);
+            cachedUsuariosGlobal = new ArrayList<>(usuarios);
             renderUsers();
         });
 
@@ -161,8 +175,6 @@ public class AdminGestionUsuariosFragment extends Fragment {
     private void renderUsers() {
         if (layoutUsersContainer == null || getContext() == null) return;
 
-        layoutUsersContainer.removeAllViews();
-
         String query = "";
         if (etBuscarUsuario != null && etBuscarUsuario.getText() != null) {
             query = etBuscarUsuario.getText().toString().trim().toLowerCase();
@@ -192,6 +204,7 @@ public class AdminGestionUsuariosFragment extends Fragment {
         }
 
         if (filtered.isEmpty()) {
+            layoutUsersContainer.removeAllViews();
             if (layoutEmptyUsers != null) {
                 layoutEmptyUsers.setVisibility(View.VISIBLE);
                 if (allUsers.isEmpty()) {
@@ -209,9 +222,25 @@ public class AdminGestionUsuariosFragment extends Fragment {
             layoutEmptyUsers.setVisibility(View.GONE);
         }
 
+        // Reciclado inteligente de vistas para mantener las fotos cargadas en memoria sin parpadeos
+        Map<String, View> existingViews = new HashMap<>();
+        for (int i = 0; i < layoutUsersContainer.getChildCount(); i++) {
+            View child = layoutUsersContainer.getChildAt(i);
+            Object tag = child.getTag();
+            if (tag instanceof String) {
+                existingViews.put((String) tag, child);
+            }
+        }
+        layoutUsersContainer.removeAllViews();
+
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (Usuario usuario : filtered) {
-            View cardView = inflater.inflate(R.layout.item_usuario_admin_card, layoutUsersContainer, false);
+            String userId = usuario.id != null ? usuario.id : (usuario.email != null ? usuario.email : "");
+            View cardView = existingViews.remove(userId);
+            if (cardView == null) {
+                cardView = inflater.inflate(R.layout.item_usuario_admin_card, layoutUsersContainer, false);
+                cardView.setTag(userId);
+            }
 
             ImageView ivAvatar = cardView.findViewById(R.id.iv_avatar_usuario);
             TextView tvNombre = cardView.findViewById(R.id.tv_nombre_usuario);
@@ -288,38 +317,93 @@ public class AdminGestionUsuariosFragment extends Fragment {
 
     private void cargarAvatar(ImageView ivAvatar, String pathOrData) {
         if (ivAvatar == null || getContext() == null) return;
+
+        // Evitar recargar o reiniciar la imagen si ya tiene exactamente esta foto cargada
+        Object currentTag = ivAvatar.getTag(R.id.iv_avatar_usuario);
+        if (pathOrData != null && !pathOrData.trim().isEmpty() && pathOrData.equals(currentTag)) {
+            return;
+        }
+
         if (pathOrData != null && !pathOrData.trim().isEmpty()) {
+            ivAvatar.setTag(R.id.iv_avatar_usuario, pathOrData);
+            ivAvatar.setImageTintList(null);
+            ivAvatar.clearColorFilter();
+            Context appCtx = ivAvatar.getContext().getApplicationContext();
+
             if (pathOrData.startsWith("data:image/") || pathOrData.startsWith("/9j/")) {
                 try {
                     String base64Data = pathOrData.contains(",")
                             ? pathOrData.substring(pathOrData.indexOf(",") + 1)
                             : pathOrData;
                     byte[] imageBytes = Base64.decode(base64Data, Base64.DEFAULT);
-                    ivAvatar.setImageTintList(null);
-                    ivAvatar.clearColorFilter();
-                    Glide.with(this)
+                    Glide.with(appCtx)
                             .load(imageBytes)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
-                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .skipMemoryCache(false)
+                            .dontAnimate()
+                            .placeholder(ivAvatar.getDrawable())
                             .circleCrop()
                             .into(ivAvatar);
                     return;
                 } catch (Exception ignored) { }
             }
+
+            if (pathOrData.startsWith("http://") || pathOrData.startsWith("https://")) {
+                Glide.with(appCtx)
+                        .load(pathOrData)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .skipMemoryCache(false)
+                        .dontAnimate()
+                        .placeholder(ivAvatar.getDrawable())
+                        .circleCrop()
+                        .into(ivAvatar);
+                return;
+            }
+
             File file = new File(pathOrData);
             if (file.exists()) {
-                ivAvatar.setImageTintList(null);
-                ivAvatar.clearColorFilter();
-                Glide.with(this)
+                Glide.with(appCtx)
                         .load(file)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .skipMemoryCache(false)
+                        .dontAnimate()
+                        .placeholder(ivAvatar.getDrawable())
                         .circleCrop()
                         .into(ivAvatar);
                 return;
             }
         }
+
+        ivAvatar.setTag(R.id.iv_avatar_usuario, null);
         ivAvatar.setImageResource(R.drawable.ic_person);
+        if (getContext() != null) {
+            ivAvatar.setImageTintList(ColorStateList.valueOf(
+                    ContextCompat.getColor(requireContext(), R.color.colorOnSurfaceVariant)));
+        }
+    }
+
+    private boolean sonListasUsuariosIguales(List<Usuario> l1, List<Usuario> l2) {
+        if (l1 == l2) return true;
+        if (l1 == null || l2 == null) return false;
+        if (l1.size() != l2.size()) return false;
+        for (int i = 0; i < l1.size(); i++) {
+            Usuario u1 = l1.get(i);
+            Usuario u2 = l2.get(i);
+            if (u1 == null || u2 == null) return false;
+            if (!equalsSafe(u1.id, u2.id)) return false;
+            if (!equalsSafe(u1.nombre, u2.nombre)) return false;
+            if (!equalsSafe(u1.email, u2.email)) return false;
+            if (!equalsSafe(u1.rol, u2.rol)) return false;
+            if (!equalsSafe(u1.telefono, u2.telefono)) return false;
+            if (!equalsSafe(u1.fotoPerfil, u2.fotoPerfil)) return false;
+        }
+        return true;
+    }
+
+    private static boolean equalsSafe(String s1, String s2) {
+        if (s1 == null && s2 == null) return true;
+        if (s1 == null || s2 == null) return false;
+        return s1.equals(s2);
     }
 
     private void mostrarDialogoAutoProteccion(String mensaje) {
