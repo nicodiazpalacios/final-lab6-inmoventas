@@ -232,12 +232,12 @@ public class AdminVentasFragment extends Fragment {
             recalcularYRenderizar();
         });
 
-        // Sincronizar también desde Supabase
+        // Sincronizar también desde Supabase con reconciliación
         SupabaseClient.obtenerContratos(new SupabaseClient.SupabaseCallback<List<Contrato>>() {
             @Override
             public void onSuccess(List<Contrato> remotos) {
-                if (remotos == null || remotos.isEmpty()) return;
-                AppDatabase.databaseWriteExecutor.execute(() -> db.contratoDao().insertarTodos(remotos));
+                final List<Contrato> listaFinal = (remotos != null) ? remotos : new java.util.ArrayList<>();
+                AppDatabase.databaseWriteExecutor.execute(() -> db.contratoDao().sincronizarConServidor(listaFinal));
             }
 
             @Override

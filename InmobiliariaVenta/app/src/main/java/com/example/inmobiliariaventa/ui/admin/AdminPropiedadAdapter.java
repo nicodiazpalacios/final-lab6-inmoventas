@@ -10,7 +10,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.inmobiliariaventa.utils.PropiedadDiffCallback;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
@@ -37,11 +39,34 @@ public class AdminPropiedadAdapter extends RecyclerView.Adapter<AdminPropiedadAd
 
     public AdminPropiedadAdapter(OnAdminPropiedadListener listener) {
         this.listener = listener;
+        setHasStableIds(true);
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
-        this.lista = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
-        notifyDataSetChanged();
+        List<Propiedad> nuevaLista = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
+        List<Propiedad> viejaLista = this.lista != null ? this.lista : new ArrayList<>();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PropiedadDiffCallback(viejaLista, nuevaLista));
+        this.lista = nuevaLista;
+        diffResult.dispatchUpdatesTo(this);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        if (lista != null && position >= 0 && position < lista.size()) {
+            Propiedad p = lista.get(position);
+            if (p != null && p.id != null) {
+                return p.id.hashCode();
+            }
+        }
+        return position;
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder.ivFoto != null) {
+            ImageLoader.clear(holder.ivFoto);
+        }
     }
 
     @NonNull

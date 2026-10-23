@@ -111,11 +111,15 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
                 public void onSuccess(List<MensajeContacto> remotos) {
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         if (remotos != null && !remotos.isEmpty()) {
+                            List<String> remoteIds = new java.util.ArrayList<>();
                             for (MensajeContacto r : remotos) {
+                                MensajeContacto local = r.remoteId != null ? dao.getMensajePorRemoteId(r.remoteId) : null;
+                                if (local != null && local.timestamp > 0 && r.timestamp <= 0) {
+                                    r.timestamp = local.timestamp;
+                                }
                                 r.calcularTimestampSiEsNecesario();
                                 r.estadoSincronizacion = "SINCRONIZADO";
 
-                                MensajeContacto local = r.remoteId != null ? dao.getMensajePorRemoteId(r.remoteId) : null;
                                 if (local != null) {
                                     r.id = local.id;
                                     dao.update(r);
@@ -123,8 +127,29 @@ public class MensajeContactoRepositoryImpl implements MensajeContactoRepository 
                                     r.id = 0; // Para que Room autogenere el ID local
                                     dao.insert(r);
                                 }
+                                if (r.remoteId != null) {
+                                    remoteIds.add(r.remoteId);
+                                }
+                            }
+
+                            // Reparar timestamps de mensajes locales existentes si tuvieran timestamp <= 0
+                            List<MensajeContacto> existentes = dao.getAllMensajesSync();
+                            if (existentes != null) {
+                                for (MensajeContacto m : existentes) {
+                                    if (m != null && m.timestamp <= 0) {
+                                        m.calcularTimestampSiEsNecesario();
+                                        if (m.timestamp > 0) {
+                                            dao.actualizarTimestamp(m.id, m.timestamp);
+                                        }
+                                    }
+                                }
+                            }
+                            if (!remoteIds.isEmpty()) {
+                                dao.eliminarNoEnServidor(remoteIds);
                             }
                             Log.d(TAG, "Sincronizados " + remotos.size() + " mensajes desde Supabase a Room.");
+                        } else {
+                            dao.eliminarTodosSincronizados();
                         }
 
                         if (onComplete != null) {

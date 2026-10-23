@@ -62,6 +62,8 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
     private String selectedFilter = "Todos"; // "Todos", "Publicados", "Pausados", "Finalizados"
     private String selectedSort = "Recientes"; // "Recientes", "Mayor Monto", "Menor Monto"
     private String searchQuery = "";
+    private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     public AdminPropiedadesFragment() {
         // Constructor público vacío requerido
@@ -98,6 +100,8 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
         // Configuración de RecyclerView y Adapter
         if (rvPropiedades != null) {
             rvPropiedades.setLayoutManager(new LinearLayoutManager(requireContext()));
+            rvPropiedades.setHasFixedSize(true);
+            rvPropiedades.setItemViewCacheSize(6);
             adapter = new AdminPropiedadAdapter(this);
             rvPropiedades.setAdapter(adapter);
         }
@@ -145,7 +149,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
             btnEmptyReset.setOnClickListener(v -> restablecerFiltros());
         }
 
-        // Búsqueda en tiempo real
+        // Búsqueda en tiempo real con debounce para evitar lag al tipear
         if (etBuscarPropiedades != null) {
             etBuscarPropiedades.addTextChangedListener(new TextWatcher() {
                 @Override
@@ -154,7 +158,11 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     searchQuery = s != null ? s.toString().trim() : "";
-                    aplicarFiltrosYOrden();
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    searchRunnable = () -> aplicarFiltrosYOrden();
+                    searchHandler.postDelayed(searchRunnable, 150);
                 }
 
                 @Override
@@ -467,6 +475,14 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
         if (getView() != null) {
             CartelUtils.mostrar(getView(), "Filtros y orden restablecidos");
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (propiedadViewModel != null) {
+            propiedadViewModel.sincronizarConNube(null);
         }
     }
 }

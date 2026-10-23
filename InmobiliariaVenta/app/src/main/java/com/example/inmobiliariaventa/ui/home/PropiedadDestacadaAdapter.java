@@ -20,7 +20,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.inmobiliariaventa.utils.PropiedadDiffCallback;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
@@ -82,8 +84,11 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
-        this.propiedades = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
-        notifyDataSetChanged();
+        List<Propiedad> nuevaLista = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
+        List<Propiedad> viejaLista = this.propiedades != null ? this.propiedades : new ArrayList<>();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PropiedadDiffCallback(viejaLista, nuevaLista));
+        this.propiedades = nuevaLista;
+        diffResult.dispatchUpdatesTo(this);
     }
 
     public void agregarPropiedades(List<Propiedad> mas) {
@@ -99,39 +104,51 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
         boolean isLoggedIn = prefs.getBoolean("is_user_logged_in", false);
         String userId = prefs.getString("user_id", "");
         if (isLoggedIn && !userId.isEmpty()) {
-            // Sincronizar en background con Supabase y refrescar si hubo cambios
             FavoritoRepositoryImpl.getInstance(context).sincronizarConNube(userId, () -> {
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     List<String> ids = FavoritoRepositoryImpl.getInstance(context).obtenerIdsFavoritosDeUsuario(userId);
-                    synchronized (favoritosUsuarioIds) {
-                        favoritosUsuarioIds.clear();
-                        if (ids != null) {
-                            favoritosUsuarioIds.addAll(ids);
-                        }
-                        favoritosInicializados = true;
-                    }
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
+                    actualizarFavoritosSiCambiaron(ids);
                 });
             });
 
-            // Cargar de Room de inmediato para respuesta visual instantánea
             AppDatabase.databaseWriteExecutor.execute(() -> {
                 List<String> ids = AppDatabase.getInstance(context).favoritoDao().obtenerIdsFavoritosDeUsuario(userId);
-                synchronized (favoritosUsuarioIds) {
-                    favoritosUsuarioIds.clear();
-                    if (ids != null) {
-                        favoritosUsuarioIds.addAll(ids);
-                    }
-                    favoritosInicializados = true;
-                }
-                new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
+                actualizarFavoritosSiCambiaron(ids);
             });
         } else {
+            boolean cambio;
             synchronized (favoritosUsuarioIds) {
+                cambio = !favoritosUsuarioIds.isEmpty();
                 favoritosUsuarioIds.clear();
                 favoritosInicializados = true;
             }
-            notifyDataSetChanged();
+            if (cambio) {
+                notifyDataSetChanged();
+            }
+        }
+    }
+
+    private void actualizarFavoritosSiCambiaron(List<String> nuevosIds) {
+        java.util.Set<String> set = new java.util.HashSet<>(nuevosIds != null ? nuevosIds : java.util.Collections.emptyList());
+        boolean cambio;
+        synchronized (favoritosUsuarioIds) {
+            cambio = !favoritosUsuarioIds.equals(set);
+            if (cambio) {
+                favoritosUsuarioIds.clear();
+                favoritosUsuarioIds.addAll(set);
+            }
+            favoritosInicializados = true;
+        }
+        if (cambio) {
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(this::notifyDataSetChanged);
+        }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder.propertyImageView != null) {
+            ImageLoader.clear(holder.propertyImageView);
         }
     }
 

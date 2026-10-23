@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Update;
 import androidx.room.Delete;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import java.util.List;
 import com.example.inmobiliariaventa.domain.entity.Contrato;
 
@@ -24,10 +25,35 @@ public interface ContratoDao {
     @Delete
     void eliminar(Contrato contrato);
 
-    @Query("SELECT * FROM contratos ORDER BY timestamp DESC")
+    @Query("DELETE FROM contratos WHERE id = :id")
+    void eliminarPorId(String id);
+
+    @Query("DELETE FROM contratos WHERE id NOT IN (:idsServidor) AND (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
+    void eliminarNoEnServidor(List<String> idsServidor);
+
+    @Query("DELETE FROM contratos WHERE (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
+    void eliminarTodosSincronizados();
+
+    @Transaction
+    default void sincronizarConServidor(List<Contrato> listaServidor) {
+        if (listaServidor != null && !listaServidor.isEmpty()) {
+            insertarTodos(listaServidor);
+            List<String> ids = new java.util.ArrayList<>();
+            for (Contrato c : listaServidor) {
+                if (c.id != null) ids.add(c.id);
+            }
+            if (!ids.isEmpty()) {
+                eliminarNoEnServidor(ids);
+            }
+        } else {
+            eliminarTodosSincronizados();
+        }
+    }
+
+    @Query("SELECT * FROM contratos ORDER BY timestamp DESC, id DESC")
     LiveData<List<Contrato>> obtenerTodosLiveData();
 
-    @Query("SELECT * FROM contratos ORDER BY timestamp DESC")
+    @Query("SELECT * FROM contratos ORDER BY timestamp DESC, id DESC")
     List<Contrato> obtenerTodosSync();
 
     @Query("SELECT COUNT(*) FROM contratos")

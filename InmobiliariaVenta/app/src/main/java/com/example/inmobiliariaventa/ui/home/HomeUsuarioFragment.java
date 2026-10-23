@@ -35,15 +35,16 @@ import java.util.List;
 
 public class HomeUsuarioFragment extends Fragment {
 
+    private androidx.core.widget.NestedScrollView homeNestedScrollView;
     private RecyclerView categoriesRecyclerView;
     private RecyclerView featuredRecyclerView;
     private LinearLayout searchContainer;
 
-    private androidx.core.widget.NestedScrollView homeNestedScrollView;
+    private boolean isCargandoMas = false;
     private PropiedadDestacadaAdapter featuredAdapter;
     private List<Propiedad> listaCompletaHome = new ArrayList<>();
-    private int limiteActualHome = 20;
-    private static final int BATCH_SIZE = 20;
+    private int limiteActualHome = 10;
+    private static final int BATCH_SIZE = 10;
 
     private MaterialCardView cardModoOffline;
     private LinearLayout layoutOfflineVacio;
@@ -61,7 +62,7 @@ public class HomeUsuarioFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home_usuario, container, false);
 
-        homeNestedScrollView = view.findViewById(R.id.homeNestedScrollView);
+                homeNestedScrollView = view.findViewById(R.id.homeNestedScrollView);
         categoriesRecyclerView = view.findViewById(R.id.categoriesRecyclerView);
         featuredRecyclerView = view.findViewById(R.id.featuredRecyclerView);
         searchContainer = view.findViewById(R.id.searchContainer);
@@ -150,12 +151,14 @@ public class HomeUsuarioFragment extends Fragment {
             featuredAdapter.setCoordinatorLayout(rootView.findViewById(R.id.coordinator_home));
         }
         featuredRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        featuredRecyclerView.setItemViewCacheSize(20);
+        featuredRecyclerView.setNestedScrollingEnabled(false);
+        featuredRecyclerView.setHasFixedSize(false);
+        featuredRecyclerView.setItemViewCacheSize(4);
         featuredRecyclerView.setAdapter(featuredAdapter);
 
         if (homeNestedScrollView != null) {
             homeNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
+                if (v.getChildAt(0) != null && !isCargandoMas && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 350)) {
                     cargarMasPropiedadesHome();
                 }
             });
@@ -273,11 +276,17 @@ public class HomeUsuarioFragment extends Fragment {
     }
 
     private void cargarMasPropiedadesHome() {
-        if (listaCompletaHome == null || limiteActualHome >= listaCompletaHome.size()) return;
+        if (listaCompletaHome == null || limiteActualHome >= listaCompletaHome.size() || isCargandoMas) return;
+        isCargandoMas = true;
         int nuevoLimite = Math.min(limiteActualHome + BATCH_SIZE, listaCompletaHome.size());
         List<Propiedad> lote = new ArrayList<>(listaCompletaHome.subList(limiteActualHome, nuevoLimite));
         limiteActualHome = nuevoLimite;
         featuredAdapter.agregarPropiedades(lote);
+        if (homeNestedScrollView != null) {
+            homeNestedScrollView.post(() -> isCargandoMas = false);
+        } else {
+            isCargandoMas = false;
+        }
     }
 
     @Override

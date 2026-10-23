@@ -39,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         // Inicializar canal de notificaciones locales
         com.example.inmobiliariaventa.utils.NotificacionDispositivoUtils.crearCanalNotificaciones(this);
 
+        // Iniciar conexión Realtime en caliente con Supabase
+        com.example.inmobiliariaventa.data.remote.SupabaseRealtimeManager.getInstance(this).iniciar();
+
         // Solicitar permisos de inicio (Ubicación y Notificaciones agrupados en Android 13+)
         locationPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
@@ -340,5 +343,11 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             intent.removeExtra("extra_destino");
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        com.example.inmobiliariaventa.data.remote.SupabaseRealtimeManager.getInstance(this).detener();
     }
 }

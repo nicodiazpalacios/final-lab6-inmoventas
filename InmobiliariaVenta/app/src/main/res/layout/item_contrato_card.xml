@@ -256,7 +256,7 @@
                     android:id="@+id/progress_cobranza"
                     android:layout_width="match_parent"
                     android:layout_height="6dp"
-                    android:progress="35"
+                    android:progress="0"
                     app:indicatorColor="@color/colorSecondary"
                     app:trackColor="@color/colorSurfaceContainerHighest"
                     app:trackCornerRadius="3dp" />

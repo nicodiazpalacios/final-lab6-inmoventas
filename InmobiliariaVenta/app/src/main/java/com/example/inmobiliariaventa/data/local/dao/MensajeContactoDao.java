@@ -27,11 +27,14 @@ public interface MensajeContactoDao {
     @Delete
     void delete(MensajeContacto mensaje);
 
-    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC")
+    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC, id DESC")
     LiveData<List<MensajeContacto>> getAllMensajesLiveData();
 
-    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC")
+    @Query("SELECT * FROM mensajes_contacto ORDER BY timestamp DESC, id DESC")
     List<MensajeContacto> getAllMensajesSync();
+
+    @Query("UPDATE mensajes_contacto SET timestamp = :timestamp WHERE id = :id")
+    void actualizarTimestamp(long id, long timestamp);
 
     @Query("SELECT * FROM mensajes_contacto WHERE id = :id LIMIT 1")
     MensajeContacto getMensajePorId(long id);
@@ -65,4 +68,13 @@ public interface MensajeContactoDao {
 
     @Query("DELETE FROM mensajes_contacto WHERE id = :id")
     void eliminarPorId(long id);
+
+    @Query("DELETE FROM mensajes_contacto WHERE remote_id = :remoteId")
+    void eliminarPorRemoteId(String remoteId);
+
+    @Query("DELETE FROM mensajes_contacto WHERE remote_id NOT IN (:remoteIds) AND (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
+    void eliminarNoEnServidor(List<String> remoteIds);
+
+    @Query("DELETE FROM mensajes_contacto WHERE (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
+    void eliminarTodosSincronizados();
 }

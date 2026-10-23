@@ -12,12 +12,6 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "pagos",
-    foreignKeys = @ForeignKey(
-        entity = Contrato.class,
-        parentColumns = "id",
-        childColumns = "contratoId",
-        onDelete = ForeignKey.CASCADE
-    ),
     indices = {@Index("contratoId")}
 )
 public class Pago {

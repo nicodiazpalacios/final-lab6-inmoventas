@@ -10,7 +10,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.inmobiliariaventa.utils.PropiedadDiffCallback;
 
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
@@ -45,8 +47,19 @@ public class FavoritosAdapter extends RecyclerView.Adapter<FavoritosAdapter.View
     }
 
     public void setPropiedades(List<Propiedad> nuevas) {
-        this.propiedades = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
-        notifyDataSetChanged();
+        List<Propiedad> nuevaLista = nuevas != null ? new ArrayList<>(nuevas) : new ArrayList<>();
+        List<Propiedad> viejaLista = this.propiedades != null ? this.propiedades : new ArrayList<>();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PropiedadDiffCallback(viejaLista, nuevaLista));
+        this.propiedades = nuevaLista;
+        diffResult.dispatchUpdatesTo(this);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder.propertyImageView != null) {
+            ImageLoader.clear(holder.propertyImageView);
+        }
     }
 
     public List<Propiedad> getPropiedades() {

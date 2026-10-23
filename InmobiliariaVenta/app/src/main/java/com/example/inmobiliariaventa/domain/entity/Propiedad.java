@@ -99,7 +99,9 @@ public class Propiedad {
                est.equalsIgnoreCase("PAUSADA") ||
                est.equalsIgnoreCase("NO_VISIBLE") ||
                est.equalsIgnoreCase("Inactivo") ||
-               est.equalsIgnoreCase("PAUSA");
+               est.equalsIgnoreCase("PAUSA") ||
+               est.equalsIgnoreCase("Vendida") ||
+               est.equalsIgnoreCase("VENDIDA");
     }
 
     @androidx.room.Ignore

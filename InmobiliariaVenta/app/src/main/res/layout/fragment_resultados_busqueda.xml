@@ -7,20 +7,21 @@
     android:layout_height="match_parent"
     android:background="@color/colorSurface">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/searchResultsNestedScrollView"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingBottom="24dp">
-        
+        android:orientation="vertical">
+
+        <!-- Top Section: Search, Filters and Sorting (Pinned for instant access) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
-            
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="8dp">
+
             <!-- Expanded Search Bar -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -72,14 +73,13 @@
                     android:src="@drawable/ic_tune"
                     app:tint="@color/colorOnSurfaceVariant" />
             </LinearLayout>
-            
 
             <!-- Filter Chips Row -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:paddingBottom="8dp"
+                android:layout_marginTop="12dp"
+                android:paddingBottom="6dp"
                 android:scrollbars="none">
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -100,42 +100,42 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
                             android:gravity="center_vertical">
                             <TextView
+                                android:id="@+id/txtPrecioChip"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Precio: $500k - $1.2M"
+                                android:text="Precio"
                                 android:textColor="@color/colorOnSecondaryContainer"
-                                android:textSize="14sp"
-                                android:textStyle="bold"/>
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
                             <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_marginStart="8dp"
+                                android:id="@+id/btnRemoveFilterPrecio"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
                                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                                 app:tint="@color/colorOnSecondaryContainer"/>
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
-                    
-                    <!-- Inactive Filter Chip 1 -->
+
+                    <!-- Property Type Chip -->
                     <androidx.cardview.widget.CardView
                         android:id="@+id/chipTipoPropiedad"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
-                        app:cardBackgroundColor="@color/colorSurfaceContainerLowest"
+                        app:cardBackgroundColor="@color/colorSurfaceContainerHigh"
                         app:cardCornerRadius="20dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/colorOutlineVariant"
-                        app:strokeWidth="1dp">
+                        app:cardElevation="0dp">
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
                             android:gravity="center_vertical">
                             <TextView
                                 android:id="@+id/txtTipoPropiedad"
@@ -143,31 +143,166 @@
                                 android:layout_height="wrap_content"
                                 android:text="Tipo de propiedad"
                                 android:textColor="@color/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:textStyle="bold"/>
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
                             <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_marginStart="8dp"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_expand_more"
                                 app:tint="@color/colorOnSurfaceVariant"/>
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
+
+                    <!-- Active Ambientes Chip -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/chipAmbientes"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSecondaryContainer"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:id="@+id/txtAmbientesChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ambientes"
+                                android:textColor="@color/colorOnSecondaryContainer"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                            <ImageView
+                                android:id="@+id/btnRemoveFilterAmbientes"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                                app:tint="@color/colorOnSecondaryContainer"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Active Banos Chip -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/chipBanos"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSecondaryContainer"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:id="@+id/txtBanosChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Baños"
+                                android:textColor="@color/colorOnSecondaryContainer"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                            <ImageView
+                                android:id="@+id/btnRemoveFilterBanos"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                                app:tint="@color/colorOnSecondaryContainer"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Active Amenities Chip -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/chipAmenities"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSecondaryContainer"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:id="@+id/txtAmenitiesChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Comodidades"
+                                android:textColor="@color/colorOnSecondaryContainer"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                            <ImageView
+                                android:id="@+id/btnRemoveFilterAmenities"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                                app:tint="@color/colorOnSecondaryContainer"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Active Disposicion Chip -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/chipDisposicion"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:cardBackgroundColor="@color/colorSecondaryContainer"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:id="@+id/txtDisposicionChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Disposición"
+                                android:textColor="@color/colorOnSecondaryContainer"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                            <ImageView
+                                android:id="@+id/btnRemoveFilterDisposicion"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                                app:tint="@color/colorOnSecondaryContainer"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
                 </LinearLayout>
             </HorizontalScrollView>
-            
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/colorSurfaceVariant"
-                android:layout_marginBottom="24dp"/>
 
             <!-- Banner Modo Sin Conexión -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardModoOfflineResultados"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
@@ -179,12 +314,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
+                    android:padding="12dp"
                     android:gravity="center_vertical">
 
                     <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_cloud_off"
                         app:tint="@color/colorOfflineBannerIcon" />
 
@@ -193,7 +328,7 @@
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginStart="12dp">
+                        android:layout_marginStart="10dp">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -214,46 +349,39 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Results Header -->
+            <!-- Results Header and Sorting in a compact row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="16dp">
-                <TextView
-                    android:id="@+id/txtResultadosTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Propiedades publicadas"
-                    android:textColor="@color/colorOnSurface"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
-                <TextView
-                    android:id="@+id/txtResultadosCount"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Cargando propiedades..."
-                    android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="16sp"/>
-            </LinearLayout>
-            
-            <!-- Sorting -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
                 android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="wrap_content"
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Ordenar por:"
-                    android:textColor="@color/colorOnSurfaceVariant"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="8dp"/>
-                
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/txtResultadosTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Propiedades publicadas"
+                        android:textColor="@color/colorOnSurface"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                    <TextView
+                        android:id="@+id/txtResultadosCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Cargando propiedades..."
+                        android:textColor="@color/colorOnSurfaceVariant"
+                        android:textSize="13sp"/>
+                </LinearLayout>
+
+                <!-- Sorting Card -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/btnOrdenar"
                     android:layout_width="wrap_content"
@@ -276,23 +404,33 @@
                             android:layout_height="wrap_content"
                             android:text="Recomendados"
                             android:textColor="@color/colorOnSurface"
-                            android:textSize="14sp"
+                            android:textSize="13sp"
                             android:textStyle="bold"/>
                         <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
                             android:src="@drawable/ic_expand_more"
                             app:tint="@color/colorOnSurface"/>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
             </LinearLayout>
-            
-            <!-- RecyclerView for Results (Vertical list using the identical design) -->
+        </LinearLayout>
+
+        <!-- Frame container for smoothly recycled Results and Empty State -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- RecyclerView for Results (Hardware accelerated with view recycling) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/searchResultsRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="24dp"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 android:orientation="vertical"
                 tools:listitem="@layout/item_propiedad_destacada" />
@@ -301,10 +439,10 @@
             <LinearLayout
                 android:id="@+id/emptyStateContainer"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingVertical="48dp"
+                android:paddingHorizontal="24dp"
                 android:visibility="gone">
                 <ImageView
                     android:layout_width="64dp"
@@ -328,6 +466,6 @@
                     android:textSize="14sp"
                     android:gravity="center" />
             </LinearLayout>
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        </FrameLayout>
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

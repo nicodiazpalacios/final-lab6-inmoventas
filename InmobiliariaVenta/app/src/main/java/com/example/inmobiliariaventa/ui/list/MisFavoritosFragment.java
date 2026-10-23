@@ -94,8 +94,10 @@ public class MisFavoritosFragment extends Fragment {
             }
         }
 
-        // Configurar RecyclerView
+        // Configurar RecyclerView con reciclaje fluido de vistas
         rvFavoritos.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvFavoritos.setHasFixedSize(true);
+        rvFavoritos.setItemViewCacheSize(6);
         adapter = new FavoritosAdapter(new ArrayList<>(),
                 this::eliminarFavoritoConDeshacer,
                 this::abrirDetallePropiedad);

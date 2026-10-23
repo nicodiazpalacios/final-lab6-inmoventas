@@ -389,7 +389,15 @@ public class AdminAgregarContratoFragment extends Fragment {
         }
 
         if (actvStatus != null) {
-            actvStatus.setText(c.getEstadoNormalizado(), false);
+            String norm = c.getEstadoNormalizado();
+            actvStatus.setText(norm, false);
+            if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(norm)) {
+                String[] statusOptionsCompletado = {Contrato.ESTADO_COMPLETADO};
+                android.widget.ArrayAdapter<String> statusAdapter = new android.widget.ArrayAdapter<>(requireContext(),
+                        android.R.layout.simple_dropdown_item_1line, statusOptionsCompletado);
+                actvStatus.setAdapter(statusAdapter);
+                actvStatus.setEnabled(false);
+            }
         }
 
         if (etDescription != null && c.descripcion != null) {
@@ -780,6 +788,11 @@ public class AdminAgregarContratoFragment extends Fragment {
                 : Contrato.ESTADO_PENDIENTE;
 
         boolean esEdicion = (contratoEnEdicion != null);
+        if (esEdicion && Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contratoEnEdicion.getEstadoNormalizado())
+                && Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(situacion)) {
+            if (tilStatus != null) tilStatus.setError("Un contrato completado no puede pasar a estado Rechazado");
+            hasError = true;
+        }
         String contratoId = esEdicion ? contratoEnEdicion.id : UUID.randomUUID().toString();
         long timestamp = esEdicion ? contratoEnEdicion.timestamp : System.currentTimeMillis();
 
@@ -930,8 +943,8 @@ public class AdminAgregarContratoFragment extends Fragment {
                         repo.update(propAfectada);
                     }
                 } else if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(situacion)) {
-                    if (!"Vendida".equalsIgnoreCase(propAfectada.estado)) {
-                        propAfectada.estado = "Vendida";
+                    if (!propAfectada.isPausada()) {
+                        propAfectada.estado = "Pausado";
                         repo.update(propAfectada);
                     }
                 } else if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(situacion) || "Cancelado".equalsIgnoreCase(situacion)) {

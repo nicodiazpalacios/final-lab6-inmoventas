@@ -23,6 +23,9 @@ public interface UsuarioDao {
 
     @Delete
     void eliminar(Usuario usuario);
+
+    @Query("DELETE FROM usuarios WHERE id = :id")
+    void eliminarPorId(String id);
     
     @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
     LiveData<Usuario> obtenerPorId(String id);

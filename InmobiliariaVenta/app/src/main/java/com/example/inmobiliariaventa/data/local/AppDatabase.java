@@ -26,7 +26,7 @@ import com.example.inmobiliariaventa.data.local.dao.ConfiguracionEmpresaDao;
 import com.example.inmobiliariaventa.data.local.dao.MensajeContactoDao;
 import com.example.inmobiliariaventa.data.local.dao.PagoDao;
 
-@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class, MensajeContacto.class, Pago.class}, version = 13, exportSchema = false)
+@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class, MensajeContacto.class, Pago.class}, version = 14, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -74,8 +74,27 @@ public abstract class AppDatabase extends RoomDatabase {
                     + "`metodoPago` TEXT, "
                     + "`concepto` TEXT, "
                     + "`estadoSincronizacion` TEXT, "
-                    + "PRIMARY KEY(`id`), "
-                    + "FOREIGN KEY(`contratoId`) REFERENCES `contratos`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)");
+                    + "PRIMARY KEY(`id`))");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_pagos_contratoId` ON `pagos` (`contratoId`)");
+        }
+    };
+
+    private static final Migration MIGRATION_13_14 = new Migration(13, 14) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `pagos_new` ("
+                    + "`id` TEXT NOT NULL, "
+                    + "`contratoId` TEXT NOT NULL, "
+                    + "`nroCuota` INTEGER NOT NULL, "
+                    + "`monto` REAL NOT NULL, "
+                    + "`fecha` TEXT, "
+                    + "`metodoPago` TEXT, "
+                    + "`concepto` TEXT, "
+                    + "`estadoSincronizacion` TEXT, "
+                    + "PRIMARY KEY(`id`))");
+            database.execSQL("INSERT OR IGNORE INTO `pagos_new` SELECT * FROM `pagos`");
+            database.execSQL("DROP TABLE `pagos`");
+            database.execSQL("ALTER TABLE `pagos_new` RENAME TO `pagos`");
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_pagos_contratoId` ON `pagos` (`contratoId`)");
         }
     };
@@ -86,7 +105,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "homefinder_database")
-                            .addMigrations(MIGRATION_11_12, MIGRATION_12_13)
+                            .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

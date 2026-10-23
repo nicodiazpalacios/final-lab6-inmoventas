@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey;
 import com.google.gson.annotations.SerializedName;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 @Entity(tableName = "mensajes_contacto")
@@ -56,6 +57,10 @@ public class MensajeContacto {
     @SerializedName("hora")
     public String hora;  // "11:45 AM"
 
+    @androidx.room.Ignore
+    @SerializedName(value = "created_at", alternate = {"createdAt"})
+    public String createdAt;
+
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 
@@ -93,17 +98,64 @@ public class MensajeContacto {
 
     public void calcularTimestampSiEsNecesario() {
         if (this.timestamp > 0) return;
-        try {
-            if (this.fecha != null && this.hora != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.ENGLISH);
-                java.util.Date d = sdf.parse(this.fecha + " " + this.hora);
-                if (d != null) {
-                    this.timestamp = d.getTime();
+
+        // 1. Intentar desde createdAt si fue provisto por Supabase
+        if (this.createdAt != null && !this.createdAt.trim().isEmpty()) {
+            try {
+                long ts = com.example.inmobiliariaventa.data.remote.SupabaseClient.parseTimestampFlexible(
+                        new com.google.gson.JsonPrimitive(this.createdAt));
+                if (ts > 0) {
+                    this.timestamp = ts;
+                    return;
                 }
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Intentar parsear fecha y hora
+        if (this.fecha != null && !this.fecha.trim().isEmpty()) {
+            String fechaLimpia = this.fecha.trim();
+            String horaLimpia = this.hora != null ? this.hora.trim() : "";
+
+            // Normalizar hora en español (a. m. / p. m. -> AM / PM)
+            horaLimpia = horaLimpia.replace("a. m.", "AM")
+                                   .replace("p. m.", "PM")
+                                   .replace("a.m.", "AM")
+                                   .replace("p.m.", "PM")
+                                   .replace("a. m", "AM")
+                                   .replace("p. m", "PM")
+                                   .toUpperCase(Locale.ENGLISH);
+
+            String combined = (fechaLimpia + (horaLimpia.isEmpty() ? "" : " " + horaLimpia)).trim();
+
+            String[] patterns = new String[] {
+                    "dd/MM/yyyy hh:mm a",
+                    "dd/MM/yyyy HH:mm",
+                    "dd/MM/yyyy h:mm a",
+                    "dd-MM-yyyy HH:mm",
+                    "yyyy-MM-dd HH:mm",
+                    "dd/MM/yyyy"
+            };
+
+            for (String pattern : patterns) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
+                    Date d = sdf.parse(combined);
+                    if (d != null) {
+                        this.timestamp = d.getTime();
+                        return;
+                    }
+                } catch (Exception ignored) {}
             }
-        } catch (Exception ignored) {}
+        }
+
         if (this.timestamp <= 0) {
             this.timestamp = System.currentTimeMillis();
         }
+    }
+
+    public long getEfectiveTimestamp() {
+        if (this.timestamp > 0) return this.timestamp;
+        calcularTimestampSiEsNecesario();
+        return this.timestamp > 0 ? this.timestamp : System.currentTimeMillis();
     }
 }

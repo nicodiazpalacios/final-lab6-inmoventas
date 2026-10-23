@@ -188,6 +188,10 @@ public class SupabaseClient {
                 }
             })
             .create();
+    public static Gson getGson() {
+        return gson;
+    }
+
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface SupabaseCallback<T> {

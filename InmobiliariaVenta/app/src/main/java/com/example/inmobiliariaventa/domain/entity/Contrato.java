@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 
@@ -92,6 +93,10 @@ public class Contrato {
 
     public long timestamp;
 
+    @Ignore
+    @SerializedName(value = "created_at", alternate = {"createdAt", "created_at_str"})
+    public String createdAt;
+
     @ColumnInfo(name = "estadoSincronizacion")
     public String estadoSincronizacion;
 
@@ -171,6 +176,24 @@ public class Contrato {
         if (this.clienteId == null || this.clienteId.isEmpty()) {
             this.clienteId = (this.clienteDni != null && !this.clienteDni.isEmpty()) ? this.clienteDni : this.id;
         }
+        if (this.createdAt != null && !this.createdAt.trim().isEmpty()) {
+            try {
+                long parsed = com.example.inmobiliariaventa.data.remote.SupabaseClient.parseTimestampFlexible(
+                        new com.google.gson.JsonPrimitive(this.createdAt.trim()));
+                if (parsed > 0) {
+                    this.timestamp = parsed;
+                }
+            } catch (Exception ignored) { }
+        }
+        if (this.timestamp <= 0 && this.fechaInicio != null && !this.fechaInicio.trim().isEmpty()) {
+            try {
+                long parsed = com.example.inmobiliariaventa.data.remote.SupabaseClient.parseTimestampFlexible(
+                        new com.google.gson.JsonPrimitive(this.fechaInicio.trim()));
+                if (parsed > 0) {
+                    this.timestamp = parsed;
+                }
+            } catch (Exception ignored) { }
+        }
         if (this.timestamp <= 0) {
             this.timestamp = System.currentTimeMillis();
         }
@@ -187,13 +210,29 @@ public class Contrato {
         return this.listaPagos != null ? this.listaPagos : new ArrayList<>();
     }
 
+    public boolean esPagoDeSenia(Pago p) {
+        if (p == null) return false;
+        String concepto = p.concepto != null ? p.concepto.toLowerCase(Locale.ROOT) : "";
+        if (concepto.contains("seña") || concepto.contains("senia") || concepto.contains("anticipo")) {
+            return true;
+        }
+        if (concepto.contains("saldo") || concepto.contains("liquidac") || concepto.contains("cuota")) {
+            return false;
+        }
+        if (p.nroCuota == 0 && this.seniaMonto != null && Math.abs(p.monto - this.seniaMonto) < 0.01) {
+            return true;
+        }
+        return false;
+    }
+
     public double calcularTotalAbonado() {
         if (listaPagos != null && !listaPagos.isEmpty()) {
             double total = 0.0;
             boolean incluyeSenia = false;
             for (Pago p : listaPagos) {
+                if (p == null) continue;
                 total += p.monto;
-                if (p.nroCuota == 0) {
+                if (esPagoDeSenia(p)) {
                     incluyeSenia = true;
                 }
             }

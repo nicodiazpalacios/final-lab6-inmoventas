@@ -56,7 +56,9 @@ public class ResultadosBusquedaFragment extends Fragment {
     private List<Propiedad> listaFiltradaResultados = new ArrayList<>();
     private int limiteActualResultados = 20;
     private static final int BATCH_SIZE_SEARCH = 20;
-    private androidx.core.widget.NestedScrollView searchResultsNestedScrollView;
+    private boolean isCargandoMas = false;
+    private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable searchRunnable;
     private String selectedTipo = "Todas";
     private String selectedSort = "Recomendados";
     private String currentSearchQuery = "";
@@ -94,22 +96,30 @@ public class ResultadosBusquedaFragment extends Fragment {
         txtResultadosCount = view.findViewById(R.id.txtResultadosCount);
         searchResultsRecyclerView = view.findViewById(R.id.searchResultsRecyclerView);
         emptyStateContainer = view.findViewById(R.id.emptyStateContainer);
-        searchResultsNestedScrollView = view.findViewById(R.id.searchResultsNestedScrollView);
 
-        // RecyclerView Setup con optimizaciones de rendimiento
+        // RecyclerView Setup con reciclaje de vistas fluido a 60/120 FPS
         adapter = new PropiedadDestacadaAdapter(new ArrayList<>());
-        searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        searchResultsRecyclerView.setItemViewCacheSize(20);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+        searchResultsRecyclerView.setLayoutManager(layoutManager);
+        searchResultsRecyclerView.setHasFixedSize(true);
+        searchResultsRecyclerView.setItemViewCacheSize(6);
         searchResultsRecyclerView.setAdapter(adapter);
 
-        // Carga continua automática al hacer scroll (sin necesidad de botón)
-        if (searchResultsNestedScrollView != null) {
-            searchResultsNestedScrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                if (v.getChildAt(0) != null && scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight() - 800)) {
-                    cargarMasResultadosBusqueda();
+        // Carga continua automática al hacer scroll con vista reciclada
+        searchResultsRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (dy > 0) {
+                    int visibleItemCount = layoutManager.getChildCount();
+                    int totalItemCount = layoutManager.getItemCount();
+                    int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+
+                    if (!isCargandoMas && (visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 2) {
+                        cargarMasResultadosBusqueda();
+                    }
                 }
-            });
-        }
+            }
+        });
 
         // Volver atrás
         if (btnBack != null) {
@@ -256,7 +266,11 @@ public class ResultadosBusquedaFragment extends Fragment {
                             filterUbicacionesList.clear();
                         }
                     }
-                    applyFiltersAndSort();
+                    if (searchRunnable != null) {
+                        searchHandler.removeCallbacks(searchRunnable);
+                    }
+                    searchRunnable = () -> applyFiltersAndSort();
+                    searchHandler.postDelayed(searchRunnable, 150);
                 }
 
                 @Override
@@ -540,10 +554,16 @@ public class ResultadosBusquedaFragment extends Fragment {
     }
 
     private void cargarMasResultadosBusqueda() {
-        if (listaFiltradaResultados == null || limiteActualResultados >= listaFiltradaResultados.size()) return;
+        if (listaFiltradaResultados == null || limiteActualResultados >= listaFiltradaResultados.size() || isCargandoMas) return;
+        isCargandoMas = true;
         int nuevoLimite = Math.min(limiteActualResultados + BATCH_SIZE_SEARCH, listaFiltradaResultados.size());
         List<Propiedad> lote = new ArrayList<>(listaFiltradaResultados.subList(limiteActualResultados, nuevoLimite));
         limiteActualResultados = nuevoLimite;
         adapter.agregarPropiedades(lote);
+        if (searchResultsRecyclerView != null) {
+            searchResultsRecyclerView.post(() -> isCargandoMas = false);
+        } else {
+            isCargandoMas = false;
+        }
     }
 }

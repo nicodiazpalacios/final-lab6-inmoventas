@@ -62,6 +62,19 @@ public class AdminContratosFragment extends Fragment {
     private TextView tvEmptyContractsSubtitle;
     private View layoutPagination;
     private FloatingActionButton fabNuevoContrato;
+    private final android.os.Handler renderDebounceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable renderDebounceRunnable;
+
+    private void scheduleRenderContractsList() {
+        if (getActivity() == null) return;
+        requireActivity().runOnUiThread(() -> {
+            if (renderDebounceRunnable != null) {
+                renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+            }
+            renderDebounceRunnable = this::renderContractsList;
+            renderDebounceHandler.postDelayed(renderDebounceRunnable, 50);
+        });
+    }
 
     private final List<Contrato> allContratos = new ArrayList<>();
     private String currentStatusFilter = "Todos";
@@ -165,9 +178,7 @@ public class AdminContratosFragment extends Fragment {
                 for (Contrato c : allContratos) {
                     c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
                 }
-                if (getActivity() != null) {
-                    requireActivity().runOnUiThread(() -> renderContractsList());
-                }
+                scheduleRenderContractsList();
             });
         });
         sincronizarContratosConSupabase();
@@ -178,17 +189,17 @@ public class AdminContratosFragment extends Fragment {
         android.app.Application appContext = requireActivity().getApplication();
         AppDatabase db = AppDatabase.getInstance(appContext);
 
-        // 1. Subir todos los contratos locales a Supabase (upsert) para asegurar que ninguno quede solo local
+        // 1. Subir solo contratos pendientes locales a Supabase
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            List<Contrato> locales = db.contratoDao().obtenerTodosSync();
-            if (locales != null) {
-                for (Contrato local : locales) {
-                    SupabaseClient.guardarContrato(local, new SupabaseClient.SupabaseCallback<Boolean>() {
+            List<Contrato> pendientes = db.contratoDao().obtenerPendientesDeSubir();
+            if (pendientes != null) {
+                for (Contrato pend : pendientes) {
+                    SupabaseClient.guardarContrato(pend, new SupabaseClient.SupabaseCallback<Boolean>() {
                         @Override
                         public void onSuccess(Boolean result) {
                             AppDatabase.databaseWriteExecutor.execute(() -> {
-                                local.estadoSincronizacion = "SINCRONIZADO";
-                                db.contratoDao().insertar(local);
+                                pend.estadoSincronizacion = "SINCRONIZADO";
+                                db.contratoDao().insertar(pend);
                             });
                         }
 
@@ -199,14 +210,14 @@ public class AdminContratosFragment extends Fragment {
             }
         });
 
-        // 2. Descargar contratos desde Supabase y actualizar Room
+        // 2. Descargar contratos desde Supabase y actualizar Room (con reconciliacion de eliminados)
         SupabaseClient.obtenerContratos(new SupabaseClient.SupabaseCallback<List<Contrato>>() {
             @Override
             public void onSuccess(List<Contrato> remotos) {
-                if (remotos == null || remotos.isEmpty()) return;
+                final List<Contrato> listaFinal = (remotos != null) ? remotos : new java.util.ArrayList<>();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     List<com.example.inmobiliariaventa.domain.entity.Propiedad> todasProps = db.propiedadDao().obtenerTodasSync();
-                    for (Contrato c : remotos) {
+                    for (Contrato c : listaFinal) {
                         if ((c.propiedadTitulo == null || c.propiedadTitulo.isEmpty())
                                 && c.propiedadId != null && todasProps != null) {
                             for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todasProps) {
@@ -217,13 +228,11 @@ public class AdminContratosFragment extends Fragment {
                             }
                         }
                     }
-                    db.contratoDao().insertarTodos(remotos);
+                    db.contratoDao().sincronizarConServidor(listaFinal);
                     for (Contrato c : allContratos) {
                         c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
                     }
-                    if (getActivity() != null) {
-                        requireActivity().runOnUiThread(() -> renderContractsList());
-                    }
+                    scheduleRenderContractsList();
                 });
             }
 
@@ -231,19 +240,17 @@ public class AdminContratosFragment extends Fragment {
             public void onError(Exception e) { }
         });
 
-        // 3. Descargar pagos desde Supabase
+        // 3. Descargar pagos desde Supabase (con reconciliacion de eliminados)
         SupabaseClient.obtenerPagos(new SupabaseClient.SupabaseCallback<List<Pago>>() {
             @Override
             public void onSuccess(List<Pago> remotos) {
-                if (remotos == null || remotos.isEmpty()) return;
+                final List<Pago> listaFinal = (remotos != null) ? remotos : new java.util.ArrayList<>();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
-                    db.pagoDao().insertarTodos(remotos);
+                    db.pagoDao().sincronizarConServidor(listaFinal);
                     for (Contrato c : allContratos) {
                         c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
                     }
-                    if (getActivity() != null) {
-                        requireActivity().runOnUiThread(() -> renderContractsList());
-                    }
+                    scheduleRenderContractsList();
                 });
             }
 
@@ -297,8 +304,8 @@ public class AdminContratosFragment extends Fragment {
                     for (com.example.inmobiliariaventa.domain.entity.Propiedad p : todas) {
                         boolean matchId = c.propiedadId != null && !c.propiedadId.isEmpty() && c.propiedadId.equals(p.id);
                         boolean matchTitulo = c.propiedadTitulo != null && p.titulo != null && c.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
-                        if ((matchId || matchTitulo) && !"Vendida".equalsIgnoreCase(p.estado)) {
-                            p.estado = "Vendida";
+                        if ((matchId || matchTitulo) && !p.isPausada()) {
+                            p.estado = "Pausado";
                             if (repo == null) {
                                 repo = new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(appContext);
                             }
@@ -308,6 +315,18 @@ public class AdminContratosFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private int obtenerPrioridadEstado(Contrato c) {
+        if (c == null) return 3;
+        String est = c.getEstadoNormalizado();
+        if (Contrato.ESTADO_PENDIENTE.equalsIgnoreCase(est)) {
+            return 0; // 1° Prioridad: Pendientes arriba
+        }
+        if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(est)) {
+            return 1; // 2° Prioridad: Completados
+        }
+        return 2; // 3° Prioridad: Rechazados / Cancelados al final
     }
 
     private void renderContractsList() {
@@ -343,7 +362,24 @@ public class AdminContratosFragment extends Fragment {
                     a.montoTotal != null ? a.montoTotal : 0.0,
                     b.montoTotal != null ? b.montoTotal : 0.0));
         } else {
-            Collections.sort(filtered, (a, b) -> Long.compare(b.timestamp, a.timestamp));
+            Collections.sort(filtered, (a, b) -> {
+                int pA = obtenerPrioridadEstado(a);
+                int pB = obtenerPrioridadEstado(b);
+                if (pA != pB) {
+                    return Integer.compare(pA, pB);
+                }
+                int cmpTimestamp = Long.compare(b.timestamp, a.timestamp);
+                if (cmpTimestamp != 0) {
+                    return cmpTimestamp;
+                }
+                if (b.fechaInicio != null && a.fechaInicio != null) {
+                    int cmpFecha = b.fechaInicio.compareTo(a.fechaInicio);
+                    if (cmpFecha != 0) return cmpFecha;
+                }
+                String idA = a.id != null ? a.id : "";
+                String idB = b.id != null ? b.id : "";
+                return idB.compareTo(idA);
+            });
         }
 
         layoutContractsContainer.removeAllViews();
@@ -433,7 +469,7 @@ public class AdminContratosFragment extends Fragment {
             }
 
             int pct = (montoVal > 0) ? (int) Math.min(100, Math.round((abonadoVal / montoVal) * 100)) : 100;
-            if (progressCobranza != null) progressCobranza.setProgress(pct);
+            if (progressCobranza != null) progressCobranza.setProgressCompat(pct, false);
 
             int cuotasVal = contrato.cuotas != null && contrato.cuotas > 0 ? contrato.cuotas : 1;
             int cuotasPagadas = contrato.getCuotasPagadasCount();
@@ -486,12 +522,16 @@ public class AdminContratosFragment extends Fragment {
             }
 
             if (btnBaja != null) {
-                if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estadoActual)) {
+                if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(estadoActual)) {
+                    btnBaja.setVisibility(View.GONE);
+                } else if (Contrato.ESTADO_RECHAZADO.equalsIgnoreCase(estadoActual)) {
+                    btnBaja.setVisibility(View.VISIBLE);
                     btnBaja.setEnabled(false);
                     btnBaja.setAlpha(0.55f);
                     btnBaja.setText("Rechazado");
                     btnBaja.setOnClickListener(null);
                 } else {
+                    btnBaja.setVisibility(View.VISIBLE);
                     btnBaja.setEnabled(true);
                     btnBaja.setAlpha(1.0f);
                     btnBaja.setText("Rechazar");
@@ -564,7 +604,7 @@ public class AdminContratosFragment extends Fragment {
                     tvAdeuda.setTextColor(Color.parseColor("#B45309"));
                 }
 
-                progressBar.setProgress(pct);
+                progressBar.setProgressCompat(pct, false);
                 tvPorcentaje.setText(pct + "% abonado ($ " + cf.format(abonado) + " de $ " + cf.format(total) + ")");
 
                 String estadoNorm = contrato.getEstadoNormalizado();
@@ -704,10 +744,12 @@ public class AdminContratosFragment extends Fragment {
                     // Contado / Transferencia / Efectivo
                     double saldoRestante = Math.max(0.0, total - seniaVal);
                     Pago pagoSaldo = null;
-                    for (Pago p : contrato.getListaPagos()) {
-                        if (p.nroCuota == 0) {
-                            pagoSaldo = p;
-                            break;
+                    if (contrato.getListaPagos() != null) {
+                        for (Pago p : contrato.getListaPagos()) {
+                            if (p != null && !contrato.esPagoDeSenia(p)) {
+                                pagoSaldo = p;
+                                break;
+                            }
                         }
                     }
 
@@ -739,7 +781,7 @@ public class AdminContratosFragment extends Fragment {
                         btnCobrar.setVisibility(View.VISIBLE);
                         btnCobrar.setText("Liquidar Saldo");
                         btnCobrar.setOnClickListener(v -> {
-                            mostrarDialogoRegistrarCobro(contrato, 0, saldoRestante, "Liquidación saldo restante", this);
+                            mostrarDialogoRegistrarCobro(contrato, 1, saldoRestante, "Liquidación saldo restante", this);
                         });
                     }
                     layoutCuotas.addView(row);
@@ -749,6 +791,17 @@ public class AdminContratosFragment extends Fragment {
 
         refrescarVista.run();
         dialog.show();
+
+        AppDatabase dbCobranza = AppDatabase.getInstance(requireContext());
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<Pago> pagosActuales = dbCobranza.pagoDao().obtenerPorContratoSync(contrato.id);
+            if (pagosActuales != null) {
+                contrato.setListaPagos(pagosActuales);
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(refrescarVista);
+                }
+            }
+        });
 
         androidx.core.widget.NestedScrollView scrollCuotas = dialogView.findViewById(R.id.dialog_scroll_cuotas);
         if (scrollCuotas != null) {
@@ -870,7 +923,7 @@ public class AdminContratosFragment extends Fragment {
                                     boolean matchId = contrato.propiedadId != null && contrato.propiedadId.equals(prop.id);
                                     boolean matchTitulo = contrato.propiedadTitulo != null && prop.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(prop.titulo.trim());
                                     if (matchId || matchTitulo) {
-                                        prop.estado = "Vendida";
+                                        prop.estado = "Pausado";
                                         new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(app).update(prop);
                                         break;
                                     }
@@ -893,19 +946,23 @@ public class AdminContratosFragment extends Fragment {
                         }
 
                         SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
+
+                        if (getActivity() != null) {
+                            requireActivity().runOnUiThread(() -> {
+                                dialog.dismiss();
+                                if (onPagosRegistrados != null) {
+                                    onPagosRegistrados.run();
+                                }
+                                renderContractsList();
+
+                                String msgExito = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
+                                        ? "¡" + cuotasSeleccionadas.size() + " cuotas cobradas! El contrato ha sido COMPLETADO al 100%."
+                                        : "¡Se registraron " + cuotasSeleccionadas.size() + " cuotas con éxito!";
+                                CartelUtils.mostrar(requireContext(), msgExito);
+                            });
+                        }
                     });
                 }
-
-                dialog.dismiss();
-                if (onPagosRegistrados != null) {
-                    onPagosRegistrados.run();
-                }
-                renderContractsList();
-
-                String msgExito = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
-                        ? "¡" + cuotasSeleccionadas.size() + " cuotas cobradas! El contrato ha sido COMPLETADO al 100%."
-                        : "¡Se registraron " + cuotasSeleccionadas.size() + " cuotas con éxito!";
-                CartelUtils.mostrar(requireContext(), msgExito);
             });
         }
 
@@ -1016,7 +1073,7 @@ public class AdminContratosFragment extends Fragment {
                                 boolean matchId = contrato.propiedadId != null && contrato.propiedadId.equals(p.id);
                                 boolean matchTitulo = contrato.propiedadTitulo != null && p.titulo != null && contrato.propiedadTitulo.trim().equalsIgnoreCase(p.titulo.trim());
                                 if (matchId || matchTitulo) {
-                                    p.estado = "Vendida";
+                                    p.estado = "Pausado";
                                     new com.example.inmobiliariaventa.data.repository.PropiedadRepositoryImpl(app).update(p);
                                     break;
                                 }
@@ -1037,19 +1094,23 @@ public class AdminContratosFragment extends Fragment {
 
                     // Sincronizar contrato actualizado en Supabase
                     SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
+
+                    if (getActivity() != null) {
+                        requireActivity().runOnUiThread(() -> {
+                            dialog.dismiss();
+                            if (onPagoRegistrado != null) {
+                                onPagoRegistrado.run();
+                            }
+                            renderContractsList();
+
+                            String msg = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
+                                    ? "¡Pago registrado! El contrato ha sido COMPLETADO al 100%."
+                                    : "Pago registrado con éxito.";
+                            CartelUtils.mostrar(requireContext(), msg);
+                        });
+                    }
                 });
             }
-
-            dialog.dismiss();
-            if (onPagoRegistrado != null) {
-                onPagoRegistrado.run();
-            }
-            renderContractsList();
-
-            String msg = Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.estado)
-                    ? "¡Pago registrado! El contrato ha sido COMPLETADO al 100%."
-                    : "Pago registrado con éxito.";
-            CartelUtils.mostrar(requireContext(), msg);
         });
 
         dialog.show();
@@ -1066,7 +1127,11 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void mostrarDialogoConfirmarBaja(Contrato contrato, String clienteName, String propiedadName, String monto) {
-        if (getContext() == null) return;
+        if (getContext() == null || contrato == null) return;
+        if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.getEstadoNormalizado())) {
+            CartelUtils.mostrar(requireContext(), "Un contrato completado no puede ser rechazado");
+            return;
+        }
 
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_aviso_propiedad_contrato, null);
@@ -1113,6 +1178,9 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void darDeBajaContrato(Contrato contrato) {
+        if (contrato == null || Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.getEstadoNormalizado())) {
+            return;
+        }
         contrato.estado = Contrato.ESTADO_RECHAZADO;
         contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
         if (getActivity() == null) return;

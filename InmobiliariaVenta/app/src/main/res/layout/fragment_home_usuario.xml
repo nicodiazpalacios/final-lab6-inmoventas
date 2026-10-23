@@ -23,7 +23,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="24dp">
 
             <!-- Banner Modo Sin Conexión -->
             <com.google.android.material.card.MaterialCardView
@@ -198,8 +201,6 @@
                 android:layout_marginTop="32dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                android:orientation="horizontal"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_categoria" />
 
             <!-- Properties Section Header -->
@@ -207,7 +208,8 @@
                 android:id="@+id/tvTituloPropiedadesHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="8dp"
                 android:text="Propiedades"
                 android:textColor="@color/colorOnSurface"
                 android:textSize="20sp"
@@ -217,10 +219,9 @@
                 android:id="@+id/featuredRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                android:orientation="horizontal"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_propiedad_destacada" />
 
