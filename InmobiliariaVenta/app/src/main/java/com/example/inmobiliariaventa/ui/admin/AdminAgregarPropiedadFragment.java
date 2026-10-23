@@ -43,6 +43,10 @@ public class AdminAgregarPropiedadFragment extends Fragment {
     private TextInputEditText etTitulo, etDescripcion, etPrecio, etDireccion, etCiudad, etProvincia;
     private TextInputEditText etAmbientes, etBanos, etSuperficie;
     private AutoCompleteTextView spinnerTipoPropiedad;
+    private AutoCompleteTextView spinnerDisposicion;
+    private View layoutCaracteristicasCasa, layoutCaracteristicasDepto;
+    private com.google.android.material.switchmaterial.SwitchMaterial switchCochera, switchPatio, switchBalcon, switchAscensor;
+    private static final String[] DISPOSICIONES = new String[]{"Frente", "Contrafrente", "Lateral", "Interno"};
     private MaterialButton btnPublicarPropiedad, btnSeleccionarFotos;
     private TextView tvExplorarArchivos;
     private TextView tvTituloPantalla, tvSubtituloPantalla;
@@ -125,6 +129,19 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, tipos);
             spinnerTipoPropiedad.setAdapter(adapter);
             spinnerTipoPropiedad.setText(tipos[0], false);
+            spinnerTipoPropiedad.setOnItemClickListener((parent, v, position, id) -> actualizarVisibilidadCaracteristicas(tipos[position]));
+            layoutCaracteristicasCasa = view.findViewById(R.id.layout_caracteristicas_casa);
+            layoutCaracteristicasDepto = view.findViewById(R.id.layout_caracteristicas_depto);
+            switchCochera = view.findViewById(R.id.switch_cochera);
+            switchPatio = view.findViewById(R.id.switch_patio);
+            switchBalcon = view.findViewById(R.id.switch_balcon);
+            switchAscensor = view.findViewById(R.id.switch_ascensor);
+            spinnerDisposicion = view.findViewById(R.id.spinner_disposicion);
+            if (spinnerDisposicion != null) {
+                spinnerDisposicion.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, DISPOSICIONES));
+                spinnerDisposicion.setText(DISPOSICIONES[0], false);
+            }
+            actualizarVisibilidadCaracteristicas(tipos[0]);
         }
 
         View btnBack = view.findViewById(R.id.btn_back);
@@ -208,6 +225,14 @@ public class AdminAgregarPropiedadFragment extends Fragment {
         if (spinnerTipoPropiedad != null) {
             String tipoStr = (p.tipoPropiedad == TipoPropiedad.DEPARTAMENTO) ? "Departamento" : "Casa";
             spinnerTipoPropiedad.setText(tipoStr, false);
+            actualizarVisibilidadCaracteristicas(tipoStr);
+            if (switchCochera != null) switchCochera.setChecked(p.tieneCochera);
+            if (switchPatio != null) switchPatio.setChecked(p.tienePatio);
+            if (switchBalcon != null) switchBalcon.setChecked(p.tieneBalcon);
+            if (switchAscensor != null) switchAscensor.setChecked(p.tieneAscensor);
+            if (spinnerDisposicion != null && p.disposicion != null) {
+                spinnerDisposicion.setText(DISPOSICIONES[p.disposicion.ordinal()], false);
+            }
         }
 
         // Cargar fotos existentes en la lista
@@ -220,6 +245,34 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             }
         }
         actualizarListaFotos();
+    }
+
+    private void actualizarVisibilidadCaracteristicas(String tipo) {
+        boolean esDepto = "Departamento".equalsIgnoreCase(tipo != null ? tipo.trim() : "");
+        if (layoutCaracteristicasCasa != null) layoutCaracteristicasCasa.setVisibility(esDepto ? View.GONE : View.VISIBLE);
+        if (layoutCaracteristicasDepto != null) layoutCaracteristicasDepto.setVisibility(esDepto ? View.VISIBLE : View.GONE);
+    }
+
+    /** Aplica las características especiales según el tipo; las del otro tipo quedan en false. */
+    private void aplicarCaracteristicas(Propiedad p, TipoPropiedad tipo) {
+        boolean esDepto = tipo == TipoPropiedad.DEPARTAMENTO;
+        p.tieneCochera = !esDepto && switchCochera != null && switchCochera.isChecked();
+        p.tienePatio = !esDepto && switchPatio != null && switchPatio.isChecked();
+        p.tieneBalcon = esDepto && switchBalcon != null && switchBalcon.isChecked();
+        p.tieneAscensor = esDepto && switchAscensor != null && switchAscensor.isChecked();
+        if (esDepto) {
+            com.example.inmobiliariaventa.domain.entity.Disposicion disp = com.example.inmobiliariaventa.domain.entity.Disposicion.FRENTE;
+            String sel = spinnerDisposicion != null ? spinnerDisposicion.getText().toString() : "";
+            for (int i = 0; i < DISPOSICIONES.length; i++) {
+                if (DISPOSICIONES[i].equalsIgnoreCase(sel)) {
+                    disp = com.example.inmobiliariaventa.domain.entity.Disposicion.values()[i];
+                    break;
+                }
+            }
+            p.disposicion = disp;
+        } else if (p.disposicion == null) {
+            p.disposicion = com.example.inmobiliariaventa.domain.entity.Disposicion.FRENTE;
+        }
     }
 
     private void actualizarListaFotos() {
@@ -312,6 +365,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             p.ambientes = ambientes;
             p.banos = banos;
             p.superficieM2 = superficie;
+            aplicarCaracteristicas(p, tipoPropiedad);
 
             p.imagenes = new ArrayList<>(listaFotos);
 
@@ -359,6 +413,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             nueva.ambientes = ambientes;
             nueva.banos = banos;
             nueva.superficieM2 = superficie;
+            aplicarCaracteristicas(nueva, tipoPropiedad);
             nueva.estado = "DISPONIBLE";
             nueva.createdAt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(new Date());
 
