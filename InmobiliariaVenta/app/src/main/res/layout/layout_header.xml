@@ -37,15 +37,32 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/notificationsButton"
+            <FrameLayout
+                android:id="@+id/layoutNotificationsBadgeContainer"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_notifications"
-                app:tint="@color/icon_header_color_selector" />
+                android:layout_centerVertical="true">
+
+                <ImageButton
+                    android:id="@+id/notificationsButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_notifications"
+                    app:tint="@color/icon_header_color_selector"
+                    android:contentDescription="Notificaciones" />
+
+                <View
+                    android:id="@+id/badgeNotificationDot"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/badge_notification_dot"
+                    android:visibility="gone" />
+            </FrameLayout>
         </RelativeLayout>
     </androidx.appcompat.widget.Toolbar>
 </com.google.android.material.appbar.AppBarLayout>

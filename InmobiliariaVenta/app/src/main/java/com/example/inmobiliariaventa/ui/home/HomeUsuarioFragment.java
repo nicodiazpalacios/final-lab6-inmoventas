@@ -91,6 +91,12 @@ public class HomeUsuarioFragment extends Fragment {
 
         // Configurar botón de notificaciones en la cabecera
         View notificationsButton = view.findViewById(R.id.notificationsButton);
+        View badgeNotificationDot = view.findViewById(R.id.badgeNotificationDot);
+        if (badgeNotificationDot != null && getContext() != null) {
+            com.example.inmobiliariaventa.utils.NotificacionBadgeHelper.configurarObservadorBadge(
+                    getViewLifecycleOwner(), requireContext(), badgeNotificationDot);
+            com.example.inmobiliariaventa.utils.NotificacionBadgeHelper.sembrarNotificacionesClienteAsync(requireContext());
+        }
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
                 if (getContext() == null) return;

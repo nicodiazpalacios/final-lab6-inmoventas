@@ -148,6 +148,11 @@ public class AdminHomeFragment extends Fragment {
 
         // 7. Cabecera Botón de Notificaciones
         View notificationsButton = view.findViewById(R.id.notificationsButton);
+        View badgeNotificationDot = view.findViewById(R.id.badgeNotificationDot);
+        if (badgeNotificationDot != null && getContext() != null) {
+            com.example.inmobiliariaventa.utils.NotificacionBadgeHelper.configurarObservadorBadge(
+                    getViewLifecycleOwner(), requireContext(), badgeNotificationDot);
+        }
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
                 Navigation.findNavController(view).navigate(R.id.action_nav_admin_home_to_nav_admin_notificaciones);
