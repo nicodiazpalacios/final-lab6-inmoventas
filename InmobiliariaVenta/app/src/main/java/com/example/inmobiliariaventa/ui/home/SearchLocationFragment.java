@@ -429,7 +429,7 @@ public class SearchLocationFragment extends Fragment {
 
         // 2. Ciudades con propiedades publicadas
         Map<String, Integer> cityCountMap = new LinkedHashMap<>();
-        Set<String> publishedNeighborhoods = new LinkedHashSet<>();
+        Map<String, Integer> provinceCountMap = new LinkedHashMap<>();
 
         if (cachedProperties != null) {
             for (Propiedad p : cachedProperties) {
@@ -438,21 +438,10 @@ public class SearchLocationFragment extends Fragment {
                     cityCountMap.put(c, cityCountMap.getOrDefault(c, 0) + 1);
                 }
 
-                // Extraer barrios reales de las propiedades publicadas
-                if (p.domicilio != null && !p.domicilio.trim().isEmpty()) {
-                    String dom = p.domicilio.trim();
-                    String c = p.ciudad != null ? p.ciudad.trim() : "";
-                    if (dom.toLowerCase(Locale.ROOT).contains("belgrano")) {
-                        publishedNeighborhoods.add("Barrio Belgrano" + (!c.isEmpty() ? ", " + c : ""));
-                    } else if (dom.toLowerCase(Locale.ROOT).contains("aguirre") || dom.toLowerCase(Locale.ROOT).contains("vargas")) {
-                        publishedNeighborhoods.add("Parque Aguirre" + (!c.isEmpty() ? ", " + c : ""));
-                    } else if (dom.toLowerCase(Locale.ROOT).contains("libertad") || dom.toLowerCase(Locale.ROOT).contains("independencia")) {
-                        publishedNeighborhoods.add("Centro" + (!c.isEmpty() ? ", " + c : ""));
-                    } else if (c.toLowerCase(Locale.ROOT).contains("palermo")) {
-                        publishedNeighborhoods.add("Palermo, Buenos Aires");
-                    } else if (c.toLowerCase(Locale.ROOT).contains("puerto madero") || dom.toLowerCase(Locale.ROOT).contains("manso")) {
-                        publishedNeighborhoods.add("Puerto Madero, Buenos Aires");
-                    }
+                // 3. Provincias con propiedades publicadas
+                if (p.estadoProvincia != null && !p.estadoProvincia.trim().isEmpty()) {
+                    String prov = p.estadoProvincia.trim();
+                    provinceCountMap.put(prov, provinceCountMap.getOrDefault(prov, 0) + 1);
                 }
             }
         }
@@ -465,11 +454,11 @@ public class SearchLocationFragment extends Fragment {
             }
         }
 
-        if (!publishedNeighborhoods.isEmpty()) {
-            list.add(SuggestionItem.header("BARRIOS Y ZONAS DISPONIBLES"));
-            for (String neighborhood : publishedNeighborhoods) {
-                String cleanQuery = neighborhood.split(",")[0].trim();
-                list.add(SuggestionItem.item("📍 <b>" + neighborhood + "</b>", cleanQuery));
+        if (!provinceCountMap.isEmpty()) {
+            list.add(SuggestionItem.header("PROVINCIAS CON PROPIEDADES DISPONIBLES"));
+            for (Map.Entry<String, Integer> entry : provinceCountMap.entrySet()) {
+                String countText = entry.getValue() == 1 ? "1 propiedad disponible" : entry.getValue() + " propiedades disponibles";
+                list.add(SuggestionItem.item("🗺️ <b>" + entry.getKey() + "</b><br/><small><font color='#6B7280'>" + countText + "</font></small>", entry.getKey()));
             }
         }
 
@@ -488,7 +477,7 @@ public class SearchLocationFragment extends Fragment {
 
         // Filtrar ciudades del catálogo
         Map<String, Integer> matchedCities = new LinkedHashMap<>();
-        Set<String> matchedNeighborhoods = new LinkedHashSet<>();
+        Map<String, Integer> matchedProvinces = new LinkedHashMap<>();
 
         if (cachedProperties != null) {
             for (Propiedad p : cachedProperties) {
@@ -497,17 +486,9 @@ public class SearchLocationFragment extends Fragment {
                     matchedCities.put(c, matchedCities.getOrDefault(c, 0) + 1);
                 }
 
-                String dom = p.domicilio != null ? p.domicilio.trim() : "";
-                if (dom.toLowerCase(Locale.ROOT).contains("belgrano") && ("barrio belgrano".contains(q) || "belgrano".contains(q))) {
-                    matchedNeighborhoods.add("Barrio Belgrano" + (!c.isEmpty() ? ", " + c : ""));
-                } else if ((dom.toLowerCase(Locale.ROOT).contains("aguirre") || dom.toLowerCase(Locale.ROOT).contains("vargas")) && "parque aguirre".contains(q)) {
-                    matchedNeighborhoods.add("Parque Aguirre" + (!c.isEmpty() ? ", " + c : ""));
-                } else if ((dom.toLowerCase(Locale.ROOT).contains("libertad") || dom.toLowerCase(Locale.ROOT).contains("independencia")) && "centro".contains(q)) {
-                    matchedNeighborhoods.add("Centro" + (!c.isEmpty() ? ", " + c : ""));
-                } else if (c.toLowerCase(Locale.ROOT).contains("palermo") && "palermo".contains(q)) {
-                    matchedNeighborhoods.add("Palermo, Buenos Aires");
-                } else if ((c.toLowerCase(Locale.ROOT).contains("puerto madero") || dom.toLowerCase(Locale.ROOT).contains("manso")) && "puerto madero".contains(q)) {
-                    matchedNeighborhoods.add("Puerto Madero, Buenos Aires");
+                String prov = p.estadoProvincia != null ? p.estadoProvincia.trim() : "";
+                if (!prov.isEmpty() && prov.toLowerCase(Locale.ROOT).contains(q)) {
+                    matchedProvinces.put(prov, matchedProvinces.getOrDefault(prov, 0) + 1);
                 }
             }
         }
@@ -520,11 +501,11 @@ public class SearchLocationFragment extends Fragment {
             }
         }
 
-        if (!matchedNeighborhoods.isEmpty()) {
-            results.add(SuggestionItem.header("BARRIOS COINCIDENTES"));
-            for (String n : matchedNeighborhoods) {
-                String cleanQuery = n.split(",")[0].trim();
-                results.add(SuggestionItem.item("📍 " + highlightMatch(n, query), cleanQuery));
+        if (!matchedProvinces.isEmpty()) {
+            results.add(SuggestionItem.header("PROVINCIAS COINCIDENTES"));
+            for (Map.Entry<String, Integer> entry : matchedProvinces.entrySet()) {
+                String countText = entry.getValue() == 1 ? "1 propiedad disponible" : entry.getValue() + " propiedades disponibles";
+                results.add(SuggestionItem.item("🗺️ " + highlightMatch(entry.getKey(), query) + "<br/><small><font color='#6B7280'>" + countText + "</font></small>", entry.getKey()));
             }
         }
 
