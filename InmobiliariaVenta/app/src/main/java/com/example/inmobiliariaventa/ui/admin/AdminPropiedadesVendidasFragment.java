@@ -43,8 +43,8 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
     private ChipGroup chipGroupMetodoPago;
 
     private final List<Contrato> allContratos = new ArrayList<>();
-    private final Map<String, Propiedad> mapPropiedadesById = new HashMap<>();
-    private final Map<String, Propiedad> mapPropiedadesByTitulo = new HashMap<>();
+    private volatile Map<String, Propiedad> mapPropiedadesById = new HashMap<>();
+    private volatile Map<String, Propiedad> mapPropiedadesByTitulo = new HashMap<>();
 
     private String currentSearchQuery = "";
     private int currentCheckedChipId = R.id.chip_filtro_todas;
@@ -65,7 +65,13 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
 
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
-            btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
+            btnBack.setOnClickListener(v -> {
+                if (isAdded()) {
+                    try {
+                        Navigation.findNavController(v).popBackStack();
+                    } catch (Exception ignored) { }
+                }
+            });
         }
 
         layoutPropiedadesVendidasContainer = view.findViewById(R.id.layout_propiedades_vendidas_container);
@@ -110,14 +116,16 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
             List<Propiedad> props = db.propiedadDao().obtenerTodasSync();
-            mapPropiedadesById.clear();
-            mapPropiedadesByTitulo.clear();
+            Map<String, Propiedad> newById = new HashMap<>();
+            Map<String, Propiedad> newByTitulo = new HashMap<>();
             if (props != null) {
                 for (Propiedad p : props) {
-                    if (p.id != null) mapPropiedadesById.put(p.id, p);
-                    if (p.titulo != null) mapPropiedadesByTitulo.put(p.titulo.trim().toLowerCase(Locale.ROOT), p);
+                    if (p.id != null) newById.put(p.id, p);
+                    if (p.titulo != null) newByTitulo.put(p.titulo.trim().toLowerCase(Locale.ROOT), p);
                 }
             }
+            mapPropiedadesById = newById;
+            mapPropiedadesByTitulo = newByTitulo;
             if (getActivity() != null) {
                 getActivity().runOnUiThread(this::renderizarLista);
             }
@@ -268,29 +276,36 @@ public class AdminPropiedadesVendidasFragment extends Fragment {
             if (prop != null && prop.imagenes != null && !prop.imagenes.isEmpty() && prop.imagenes.get(0) != null) {
                 ivImagen.setPadding(0, 0, 0, 0);
                 ivImagen.setImageTintList(null);
-                Glide.with(this)
+                Glide.with(ivImagen.getContext().getApplicationContext())
                         .load(prop.imagenes.get(0))
                         .centerCrop()
                         .placeholder(R.drawable.ic_propiedades)
                         .into(ivImagen);
             }
 
-            card.setOnClickListener(v -> ContratoPdfGenerator.mostrarDialogoExportarPdf(requireContext(), c));
+            card.setOnClickListener(v -> {
+                if (isAdded() && getContext() != null) {
+                    ContratoPdfGenerator.mostrarDialogoExportarPdf(v.getContext(), c);
+                }
+            });
             layoutPropiedadesVendidasContainer.addView(card);
         }
     }
 
     private Propiedad buscarPropiedad(Contrato c) {
         if (c == null) return null;
-        if (c.propiedadId != null && mapPropiedadesById.containsKey(c.propiedadId)) {
-            return mapPropiedadesById.get(c.propiedadId);
+        Map<String, Propiedad> byId = mapPropiedadesById;
+        Map<String, Propiedad> byTitulo = mapPropiedadesByTitulo;
+        if (byId == null || byTitulo == null) return null;
+        if (c.propiedadId != null && byId.containsKey(c.propiedadId)) {
+            return byId.get(c.propiedadId);
         }
         if (c.propiedadTitulo != null) {
-            Propiedad p = mapPropiedadesByTitulo.get(c.propiedadTitulo.trim().toLowerCase(Locale.ROOT));
+            Propiedad p = byTitulo.get(c.propiedadTitulo.trim().toLowerCase(Locale.ROOT));
             if (p != null) return p;
         }
         if (c.propiedadId != null) {
-            return mapPropiedadesByTitulo.get(c.propiedadId.trim().toLowerCase(Locale.ROOT));
+            return byTitulo.get(c.propiedadId.trim().toLowerCase(Locale.ROOT));
         }
         return null;
     }

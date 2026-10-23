@@ -52,9 +52,29 @@ public class AdminVentasFragment extends Fragment {
     private LinearLayout layoutVentasPropiedadesContainer;
     private TextView tvVentasEmptyPropiedades;
 
+    private static volatile List<Contrato> cachedContratosGlobal = null;
+    private static volatile Map<String, Propiedad> cachedPropsByIdGlobal = null;
+    private static volatile Map<String, Propiedad> cachedPropsByTituloGlobal = null;
+
     private final List<Contrato> allContratos = new ArrayList<>();
-    private final Map<String, Propiedad> mapPropiedadesById = new HashMap<>();
-    private final Map<String, Propiedad> mapPropiedadesByTitulo = new HashMap<>();
+    private boolean hasLoadedInitialData = false;
+    private final android.os.Handler renderDebounceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable renderDebounceRunnable;
+
+    private void scheduleRecalcularYRenderizar() {
+        if (!isAdded() || getContext() == null) return;
+        if (renderDebounceRunnable != null) {
+            renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+        }
+        renderDebounceRunnable = () -> {
+            if (isAdded() && getContext() != null) {
+                recalcularYRenderizar();
+            }
+        };
+        renderDebounceHandler.postDelayed(renderDebounceRunnable, 50);
+    }
+    private volatile Map<String, Propiedad> mapPropiedadesById = new HashMap<>();
+    private volatile Map<String, Propiedad> mapPropiedadesByTitulo = new HashMap<>();
 
     private String currentPeriodLabel = "Este Mes";
     private Long filterStartMillis = null;
@@ -71,6 +91,14 @@ public class AdminVentasFragment extends Fragment {
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (renderDebounceHandler != null && renderDebounceRunnable != null) {
+            renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+        }
+    }
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_admin_ventas, container, false);
@@ -80,9 +108,27 @@ public class AdminVentasFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (cachedContratosGlobal != null) {
+            allContratos.clear();
+            allContratos.addAll(cachedContratosGlobal);
+        }
+        if (cachedPropsByIdGlobal != null) {
+            mapPropiedadesById = cachedPropsByIdGlobal;
+        }
+        if (cachedPropsByTituloGlobal != null) {
+            mapPropiedadesByTitulo = cachedPropsByTituloGlobal;
+        }
+        hasLoadedInitialData = (cachedContratosGlobal != null && !cachedContratosGlobal.isEmpty());
+
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
-            btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
+            btnBack.setOnClickListener(v -> {
+                if (isAdded()) {
+                    try {
+                        Navigation.findNavController(v).popBackStack();
+                    } catch (Exception ignored) { }
+                }
+            });
         }
 
         btnPeriodoMes = view.findViewById(R.id.btn_periodo_mes);
@@ -104,9 +150,13 @@ public class AdminVentasFragment extends Fragment {
 
         View tvVerTodas = view.findViewById(R.id.tv_ver_todas_propiedades);
         if (tvVerTodas != null) {
-            tvVerTodas.setOnClickListener(v ->
-                    Navigation.findNavController(view).navigate(R.id.action_nav_admin_ventas_to_nav_admin_propiedades_vendidas)
-            );
+            tvVerTodas.setOnClickListener(v -> {
+                if (isAdded()) {
+                    try {
+                        Navigation.findNavController(v).navigate(R.id.action_nav_admin_ventas_to_nav_admin_propiedades_vendidas);
+                    } catch (Exception ignored) { }
+                }
+            });
         }
 
         setupPeriodButtons();
@@ -182,26 +232,30 @@ public class AdminVentasFragment extends Fragment {
 
     private void setupReportButtons() {
         if (btnExportarPdf != null) {
-            btnExportarPdf.setOnClickListener(v ->
+            btnExportarPdf.setOnClickListener(v -> {
+                if (isAdded() && getContext() != null) {
                     ContratoPdfGenerator.mostrarReporteVentasPdf(
-                            requireContext(),
+                            v.getContext(),
                             currentPeriodLabel,
                             currentFilteredVentas,
                             currentTotalMonto,
                             currentTotalVendidas,
                             currentTotalClientes
-                    )
-            );
+                    );
+                }
+            });
         }
 
         if (btnExportarExcel != null) {
-            btnExportarExcel.setOnClickListener(v ->
+            btnExportarExcel.setOnClickListener(v -> {
+                if (isAdded() && getContext() != null) {
                     ContratoPdfGenerator.exportarReporteVentasCsv(
-                            requireContext(),
+                            v.getContext(),
                             currentPeriodLabel,
                             currentFilteredVentas
-                    )
-            );
+                    );
+                }
+            });
         }
     }
 
@@ -211,24 +265,44 @@ public class AdminVentasFragment extends Fragment {
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
             List<Propiedad> props = db.propiedadDao().obtenerTodasSync();
-            mapPropiedadesById.clear();
-            mapPropiedadesByTitulo.clear();
+            Map<String, Propiedad> newById = new HashMap<>();
+            Map<String, Propiedad> newByTitulo = new HashMap<>();
             if (props != null) {
                 for (Propiedad p : props) {
-                    if (p.id != null) mapPropiedadesById.put(p.id, p);
-                    if (p.titulo != null) mapPropiedadesByTitulo.put(p.titulo.trim().toLowerCase(Locale.ROOT), p);
+                    if (p.id != null) newById.put(p.id, p);
+                    if (p.titulo != null) newByTitulo.put(p.titulo.trim().toLowerCase(Locale.ROOT), p);
                 }
             }
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(this::recalcularYRenderizar);
+            mapPropiedadesById = newById;
+            mapPropiedadesByTitulo = newByTitulo;
+            cachedPropsByIdGlobal = newById;
+            cachedPropsByTituloGlobal = newByTitulo;
+
+            List<Contrato> contratosSync = db.contratoDao().obtenerTodosSync();
+            if (contratosSync != null && (allContratos.isEmpty() || !hasLoadedInitialData)) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
+                        allContratos.clear();
+                        allContratos.addAll(contratosSync);
+                        cachedContratosGlobal = new ArrayList<>(contratosSync);
+                        hasLoadedInitialData = true;
+                        recalcularYRenderizar();
+                    });
+                }
+            } else if (getActivity() != null) {
+                getActivity().runOnUiThread(this::scheduleRecalcularYRenderizar);
             }
         });
 
         db.contratoDao().obtenerTodosLiveData().observe(getViewLifecycleOwner(), contratos -> {
-            allContratos.clear();
             if (contratos != null) {
+                allContratos.clear();
                 allContratos.addAll(contratos);
+                cachedContratosGlobal = new ArrayList<>(contratos);
             }
+            hasLoadedInitialData = true;
+            // Renderizado inmediato sin demoras artificiales
             recalcularYRenderizar();
         });
 
@@ -247,6 +321,11 @@ public class AdminVentasFragment extends Fragment {
 
     private void recalcularYRenderizar() {
         if (!isAdded() || getContext() == null) return;
+
+        // Si todavía no se recibieron los datos iniciales y la lista está vacía, mantener placeholder para no parpadear en 0
+        if (!hasLoadedInitialData && allContratos.isEmpty()) {
+            return;
+        }
 
         currentFilteredVentas.clear();
         double sumaVentasActivas = 0.0;
@@ -320,9 +399,9 @@ public class AdminVentasFragment extends Fragment {
 
     private void renderizarPropiedadesVendidasRecientes(NumberFormat currencyFormat) {
         if (layoutVentasPropiedadesContainer == null || getContext() == null) return;
-        layoutVentasPropiedadesContainer.removeAllViews();
 
         if (currentFilteredVentas.isEmpty()) {
+            layoutVentasPropiedadesContainer.removeAllViews();
             if (tvVentasEmptyPropiedades != null) {
                 tvVentasEmptyPropiedades.setVisibility(View.VISIBLE);
             }
@@ -336,9 +415,30 @@ public class AdminVentasFragment extends Fragment {
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         int limit = Math.min(currentFilteredVentas.size(), 5);
 
+        int currentCount = layoutVentasPropiedadesContainer.getChildCount();
+        if (currentCount > limit) {
+            layoutVentasPropiedadesContainer.removeViews(limit, currentCount - limit);
+        }
+
         for (int i = 0; i < limit; i++) {
             Contrato c = currentFilteredVentas.get(i);
-            View itemView = inflater.inflate(R.layout.item_venta_propiedad_resumen, layoutVentasPropiedadesContainer, false);
+            String itemTag = c.id != null ? c.id : ("contrato_" + i);
+            View itemView;
+            if (i < layoutVentasPropiedadesContainer.getChildCount()) {
+                View existing = layoutVentasPropiedadesContainer.getChildAt(i);
+                if (itemTag.equals(existing.getTag())) {
+                    itemView = existing;
+                } else {
+                    itemView = inflater.inflate(R.layout.item_venta_propiedad_resumen, layoutVentasPropiedadesContainer, false);
+                    itemView.setTag(itemTag);
+                    layoutVentasPropiedadesContainer.removeViewAt(i);
+                    layoutVentasPropiedadesContainer.addView(itemView, i);
+                }
+            } else {
+                itemView = inflater.inflate(R.layout.item_venta_propiedad_resumen, layoutVentasPropiedadesContainer, false);
+                itemView.setTag(itemTag);
+                layoutVentasPropiedadesContainer.addView(itemView);
+            }
 
             ImageView ivThumb = itemView.findViewById(R.id.iv_venta_prop_thumb);
             TextView tvTitulo = itemView.findViewById(R.id.tv_venta_prop_titulo);
@@ -366,29 +466,35 @@ public class AdminVentasFragment extends Fragment {
             if (prop != null && prop.imagenes != null && !prop.imagenes.isEmpty() && prop.imagenes.get(0) != null) {
                 ivThumb.setPadding(0, 0, 0, 0);
                 ivThumb.setImageTintList(null);
-                Glide.with(this)
+                Glide.with(ivThumb.getContext().getApplicationContext())
                         .load(prop.imagenes.get(0))
                         .centerCrop()
                         .placeholder(R.drawable.ic_propiedades)
                         .into(ivThumb);
             }
 
-            itemView.setOnClickListener(v -> ContratoPdfGenerator.mostrarDialogoExportarPdf(requireContext(), c));
-            layoutVentasPropiedadesContainer.addView(itemView);
+            itemView.setOnClickListener(v -> {
+                if (isAdded() && getContext() != null) {
+                    ContratoPdfGenerator.mostrarDialogoExportarPdf(v.getContext(), c);
+                }
+            });
         }
     }
 
     private Propiedad buscarPropiedad(Contrato c) {
         if (c == null) return null;
-        if (c.propiedadId != null && mapPropiedadesById.containsKey(c.propiedadId)) {
-            return mapPropiedadesById.get(c.propiedadId);
+        Map<String, Propiedad> byId = mapPropiedadesById;
+        Map<String, Propiedad> byTitulo = mapPropiedadesByTitulo;
+        if (byId == null || byTitulo == null) return null;
+        if (c.propiedadId != null && byId.containsKey(c.propiedadId)) {
+            return byId.get(c.propiedadId);
         }
         if (c.propiedadTitulo != null) {
-            Propiedad p = mapPropiedadesByTitulo.get(c.propiedadTitulo.trim().toLowerCase(Locale.ROOT));
+            Propiedad p = byTitulo.get(c.propiedadTitulo.trim().toLowerCase(Locale.ROOT));
             if (p != null) return p;
         }
         if (c.propiedadId != null) {
-            return mapPropiedadesByTitulo.get(c.propiedadId.trim().toLowerCase(Locale.ROOT));
+            return byTitulo.get(c.propiedadId.trim().toLowerCase(Locale.ROOT));
         }
         return null;
     }
@@ -451,6 +557,8 @@ public class AdminVentasFragment extends Fragment {
             }
         });
 
-        dateRangePicker.show(getChildFragmentManager(), "DATE_RANGE_PICKER");
+        if (isAdded() && !isStateSaved()) {
+            dateRangePicker.show(getChildFragmentManager(), "DATE_RANGE_PICKER");
+        }
     }
 }

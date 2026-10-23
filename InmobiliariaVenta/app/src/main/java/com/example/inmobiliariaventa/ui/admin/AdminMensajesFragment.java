@@ -60,8 +60,8 @@ public class AdminMensajesFragment extends Fragment {
     private int maxPages = 1;
     private static final int PAGE_SIZE = 8;
 
+    private static volatile List<MensajeContacto> cachedMensajesGlobal = null;
     private LinearLayout layoutPage1Mensajes;
-    private LinearLayout layoutPage2Mensajes;
     private LinearLayout layoutEmptyMensajes;
     private LinearLayout layoutPagination;
     private NestedScrollView scrollViewMensajes;
@@ -81,6 +81,21 @@ public class AdminMensajesFragment extends Fragment {
     private List<MensajeContacto> listaFiltrada = new ArrayList<>();
     private String ultimoTopKey = null;
     private int ultimoTotal = 0;
+    private final android.os.Handler renderDebounceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable renderDebounceRunnable;
+
+    private void scheduleApplyFilters(View root) {
+        if (!isAdded() || getContext() == null) return;
+        if (renderDebounceRunnable != null) {
+            renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+        }
+        renderDebounceRunnable = () -> {
+            if (isAdded() && getContext() != null) {
+                applyFilters(root);
+            }
+        };
+        renderDebounceHandler.postDelayed(renderDebounceRunnable, 80);
+    }
 
     private static String claveMensaje(MensajeContacto m) {
         if (m == null) return null;
@@ -89,6 +104,14 @@ public class AdminMensajesFragment extends Fragment {
 
     public AdminMensajesFragment() {
         // Constructor público vacío requerido
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (renderDebounceHandler != null && renderDebounceRunnable != null) {
+            renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+        }
     }
 
     @Override
@@ -102,9 +125,8 @@ public class AdminMensajesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         layoutPage1Mensajes = view.findViewById(R.id.layout_page_1_mensajes);
-        layoutPage2Mensajes = view.findViewById(R.id.layout_page_2_mensajes);
-        if (layoutPage2Mensajes != null) {
-            layoutPage2Mensajes.setVisibility(View.GONE);
+        if (layoutPage1Mensajes != null) {
+            layoutPage1Mensajes.removeAllViews();
         }
 
         layoutEmptyMensajes = view.findViewById(R.id.layout_empty_mensajes);
@@ -119,15 +141,27 @@ public class AdminMensajesFragment extends Fragment {
         chipFecha = view.findViewById(R.id.chip_fecha);
         scrollChipsMensajes = view.findViewById(R.id.scroll_chips_mensajes);
 
-        // Flecha de regreso
+        // Flecha de regreso segura
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
-            btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
+            btnBack.setOnClickListener(v -> {
+                if (isAdded()) {
+                    try {
+                        Navigation.findNavController(v).popBackStack();
+                    } catch (Exception ignored) { }
+                }
+            });
         }
 
         setupSearchAndFilters(view);
         setupDatePicker(view);
         setupPagination(view);
+
+        // Renderizado instantáneo desde memoria si ya hay mensajes cacheados
+        if (cachedMensajesGlobal != null && !cachedMensajesGlobal.isEmpty()) {
+            listaMensajes = new ArrayList<>(cachedMensajesGlobal);
+            applyFilters(view);
+        }
 
         // Inicializar base de datos y observar mensajes
         initDatabaseAndObserve(view);
@@ -142,6 +176,7 @@ public class AdminMensajesFragment extends Fragment {
             if (mensajes != null) {
                 listaMensajes = new ArrayList<>(mensajes);
                 ordenarMensajesPorMasRecientes(listaMensajes);
+                cachedMensajesGlobal = new ArrayList<>(listaMensajes);
 
                 // Si llegó un mensaje nuevo (cambió el primero de la lista), volver a la página 1 y al tope
                 String nuevoTopKey = !listaMensajes.isEmpty() ? claveMensaje(listaMensajes.get(0)) : null;
@@ -155,6 +190,7 @@ public class AdminMensajesFragment extends Fragment {
                     startPage = 1;
                 }
 
+                // Renderizar inmediatamente sin debounce para eliminar parpadeo o demoras
                 applyFilters(root);
 
                 if (llegoNuevo && scrollViewMensajes != null) {
@@ -256,12 +292,12 @@ public class AdminMensajesFragment extends Fragment {
         return list;
     }
     private void renderMensajesList(View root) {
-        if (getContext() == null || layoutPage1Mensajes == null) return;
+        if (!isAdded() || getContext() == null || layoutPage1Mensajes == null) return;
 
-        layoutPage1Mensajes.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
 
         if (listaFiltrada.isEmpty()) {
+            layoutPage1Mensajes.removeAllViews();
             if (layoutEmptyMensajes != null) layoutEmptyMensajes.setVisibility(View.VISIBLE);
             if (layoutPagination != null) layoutPagination.setVisibility(View.GONE);
             return;
@@ -277,9 +313,32 @@ public class AdminMensajesFragment extends Fragment {
         int startIndex = (currentPage - 1) * PAGE_SIZE;
         int endIndex = Math.min(startIndex + PAGE_SIZE, listaFiltrada.size());
 
-        for (int i = startIndex; i < endIndex; i++) {
+        int targetCount = endIndex - startIndex;
+        int currentCount = layoutPage1Mensajes.getChildCount();
+        if (currentCount > targetCount) {
+            layoutPage1Mensajes.removeViews(targetCount, currentCount - targetCount);
+        }
+
+        for (int k = 0; k < targetCount; k++) {
+            int i = startIndex + k;
             MensajeContacto item = listaFiltrada.get(i);
-            View cardView = inflater.inflate(R.layout.item_admin_mensaje_card, layoutPage1Mensajes, false);
+            String itemTag = item.remoteId != null && !item.remoteId.isEmpty() ? item.remoteId : ("local_" + item.id);
+            View cardView;
+            if (k < layoutPage1Mensajes.getChildCount()) {
+                View existing = layoutPage1Mensajes.getChildAt(k);
+                if (itemTag.equals(existing.getTag())) {
+                    cardView = existing;
+                } else {
+                    cardView = inflater.inflate(R.layout.item_admin_mensaje_card, layoutPage1Mensajes, false);
+                    cardView.setTag(itemTag);
+                    layoutPage1Mensajes.removeViewAt(k);
+                    layoutPage1Mensajes.addView(cardView, k);
+                }
+            } else {
+                cardView = inflater.inflate(R.layout.item_admin_mensaje_card, layoutPage1Mensajes, false);
+                cardView.setTag(itemTag);
+                layoutPage1Mensajes.addView(cardView);
+            }
 
             TextView tvCliente = cardView.findViewById(R.id.tv_item_cliente);
             TextView tvFecha = cardView.findViewById(R.id.tv_item_fecha);
@@ -317,7 +376,6 @@ public class AdminMensajesFragment extends Fragment {
             }
 
             cardView.setOnClickListener(v -> abrirModalDetalleMensaje(item, root));
-            layoutPage1Mensajes.addView(cardView);
         }
 
         if (layoutPagination != null) {
@@ -423,7 +481,7 @@ public class AdminMensajesFragment extends Fragment {
                 // Guardar en la base de datos Room y en Supabase
                 MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoLeido(item);
 
-                applyFilters(root);
+                scheduleApplyFilters(root);
                 mostrarSnackbarEleganteConDeshacer(item, root);
             });
         }
@@ -506,7 +564,7 @@ public class AdminMensajesFragment extends Fragment {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     currentPage = 1;
-                    applyFilters(root);
+                    scheduleApplyFilters(root);
                 }
 
                 @Override
@@ -517,7 +575,7 @@ public class AdminMensajesFragment extends Fragment {
         if (chipGroupMensajes != null) {
             chipGroupMensajes.setOnCheckedChangeListener((group, checkedId) -> {
                 currentPage = 1;
-                applyFilters(root);
+                scheduleApplyFilters(root);
             });
         }
     }
@@ -539,7 +597,7 @@ public class AdminMensajesFragment extends Fragment {
                         chipFecha.setText(selectedDateFilter);
                         chipFecha.setCloseIconVisible(true);
                         currentPage = 1;
-                        applyFilters(root);
+                        scheduleApplyFilters(root);
                     }
                 });
 
@@ -763,7 +821,7 @@ public class AdminMensajesFragment extends Fragment {
                 .setAction("DESHACER", v -> {
                     item.leido = false;
                     MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoNoLeido(item);
-                    applyFilters(root);
+                    scheduleApplyFilters(root);
                     mostrarSnackbarElegante("Se restableció a no leído");
                 })
                 .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))

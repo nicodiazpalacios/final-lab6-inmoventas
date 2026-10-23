@@ -72,11 +72,14 @@ public class AdminContratosFragment extends Fragment {
                 renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
             }
             renderDebounceRunnable = this::renderContractsList;
-            renderDebounceHandler.postDelayed(renderDebounceRunnable, 50);
+            renderDebounceHandler.postDelayed(renderDebounceRunnable, 120);
         });
     }
 
+    private static volatile List<Contrato> cachedContratosGlobal = null;
+    private final java.util.Map<String, List<com.example.inmobiliariaventa.domain.entity.Pago>> cachePagosPorContrato = new java.util.concurrent.ConcurrentHashMap<>();
     private final List<Contrato> allContratos = new ArrayList<>();
+    private boolean hasLoadedInitialData = false;
     private String currentStatusFilter = "Todos";
     private String currentSearchQuery = "";
     private String currentSortOrder = "Recientes";
@@ -92,6 +95,14 @@ public class AdminContratosFragment extends Fragment {
 
     public AdminContratosFragment() {
         // Required empty public constructor
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (renderDebounceHandler != null && renderDebounceRunnable != null) {
+            renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
+        }
     }
 
     @Override
@@ -163,22 +174,74 @@ public class AdminContratosFragment extends Fragment {
 
         setupSearchFilter();
         setupPagination(view);
+
+        // Precarga instantánea en 0 ms si ya hay contratos en memoria
+        if (cachedContratosGlobal != null && !cachedContratosGlobal.isEmpty()) {
+            allContratos.clear();
+            allContratos.addAll(cachedContratosGlobal);
+            hasLoadedInitialData = true;
+            renderContractsList();
+        }
+
         observeContracts();
     }
 
     private void observeContracts() {
+        if (getContext() == null) return;
         AppDatabase db = AppDatabase.getInstance(requireContext());
-        db.contratoDao().obtenerTodosLiveData().observe(getViewLifecycleOwner(), contratos -> {
-            allContratos.clear();
-            if (contratos != null) {
-                allContratos.addAll(contratos);
-                sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(contratos));
-            }
+
+        // Carga sincronizada en segundo plano al abrir para renderizado inmediato
+        if (allContratos.isEmpty() || cachedContratosGlobal == null) {
             AppDatabase.databaseWriteExecutor.execute(() -> {
-                for (Contrato c : allContratos) {
-                    c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
+                List<Contrato> iniciales = db.contratoDao().obtenerTodosSync();
+                if (iniciales != null && !iniciales.isEmpty() && allContratos.isEmpty()) {
+                    for (Contrato c : iniciales) {
+                        if (c == null || c.id == null) continue;
+                        List<com.example.inmobiliariaventa.domain.entity.Pago> pagos = db.pagoDao().obtenerPorContratoSync(c.id);
+                        if (pagos != null) {
+                            cachePagosPorContrato.put(c.id, pagos);
+                            c.setListaPagos(pagos);
+                        }
+                    }
+                    if (getActivity() != null) {
+                        requireActivity().runOnUiThread(() -> {
+                            if (!isAdded()) return;
+                            allContratos.clear();
+                            allContratos.addAll(iniciales);
+                            cachedContratosGlobal = new ArrayList<>(iniciales);
+                            hasLoadedInitialData = true;
+                            renderContractsList();
+                        });
+                    }
                 }
-                scheduleRenderContractsList();
+            });
+        }
+
+        db.contratoDao().obtenerTodosLiveData().observe(getViewLifecycleOwner(), contratos -> {
+            if (contratos == null) return;
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                for (Contrato c : contratos) {
+                    if (c == null || c.id == null) continue;
+                    List<com.example.inmobiliariaventa.domain.entity.Pago> pagos = db.pagoDao().obtenerPorContratoSync(c.id);
+                    if (pagos != null) {
+                        cachePagosPorContrato.put(c.id, pagos);
+                        c.setListaPagos(pagos);
+                    } else {
+                        List<com.example.inmobiliariaventa.domain.entity.Pago> enCache = cachePagosPorContrato.get(c.id);
+                        if (enCache != null) c.setListaPagos(enCache);
+                    }
+                }
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
+                        allContratos.clear();
+                        allContratos.addAll(contratos);
+                        cachedContratosGlobal = new ArrayList<>(contratos);
+                        hasLoadedInitialData = true;
+                        renderContractsList();
+                    });
+                }
+                sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(contratos));
             });
         });
         sincronizarContratosConSupabase();
@@ -229,10 +292,6 @@ public class AdminContratosFragment extends Fragment {
                         }
                     }
                     db.contratoDao().sincronizarConServidor(listaFinal);
-                    for (Contrato c : allContratos) {
-                        c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
-                    }
-                    scheduleRenderContractsList();
                 });
             }
 
@@ -382,10 +441,9 @@ public class AdminContratosFragment extends Fragment {
             });
         }
 
-        layoutContractsContainer.removeAllViews();
-
         if (filtered.isEmpty()) {
-            if (layoutEmptyContracts != null) {
+            layoutContractsContainer.removeAllViews();
+            if (hasLoadedInitialData && layoutEmptyContracts != null) {
                 layoutEmptyContracts.setVisibility(View.VISIBLE);
                 if (allContratos.isEmpty()) {
                     if (tvEmptyContractsTitle != null) tvEmptyContractsTitle.setText("No hay contratos cargados");
@@ -423,8 +481,30 @@ public class AdminContratosFragment extends Fragment {
         NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.US);
         currencyFormat.setMaximumFractionDigits(0);
 
-        for (Contrato contrato : pageItems) {
-            View cardView = inflater.inflate(R.layout.item_contrato_card, layoutContractsContainer, false);
+        int targetCount = pageItems.size();
+        int currentCount = layoutContractsContainer.getChildCount();
+        if (currentCount > targetCount) {
+            layoutContractsContainer.removeViews(targetCount, currentCount - targetCount);
+        }
+
+        for (int index = 0; index < targetCount; index++) {
+            Contrato contrato = pageItems.get(index);
+            View cardView;
+            if (index < layoutContractsContainer.getChildCount()) {
+                View existing = layoutContractsContainer.getChildAt(index);
+                if (contrato.id != null && contrato.id.equals(existing.getTag())) {
+                    cardView = existing;
+                } else {
+                    cardView = inflater.inflate(R.layout.item_contrato_card, layoutContractsContainer, false);
+                    cardView.setTag(contrato.id);
+                    layoutContractsContainer.removeViewAt(index);
+                    layoutContractsContainer.addView(cardView, index);
+                }
+            } else {
+                cardView = inflater.inflate(R.layout.item_contrato_card, layoutContractsContainer, false);
+                cardView.setTag(contrato.id);
+                layoutContractsContainer.addView(cardView);
+            }
 
             TextView tvCliente = cardView.findViewById(R.id.tv_cliente);
             TextView tvPropiedad = cardView.findViewById(R.id.tv_propiedad);
@@ -539,7 +619,6 @@ public class AdminContratosFragment extends Fragment {
                 }
             }
 
-            layoutContractsContainer.addView(cardView);
         }
 
         if (layoutPagination != null) {
