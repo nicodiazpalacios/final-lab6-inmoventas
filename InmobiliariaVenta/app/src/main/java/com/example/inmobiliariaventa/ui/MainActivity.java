@@ -17,6 +17,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.NavGraph;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
@@ -385,11 +386,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        NavOptions navOptions = new NavOptions.Builder()
+                .setEnterAnim(androidx.navigation.ui.R.anim.nav_default_enter_anim)
+                .setExitAnim(androidx.navigation.ui.R.anim.nav_default_exit_anim)
+                .setPopEnterAnim(androidx.navigation.ui.R.anim.nav_default_pop_enter_anim)
+                .setPopExitAnim(androidx.navigation.ui.R.anim.nav_default_pop_exit_anim)
+                .build();
+
         // Si el destino es inicio o nav_admin_home, siempre hacer pop hasta la raíz correspondiente
         if (itemId == R.id.nav_inicio) {
             if (!navController.popBackStack(R.id.nav_inicio, false)) {
                 try {
-                    navController.navigate(R.id.nav_inicio);
+                    navController.navigate(R.id.nav_inicio, null, navOptions);
                 } catch (Exception ignored) {}
             }
             return;
@@ -397,16 +405,16 @@ public class MainActivity extends AppCompatActivity {
         if (itemId == R.id.nav_admin_home) {
             if (!navController.popBackStack(R.id.nav_admin_home, false)) {
                 try {
-                    navController.navigate(R.id.nav_admin_home);
+                    navController.navigate(R.id.nav_admin_home, null, navOptions);
                 } catch (Exception ignored) {}
             }
             return;
         }
 
-        // Para las demás pestañas: intentar volver a ella si ya existe en la pila, o navegar a ella
+        // Para las demás pestañas (Favoritos, Buscar, Perfil): navegar con animación fluida
         if (!navController.popBackStack(itemId, false)) {
             try {
-                navController.navigate(itemId);
+                navController.navigate(itemId, null, navOptions);
             } catch (Exception ignored) {}
         }
     }

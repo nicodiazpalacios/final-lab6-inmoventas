@@ -24,6 +24,20 @@
             app:exitAnim="@anim/nav_default_exit_anim"
             app:popEnterAnim="@anim/nav_default_pop_enter_anim"
             app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_guardados"
+            app:destination="@id/nav_guardados"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_detalle_propiedad"
+            app:destination="@id/nav_detalle_propiedad"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
     <fragment
@@ -93,7 +107,22 @@
         android:id="@+id/nav_guardados"
         android:name="com.example.inmobiliariaventa.ui.list.MisFavoritosFragment"
         android:label="Mis Favoritos"
-        tools:layout="@layout/fragment_mis_favoritos" />
+        tools:layout="@layout/fragment_mis_favoritos">
+        <action
+            android:id="@+id/action_nav_guardados_to_nav_detalle_propiedad"
+            app:destination="@id/nav_detalle_propiedad"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_guardados_to_nav_inicio"
+            app:destination="@id/nav_inicio"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_detalle_propiedad"

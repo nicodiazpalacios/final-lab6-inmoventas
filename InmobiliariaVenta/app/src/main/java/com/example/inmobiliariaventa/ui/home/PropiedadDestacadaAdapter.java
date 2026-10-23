@@ -381,11 +381,21 @@ public class PropiedadDestacadaAdapter extends RecyclerView.Adapter<PropiedadDes
             holder.favoriteButtonCard.setOnClickListener(favClickListener);
         }
 
-        // Navegar al detalle de la propiedad al hacer click en la tarjeta
+        // Navegar al detalle de la propiedad al hacer click en la tarjeta con animación fluida
         holder.itemView.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("propiedad_id", prop.id);
-            Navigation.findNavController(v).navigate(R.id.nav_detalle_propiedad, bundle);
+            androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                    .setEnterAnim(androidx.navigation.ui.R.anim.nav_default_enter_anim)
+                    .setExitAnim(androidx.navigation.ui.R.anim.nav_default_exit_anim)
+                    .setPopEnterAnim(androidx.navigation.ui.R.anim.nav_default_pop_enter_anim)
+                    .setPopExitAnim(androidx.navigation.ui.R.anim.nav_default_pop_exit_anim)
+                    .build();
+            try {
+                Navigation.findNavController(v).navigate(R.id.nav_detalle_propiedad, bundle, navOptions);
+            } catch (Exception e) {
+                Navigation.findNavController(v).navigate(R.id.nav_detalle_propiedad, bundle);
+            }
         });
     }
 

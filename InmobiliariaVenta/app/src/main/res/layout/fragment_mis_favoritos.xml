@@ -57,7 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Cargando tus propiedades guardadas..."
+                android:text="Tus propiedades guardadas"
                 android:textColor="@color/colorOnSurfaceVariant"
                 android:textSize="14sp" />
 

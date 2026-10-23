@@ -49,6 +49,7 @@ public class MisFavoritosFragment extends Fragment {
     private com.google.android.material.card.MaterialCardView cardModoOfflineFavoritos;
 
     private FavoritosAdapter adapter;
+    private static volatile List<Propiedad> cachedFavoritosGlobal = null;
     private final List<Propiedad> listaOriginal = new ArrayList<>();
     private int criterioOrdenActual = 0; // 0: Reciente, 1: Menor precio, 2: Mayor precio, 3: Más ambientes, 4: Mayor m²
 
@@ -131,6 +132,14 @@ public class MisFavoritosFragment extends Fragment {
                     }
                 });
 
+        // Precarga instantánea en memoria si ya existen favoritos cacheados (0 ms)
+        if (cachedFavoritosGlobal != null && !cachedFavoritosGlobal.isEmpty()) {
+            listaOriginal.clear();
+            listaOriginal.addAll(cachedFavoritosGlobal);
+            actualizarVistaFavoritos();
+            if (pbFavoritos != null) pbFavoritos.setVisibility(View.GONE);
+        }
+
         // Cargar favoritos del usuario conectado
         cargarFavoritosUsuario();
     }
@@ -152,7 +161,11 @@ public class MisFavoritosFragment extends Fragment {
         }
 
         if (layoutNoLogin != null) layoutNoLogin.setVisibility(View.GONE);
-        if (pbFavoritos != null) pbFavoritos.setVisibility(View.VISIBLE);
+        if (cachedFavoritosGlobal == null || cachedFavoritosGlobal.isEmpty()) {
+            if (pbFavoritos != null) pbFavoritos.setVisibility(View.VISIBLE);
+        } else {
+            if (pbFavoritos != null) pbFavoritos.setVisibility(View.GONE);
+        }
 
         // Observar en tiempo real los favoritos del usuario desde Room
         AppDatabase.getInstance(requireContext())
@@ -169,6 +182,7 @@ public class MisFavoritosFragment extends Fragment {
                             }
                         }
                     }
+                    cachedFavoritosGlobal = new ArrayList<>(listaOriginal);
 
                     actualizarVistaFavoritos();
                 });
@@ -309,12 +323,22 @@ public class MisFavoritosFragment extends Fragment {
     }
 
     private void abrirDetallePropiedad(Propiedad prop) {
-        if (prop == null || prop.id == null) return;
+        if (prop == null || prop.id == null || !isAdded()) return;
         Bundle bundle = new Bundle();
         bundle.putString("propiedad_id", prop.id);
+        androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                .setEnterAnim(androidx.navigation.ui.R.anim.nav_default_enter_anim)
+                .setExitAnim(androidx.navigation.ui.R.anim.nav_default_exit_anim)
+                .setPopEnterAnim(androidx.navigation.ui.R.anim.nav_default_pop_enter_anim)
+                .setPopExitAnim(androidx.navigation.ui.R.anim.nav_default_pop_exit_anim)
+                .build();
         try {
-            Navigation.findNavController(requireView()).navigate(R.id.nav_detalle_propiedad, bundle);
-        } catch (Exception ignored) {}
+            Navigation.findNavController(requireView()).navigate(R.id.nav_detalle_propiedad, bundle, navOptions);
+        } catch (Exception ignored) {
+            try {
+                Navigation.findNavController(requireView()).navigate(R.id.nav_detalle_propiedad, bundle);
+            } catch (Exception ignored2) {}
+        }
     }
 
     private void mostrarDialogoOrdenamiento() {
