@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -24,23 +23,32 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inmobiliariaventa.R;
+import com.example.inmobiliariaventa.data.remote.GeorefApiClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
 import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public class AdminAgregarPropiedadFragment extends Fragment {
 
-    private TextInputEditText etTitulo, etDescripcion, etPrecio, etDireccion, etCiudad, etProvincia;
+    private TextInputEditText etTitulo, etDescripcion, etPrecio, etDireccion;
+    private AutoCompleteTextView spinnerProvincia, spinnerCiudad;
+    private TextInputLayout tilProvincia, tilCiudad;
+    private final Map<String, String> provinciaNombreAId = new HashMap<>();
+    private final List<String> listaProvinciasNombres = new ArrayList<>();
+
     private TextInputEditText etAmbientes, etBanos, etSuperficie;
     private AutoCompleteTextView spinnerTipoPropiedad;
     private AutoCompleteTextView spinnerDisposicion;
@@ -100,8 +108,12 @@ public class AdminAgregarPropiedadFragment extends Fragment {
         etDescripcion = view.findViewById(R.id.et_descripcion_propiedad);
         etPrecio = view.findViewById(R.id.et_precio_propiedad);
         etDireccion = view.findViewById(R.id.et_direccion_propiedad);
-        etCiudad = view.findViewById(R.id.et_ciudad_propiedad);
-        etProvincia = view.findViewById(R.id.et_provincia_propiedad);
+
+        tilProvincia = view.findViewById(R.id.til_provincia_propiedad);
+        tilCiudad = view.findViewById(R.id.til_ciudad_propiedad);
+        spinnerProvincia = view.findViewById(R.id.spinner_provincia_propiedad);
+        spinnerCiudad = view.findViewById(R.id.spinner_ciudad_propiedad);
+
         etAmbientes = view.findViewById(R.id.et_ambientes_propiedad);
         etBanos = view.findViewById(R.id.et_banos_propiedad);
         etSuperficie = view.findViewById(R.id.et_superficie_propiedad);
@@ -144,6 +156,9 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             actualizarVisibilidadCaracteristicas(tipos[0]);
         }
 
+        // Configuración y enlace con el servicio de normalización Georef
+        configurarSelectoresGeoref();
+
         View btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> Navigation.findNavController(view).popBackStack());
@@ -168,6 +183,137 @@ public class AdminAgregarPropiedadFragment extends Fragment {
                 configurarModoEdicion();
             }
         }
+    }
+
+    /**
+     * Inicializa los desplegables de Provincia y Ciudad con Georef API
+     */
+    private void configurarSelectoresGeoref() {
+        if (spinnerProvincia == null || spinnerCiudad == null) return;
+
+        // Por defecto, ciudad deshabilitada hasta que se elija una provincia
+        spinnerCiudad.setEnabled(false);
+        if (tilCiudad != null) {
+            tilCiudad.setEnabled(false);
+            tilCiudad.setHelperText("Seleccione primero una provincia");
+        }
+
+        // Evento al seleccionar una provincia del menú desplegable
+        spinnerProvincia.setOnItemClickListener((parent, v, position, id) -> {
+            String provinciaSeleccionada = (String) parent.getItemAtPosition(position);
+            onProvinciaSeleccionada(provinciaSeleccionada, null);
+        });
+
+        // Cargar provincias desde Georef
+        GeorefApiClient.obtenerProvincias(new GeorefApiClient.GeorefCallback<List<GeorefApiClient.ProvinciaItem>>() {
+            @Override
+            public void onSuccess(List<GeorefApiClient.ProvinciaItem> provincias) {
+                if (!isAdded() || getContext() == null) return;
+
+                provinciaNombreAId.clear();
+                listaProvinciasNombres.clear();
+
+                if (provincias != null && !provincias.isEmpty()) {
+                    for (GeorefApiClient.ProvinciaItem p : provincias) {
+                        if (p != null && p.nombre != null) {
+                            provinciaNombreAId.put(p.nombre, p.id);
+                            listaProvinciasNombres.add(p.nombre);
+                        }
+                    }
+                } else {
+                    listaProvinciasNombres.addAll(GeorefApiClient.PROVINCIAS_FALLBACK);
+                }
+
+                poblarAdapterProvincias();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                if (!isAdded() || getContext() == null) return;
+                // Si no hay conexión o falla la API, usar respaldo local de 24 provincias
+                listaProvinciasNombres.clear();
+                listaProvinciasNombres.addAll(GeorefApiClient.PROVINCIAS_FALLBACK);
+                poblarAdapterProvincias();
+            }
+        });
+    }
+
+    private void poblarAdapterProvincias() {
+        if (!isAdded() || getContext() == null || spinnerProvincia == null) return;
+        ArrayAdapter<String> adapterProvincias = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                listaProvinciasNombres
+        );
+        spinnerProvincia.setAdapter(adapterProvincias);
+    }
+
+    private void onProvinciaSeleccionada(String nombreProvincia, @Nullable String ciudadPrevia) {
+        if (!isAdded() || getContext() == null || TextUtils.isEmpty(nombreProvincia)) return;
+
+        if (tilProvincia != null) {
+            tilProvincia.setError(null);
+        }
+
+        // Limpiar ciudad seleccionada si el usuario cambió de provincia manualmente
+        if (ciudadPrevia == null) {
+            spinnerCiudad.setText("", false);
+        }
+
+        // Bloquear mientras se cargan las ciudades de la provincia
+        spinnerCiudad.setEnabled(false);
+        if (tilCiudad != null) {
+            tilCiudad.setEnabled(false);
+            tilCiudad.setError(null);
+            tilCiudad.setHelperText("Cargando localidades de " + nombreProvincia + "...");
+        }
+
+        // Obtener el ID de la provincia de Georef o usar el nombre como fallback
+        String idOProvincia = provinciaNombreAId.get(nombreProvincia);
+        if (idOProvincia == null || idOProvincia.isEmpty()) {
+            idOProvincia = nombreProvincia;
+        }
+
+        GeorefApiClient.obtenerLocalidadesPorProvincia(idOProvincia, new GeorefApiClient.GeorefCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> localidades) {
+                if (!isAdded() || getContext() == null) return;
+
+                spinnerCiudad.setEnabled(true);
+                if (tilCiudad != null) {
+                    tilCiudad.setEnabled(true);
+                    tilCiudad.setHelperText("Escriba o elija una localidad de la lista");
+                }
+
+                List<String> items = (localidades != null) ? localidades : new ArrayList<>();
+                ArrayAdapter<String> adapterCiudades = new ArrayAdapter<>(
+                        requireContext(),
+                        android.R.layout.simple_dropdown_item_1line,
+                        items
+                );
+                spinnerCiudad.setAdapter(adapterCiudades);
+
+                if (ciudadPrevia != null && !ciudadPrevia.isEmpty()) {
+                    spinnerCiudad.setText(ciudadPrevia, false);
+                }
+            }
+
+            @Override
+            public void onError(Exception error) {
+                if (!isAdded() || getContext() == null) return;
+
+                // Si no hay red, habilitar para permitir escritura manual
+                spinnerCiudad.setEnabled(true);
+                if (tilCiudad != null) {
+                    tilCiudad.setEnabled(true);
+                    tilCiudad.setHelperText("Ingrese la localidad manualmente");
+                }
+
+                if (ciudadPrevia != null && !ciudadPrevia.isEmpty()) {
+                    spinnerCiudad.setText(ciudadPrevia, false);
+                }
+            }
+        });
     }
 
     private void configurarModoEdicion() {
@@ -207,12 +353,20 @@ public class AdminAgregarPropiedadFragment extends Fragment {
         if (etDireccion != null && p.domicilio != null) {
             etDireccion.setText(p.domicilio);
         }
-        if (etCiudad != null && p.ciudad != null) {
-            etCiudad.setText(p.ciudad);
+
+        // Preselección de Provincia y carga dependiente de Ciudad
+        if (p.estadoProvincia != null && !p.estadoProvincia.trim().isEmpty()) {
+            if (spinnerProvincia != null) {
+                spinnerProvincia.setText(p.estadoProvincia, false);
+            }
+            onProvinciaSeleccionada(p.estadoProvincia, p.ciudad);
+        } else if (p.ciudad != null && !p.ciudad.trim().isEmpty()) {
+            if (spinnerCiudad != null) {
+                spinnerCiudad.setEnabled(true);
+                spinnerCiudad.setText(p.ciudad, false);
+            }
         }
-        if (etProvincia != null && p.estadoProvincia != null) {
-            etProvincia.setText(p.estadoProvincia);
-        }
+
         if (etAmbientes != null) {
             etAmbientes.setText(String.valueOf(p.ambientes));
         }
@@ -296,16 +450,13 @@ public class AdminAgregarPropiedadFragment extends Fragment {
 
     private void guardarOActualizarPropiedad(View view) {
         String titulo = etTitulo != null && etTitulo.getText() != null ? etTitulo.getText().toString().trim() : "";
-        String direccion = etDireccion != null && etDireccion.getText() != null ? etDireccion.getText().toString().trim() : "";
         String precioStr = etPrecio != null && etPrecio.getText() != null ? etPrecio.getText().toString().trim() : "";
+        String provincia = spinnerProvincia != null && spinnerProvincia.getText() != null ? spinnerProvincia.getText().toString().trim() : "";
+        String ciudad = spinnerCiudad != null && spinnerCiudad.getText() != null ? spinnerCiudad.getText().toString().trim() : "";
+        String direccion = etDireccion != null && etDireccion.getText() != null ? etDireccion.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(titulo)) {
             if (etTitulo != null) etTitulo.setError("Ingrese un título");
-            return;
-        }
-
-        if (TextUtils.isEmpty(direccion)) {
-            if (etDireccion != null) etDireccion.setError("Ingrese una dirección");
             return;
         }
 
@@ -322,9 +473,34 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             return;
         }
 
+        // Validación obligatoria de Provincia
+        if (TextUtils.isEmpty(provincia)) {
+            if (tilProvincia != null) {
+                tilProvincia.setError("Debe seleccionar una provincia primero");
+                tilProvincia.requestFocus();
+            }
+            return;
+        } else if (tilProvincia != null) {
+            tilProvincia.setError(null);
+        }
+
+        // Validación obligatoria de Ciudad según la provincia seleccionada
+        if (TextUtils.isEmpty(ciudad)) {
+            if (tilCiudad != null) {
+                tilCiudad.setError("Debe seleccionar o ingresar una localidad/ciudad");
+                tilCiudad.requestFocus();
+            }
+            return;
+        } else if (tilCiudad != null) {
+            tilCiudad.setError(null);
+        }
+
+        if (TextUtils.isEmpty(direccion)) {
+            if (etDireccion != null) etDireccion.setError("Ingrese una dirección");
+            return;
+        }
+
         String descripcion = etDescripcion != null && etDescripcion.getText() != null ? etDescripcion.getText().toString().trim() : "";
-        String ciudad = etCiudad != null && etCiudad.getText() != null ? etCiudad.getText().toString().trim() : "Buenos Aires";
-        String provincia = etProvincia != null && etProvincia.getText() != null ? etProvincia.getText().toString().trim() : "";
         String tipoSeleccionado = spinnerTipoPropiedad != null ? spinnerTipoPropiedad.getText().toString() : "Casa";
         TipoPropiedad tipoPropiedad = "Departamento".equalsIgnoreCase(tipoSeleccionado) ? TipoPropiedad.DEPARTAMENTO : TipoPropiedad.CASA;
 
