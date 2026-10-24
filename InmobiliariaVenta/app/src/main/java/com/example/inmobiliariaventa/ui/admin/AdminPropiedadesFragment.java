@@ -76,6 +76,14 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -109,6 +117,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
         // Botón Filtros: Todos, Publicados, Pausados
         if (btnFiltros != null) {
             btnFiltros.setOnClickListener(v -> {
+                if (!isAdded() || getContext() == null) return;
                 PopupMenu popup = new PopupMenu(requireContext(), btnFiltros);
                 popup.getMenu().add("Todos");
                 popup.getMenu().add("Publicados");
@@ -118,7 +127,9 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                     selectedFilter = item.getTitle().toString();
                     actualizarEstiloBotonFiltros();
                     aplicarFiltrosYOrden();
-                    CartelUtils.mostrar(requireContext(), "Filtro: " + selectedFilter);
+                    if (isAdded() && getContext() != null) {
+                        CartelUtils.mostrar(requireContext(), "Filtro: " + selectedFilter);
+                    }
                     return true;
                 });
                 popup.show();
@@ -128,6 +139,7 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
         // Botón Orden: Recientes, Mayor Monto, Menor Monto
         if (btnOrden != null) {
             btnOrden.setOnClickListener(v -> {
+                if (!isAdded() || getContext() == null) return;
                 PopupMenu popup = new PopupMenu(requireContext(), btnOrden);
                 popup.getMenu().add("Recientes");
                 popup.getMenu().add("Mayor Monto");
@@ -137,7 +149,9 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                     selectedSort = item.getTitle().toString();
                     actualizarEstiloBotonOrden();
                     aplicarFiltrosYOrden();
-                    CartelUtils.mostrar(requireContext(), "Orden: " + selectedSort);
+                    if (isAdded() && getContext() != null) {
+                        CartelUtils.mostrar(requireContext(), "Orden: " + selectedSort);
+                    }
                     return true;
                 });
                 popup.show();
@@ -161,7 +175,11 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
                     if (searchRunnable != null) {
                         searchHandler.removeCallbacks(searchRunnable);
                     }
-                    searchRunnable = () -> aplicarFiltrosYOrden();
+                    searchRunnable = () -> {
+                        if (isAdded() && getContext() != null) {
+                            aplicarFiltrosYOrden();
+                        }
+                    };
                     searchHandler.postDelayed(searchRunnable, 150);
                 }
 
@@ -446,7 +464,10 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
     private void actualizarEstiloBotonFiltros() {
         if (btnFiltros == null || getContext() == null) return;
-        btnFiltros.setText("FILTROS (" + selectedFilter + ")");
+        String label = "Todos".equalsIgnoreCase(selectedFilter)
+                ? "FILTROS"
+                : "FILTRO: " + selectedFilter;
+        btnFiltros.setText(label);
         btnFiltros.setStrokeColorResource(R.color.colorOutlineVariant);
         btnFiltros.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
         btnFiltros.setIconTintResource(R.color.colorOnSurface);
@@ -454,7 +475,10 @@ public class AdminPropiedadesFragment extends Fragment implements AdminPropiedad
 
     private void actualizarEstiloBotonOrden() {
         if (btnOrden == null || getContext() == null) return;
-        btnOrden.setText("ORDEN (" + selectedSort + ")");
+        String label = "Recientes".equalsIgnoreCase(selectedSort)
+                ? "ORDEN"
+                : "ORDEN: " + selectedSort;
+        btnOrden.setText(label);
         btnOrden.setStrokeColorResource(R.color.colorOutlineVariant);
         btnOrden.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorOnSurface));
         btnOrden.setIconTintResource(R.color.colorOnSurface);

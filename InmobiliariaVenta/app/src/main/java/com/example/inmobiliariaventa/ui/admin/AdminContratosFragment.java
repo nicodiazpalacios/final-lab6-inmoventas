@@ -42,11 +42,9 @@ import java.util.HashSet;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.Locale;
@@ -66,12 +64,18 @@ public class AdminContratosFragment extends Fragment {
     private Runnable renderDebounceRunnable;
 
     private void scheduleRenderContractsList() {
-        if (getActivity() == null) return;
-        requireActivity().runOnUiThread(() -> {
+        androidx.fragment.app.FragmentActivity activity = getActivity();
+        if (activity == null) return;
+        activity.runOnUiThread(() -> {
+            if (!isAdded() || getContext() == null) return;
             if (renderDebounceRunnable != null) {
                 renderDebounceHandler.removeCallbacks(renderDebounceRunnable);
             }
-            renderDebounceRunnable = this::renderContractsList;
+            renderDebounceRunnable = () -> {
+                if (isAdded() && getContext() != null) {
+                    renderContractsList();
+                }
+            };
             renderDebounceHandler.postDelayed(renderDebounceRunnable, 120);
         });
     }
@@ -132,6 +136,7 @@ public class AdminContratosFragment extends Fragment {
         MaterialButton btnFilterStatus = view.findViewById(R.id.btn_filter_status);
         if (btnFilterStatus != null) {
             btnFilterStatus.setOnClickListener(v -> {
+                if (!isAdded() || getContext() == null) return;
                 android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnFilterStatus);
                 popup.getMenu().add("Todos");
                 popup.getMenu().add(Contrato.ESTADO_PENDIENTE);
@@ -141,11 +146,13 @@ public class AdminContratosFragment extends Fragment {
                     currentStatusFilter = item.getTitle().toString();
                     btnFilterStatus.setText("Todos".equalsIgnoreCase(currentStatusFilter)
                             ? "FILTROS"
-                            : "FILTROS (" + currentStatusFilter + ")");
+                            : "FILTRO: " + currentStatusFilter);
                     currentPage = 1;
                     startPage = 1;
                     renderContractsList();
-                    CartelUtils.mostrar(requireContext(), "Filtro: " + currentStatusFilter);
+                    if (isAdded() && getContext() != null) {
+                        CartelUtils.mostrar(requireContext(), "Filtro: " + currentStatusFilter);
+                    }
                     return true;
                 });
                 popup.show();
@@ -155,17 +162,22 @@ public class AdminContratosFragment extends Fragment {
         MaterialButton btnSortContracts = view.findViewById(R.id.btn_sort_contracts);
         if (btnSortContracts != null) {
             btnSortContracts.setOnClickListener(v -> {
+                if (!isAdded() || getContext() == null) return;
                 android.widget.PopupMenu popup = new android.widget.PopupMenu(requireContext(), btnSortContracts);
                 popup.getMenu().add("Recientes");
                 popup.getMenu().add("Mayor Monto");
                 popup.getMenu().add("Menor Monto");
                 popup.setOnMenuItemClickListener(item -> {
                     currentSortOrder = item.getTitle().toString();
-                    btnSortContracts.setText("ORDEN (" + currentSortOrder + ")");
+                    btnSortContracts.setText("Recientes".equalsIgnoreCase(currentSortOrder)
+                            ? "ORDEN"
+                            : "ORDEN: " + currentSortOrder);
                     currentPage = 1;
                     startPage = 1;
                     renderContractsList();
-                    CartelUtils.mostrar(requireContext(), "Orden: " + currentSortOrder);
+                    if (isAdded() && getContext() != null) {
+                        CartelUtils.mostrar(requireContext(), "Orden: " + currentSortOrder);
+                    }
                     return true;
                 });
                 popup.show();
@@ -194,7 +206,7 @@ public class AdminContratosFragment extends Fragment {
         if (allContratos.isEmpty() || cachedContratosGlobal == null) {
             AppDatabase.databaseWriteExecutor.execute(() -> {
                 List<Contrato> iniciales = db.contratoDao().obtenerTodosSync();
-                if (iniciales != null && !iniciales.isEmpty() && allContratos.isEmpty()) {
+                if (iniciales != null && !iniciales.isEmpty()) {
                     for (Contrato c : iniciales) {
                         if (c == null || c.id == null) continue;
                         List<com.example.inmobiliariaventa.domain.entity.Pago> pagos = db.pagoDao().obtenerPorContratoSync(c.id);
@@ -203,14 +215,16 @@ public class AdminContratosFragment extends Fragment {
                             c.setListaPagos(pagos);
                         }
                     }
-                    if (getActivity() != null) {
-                        requireActivity().runOnUiThread(() -> {
-                            if (!isAdded()) return;
-                            allContratos.clear();
-                            allContratos.addAll(iniciales);
-                            cachedContratosGlobal = new ArrayList<>(iniciales);
-                            hasLoadedInitialData = true;
-                            renderContractsList();
+                    androidx.fragment.app.FragmentActivity activity = getActivity();
+                    if (activity != null) {
+                        activity.runOnUiThread(() -> {
+                            if (!isAdded() || getContext() == null) return;
+                            if (allContratos.isEmpty()) {
+                                allContratos.addAll(iniciales);
+                                cachedContratosGlobal = new ArrayList<>(iniciales);
+                                hasLoadedInitialData = true;
+                                renderContractsList();
+                            }
                         });
                     }
                 }
@@ -219,8 +233,9 @@ public class AdminContratosFragment extends Fragment {
 
         db.contratoDao().obtenerTodosLiveData().observe(getViewLifecycleOwner(), contratos -> {
             if (contratos == null) return;
+            final List<Contrato> copiaContratos = new ArrayList<>(contratos);
             AppDatabase.databaseWriteExecutor.execute(() -> {
-                for (Contrato c : contratos) {
+                for (Contrato c : copiaContratos) {
                     if (c == null || c.id == null) continue;
                     List<com.example.inmobiliariaventa.domain.entity.Pago> pagos = db.pagoDao().obtenerPorContratoSync(c.id);
                     if (pagos != null) {
@@ -231,25 +246,27 @@ public class AdminContratosFragment extends Fragment {
                         if (enCache != null) c.setListaPagos(enCache);
                     }
                 }
-                if (getActivity() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        if (!isAdded()) return;
+                androidx.fragment.app.FragmentActivity activity = getActivity();
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (!isAdded() || getContext() == null) return;
                         allContratos.clear();
-                        allContratos.addAll(contratos);
-                        cachedContratosGlobal = new ArrayList<>(contratos);
+                        allContratos.addAll(copiaContratos);
+                        cachedContratosGlobal = new ArrayList<>(copiaContratos);
                         hasLoadedInitialData = true;
                         renderContractsList();
                     });
                 }
-                sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(contratos));
+                sincronizarPropiedadesPausadasPorContratos(new ArrayList<>(copiaContratos));
             });
         });
         sincronizarContratosConSupabase();
     }
 
     private void sincronizarContratosConSupabase() {
-        if (getActivity() == null) return;
-        android.app.Application appContext = requireActivity().getApplication();
+        androidx.fragment.app.FragmentActivity activity = getActivity();
+        if (activity == null) return;
+        android.app.Application appContext = activity.getApplication();
         AppDatabase db = AppDatabase.getInstance(appContext);
 
         // 1. Subir solo contratos pendientes locales a Supabase
@@ -273,7 +290,7 @@ public class AdminContratosFragment extends Fragment {
             }
         });
 
-        // 2. Descargar contratos desde Supabase y actualizar Room (con reconciliacion de eliminados)
+        // 2. Descargar contratos desde Supabase y actualizar Room (no destructivo)
         SupabaseClient.obtenerContratos(new SupabaseClient.SupabaseCallback<List<Contrato>>() {
             @Override
             public void onSuccess(List<Contrato> remotos) {
@@ -299,17 +316,31 @@ public class AdminContratosFragment extends Fragment {
             public void onError(Exception e) { }
         });
 
-        // 3. Descargar pagos desde Supabase (con reconciliacion de eliminados)
+        // 3. Descargar pagos desde Supabase y actualizar Room (sin ConcurrentModificationException)
         SupabaseClient.obtenerPagos(new SupabaseClient.SupabaseCallback<List<Pago>>() {
             @Override
             public void onSuccess(List<Pago> remotos) {
                 final List<Pago> listaFinal = (remotos != null) ? remotos : new java.util.ArrayList<>();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     db.pagoDao().sincronizarConServidor(listaFinal);
-                    for (Contrato c : allContratos) {
-                        c.setListaPagos(db.pagoDao().obtenerPorContratoSync(c.id));
+                    androidx.fragment.app.FragmentActivity act = getActivity();
+                    if (act != null) {
+                        act.runOnUiThread(() -> {
+                            if (!isAdded() || getContext() == null) return;
+                            final List<Contrato> snapshot = new ArrayList<>(allContratos);
+                            AppDatabase.databaseWriteExecutor.execute(() -> {
+                                for (Contrato c : snapshot) {
+                                    if (c == null || c.id == null) continue;
+                                    List<Pago> pagos = db.pagoDao().obtenerPorContratoSync(c.id);
+                                    if (pagos != null) {
+                                        cachePagosPorContrato.put(c.id, pagos);
+                                        c.setListaPagos(pagos);
+                                    }
+                                }
+                                scheduleRenderContractsList();
+                            });
+                        });
                     }
-                    scheduleRenderContractsList();
                 });
             }
 
@@ -337,8 +368,9 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void sincronizarPropiedadesPausadasPorContratos(List<Contrato> contratos) {
-        if (getActivity() == null) return;
-        android.app.Application appContext = requireActivity().getApplication();
+        androidx.fragment.app.FragmentActivity activity = getActivity();
+        if (activity == null) return;
+        android.app.Application appContext = activity.getApplication();
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(appContext);
             List<com.example.inmobiliariaventa.domain.entity.Propiedad> todas = db.propiedadDao().obtenerTodasSync();
@@ -389,7 +421,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void renderContractsList() {
-        if (layoutContractsContainer == null || getContext() == null) return;
+        if (!isAdded() || layoutContractsContainer == null || getContext() == null) return;
 
         List<Contrato> filtered = new ArrayList<>();
         for (Contrato c : allContratos) {
@@ -588,9 +620,11 @@ public class AdminContratosFragment extends Fragment {
             }
 
             if (btnPdf != null) {
-                btnPdf.setOnClickListener(v ->
-                        com.example.inmobiliariaventa.utils.ContratoPdfGenerator.mostrarDialogoExportarPdf(requireContext(), contrato)
-                );
+                btnPdf.setOnClickListener(v -> {
+                    if (isAdded() && getContext() != null) {
+                        com.example.inmobiliariaventa.utils.ContratoPdfGenerator.mostrarDialogoExportarPdf(requireContext(), contrato);
+                    }
+                });
             }
 
             if (btnModificar != null) {
@@ -628,7 +662,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void mostrarDialogoCobranzas(Contrato contrato) {
-        if (getContext() == null || contrato == null) return;
+        if (!isAdded() || getContext() == null || contrato == null) return;
 
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_gestion_cobranzas, null);
@@ -665,6 +699,8 @@ public class AdminContratosFragment extends Fragment {
         Runnable refrescarVista = new Runnable() {
             @Override
             public void run() {
+                if (!isAdded() || getContext() == null) return;
+
                 NumberFormat cf = NumberFormat.getNumberInstance(Locale.US);
                 cf.setMaximumFractionDigits(0);
 
@@ -876,8 +912,9 @@ public class AdminContratosFragment extends Fragment {
             List<Pago> pagosActuales = dbCobranza.pagoDao().obtenerPorContratoSync(contrato.id);
             if (pagosActuales != null) {
                 contrato.setListaPagos(pagosActuales);
-                if (getActivity() != null) {
-                    requireActivity().runOnUiThread(refrescarVista);
+                androidx.fragment.app.FragmentActivity act = getActivity();
+                if (act != null) {
+                    act.runOnUiThread(refrescarVista);
                 }
             }
         });
@@ -906,7 +943,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void mostrarDialogoRegistrarCobroMultiple(Contrato contrato, List<Integer> cuotasSeleccionadas, double valorUnitarioCuota, Runnable onPagosRegistrados) {
-        if (getContext() == null || contrato == null || cuotasSeleccionadas == null || cuotasSeleccionadas.isEmpty()) return;
+        if (!isAdded() || getContext() == null || contrato == null || cuotasSeleccionadas == null || cuotasSeleccionadas.isEmpty()) return;
 
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_registrar_pago_cuota, null);
@@ -983,8 +1020,9 @@ public class AdminContratosFragment extends Fragment {
                     nuevosPagos.add(p);
                 }
 
-                if (getActivity() != null) {
-                    android.app.Application app = requireActivity().getApplication();
+                androidx.fragment.app.FragmentActivity activity = getActivity();
+                if (activity != null) {
+                    android.app.Application app = activity.getApplication();
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         AppDatabase db = AppDatabase.getInstance(app);
                         db.pagoDao().insertarTodos(nuevosPagos);
@@ -1026,9 +1064,11 @@ public class AdminContratosFragment extends Fragment {
 
                         SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
 
-                        if (getActivity() != null) {
-                            requireActivity().runOnUiThread(() -> {
+                        androidx.fragment.app.FragmentActivity act = getActivity();
+                        if (act != null) {
+                            act.runOnUiThread(() -> {
                                 dialog.dismiss();
+                                if (!isAdded() || getContext() == null) return;
                                 if (onPagosRegistrados != null) {
                                     onPagosRegistrados.run();
                                 }
@@ -1059,7 +1099,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void mostrarDialogoRegistrarCobro(Contrato contrato, int nroCuota, double montoSugerido, String conceptoDefecto, Runnable onPagoRegistrado) {
-        if (getContext() == null || contrato == null) return;
+        if (!isAdded() || getContext() == null || contrato == null) return;
 
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_registrar_pago_cuota, null);
@@ -1133,8 +1173,9 @@ public class AdminContratosFragment extends Fragment {
                     concepto
             );
 
-            if (getActivity() != null) {
-                android.app.Application app = requireActivity().getApplication();
+            androidx.fragment.app.FragmentActivity activity = getActivity();
+            if (activity != null) {
+                android.app.Application app = activity.getApplication();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     AppDatabase db = AppDatabase.getInstance(app);
                     db.pagoDao().insertar(nuevoPago);
@@ -1174,9 +1215,11 @@ public class AdminContratosFragment extends Fragment {
                     // Sincronizar contrato actualizado en Supabase
                     SupabaseClient.actualizarEstadoContrato(contrato.id, contrato.estado, null);
 
-                    if (getActivity() != null) {
-                        requireActivity().runOnUiThread(() -> {
+                    androidx.fragment.app.FragmentActivity act = getActivity();
+                    if (act != null) {
+                        act.runOnUiThread(() -> {
                             dialog.dismiss();
+                            if (!isAdded() || getContext() == null) return;
                             if (onPagoRegistrado != null) {
                                 onPagoRegistrado.run();
                             }
@@ -1206,7 +1249,7 @@ public class AdminContratosFragment extends Fragment {
     }
 
     private void mostrarDialogoConfirmarBaja(Contrato contrato, String clienteName, String propiedadName, String monto) {
-        if (getContext() == null || contrato == null) return;
+        if (!isAdded() || getContext() == null || contrato == null) return;
         if (Contrato.ESTADO_COMPLETADO.equalsIgnoreCase(contrato.getEstadoNormalizado())) {
             CartelUtils.mostrar(requireContext(), "Un contrato completado no puede ser rechazado");
             return;
@@ -1246,6 +1289,7 @@ public class AdminContratosFragment extends Fragment {
             btnConfirmar.setTextColor(Color.WHITE);
             btnConfirmar.setOnClickListener(v -> {
                 dialog.dismiss();
+                if (!isAdded() || getContext() == null) return;
                 darDeBajaContrato(contrato);
                 ActividadRepository.getInstance(requireContext())
                         .registrarModificacionContrato(clienteName, propiedadName, monto, "Rechazado (Baja)");
@@ -1262,8 +1306,9 @@ public class AdminContratosFragment extends Fragment {
         }
         contrato.estado = Contrato.ESTADO_RECHAZADO;
         contrato.estadoSincronizacion = "PENDIENTE_SUBIR";
-        if (getActivity() == null) return;
-        android.app.Application appContext = requireActivity().getApplication();
+        androidx.fragment.app.FragmentActivity activity = getActivity();
+        if (activity == null) return;
+        android.app.Application appContext = activity.getApplication();
         AppDatabase.databaseWriteExecutor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(appContext);
             db.contratoDao().actualizar(contrato);
@@ -1415,7 +1460,9 @@ public class AdminContratosFragment extends Fragment {
         currentPage = page;
         startPage = currentPage;
         renderContractsList();
-        CartelUtils.mostrar(requireContext(), "Página " + currentPage + " de " + maxPages);
+        if (isAdded() && getContext() != null) {
+            CartelUtils.mostrar(requireContext(), "Página " + currentPage + " de " + maxPages);
+        }
     }
 
     private void renderPagination(boolean showToast) {
@@ -1448,7 +1495,7 @@ public class AdminContratosFragment extends Fragment {
         btnPageNext.setEnabled(canGoNext);
         btnPageNext.setAlpha(canGoNext ? 1.0f : 0.35f);
 
-        if (showToast) {
+        if (showToast && isAdded() && getContext() != null) {
             CartelUtils.mostrar(requireContext(), "Página " + currentPage + " de " + maxPages);
         }
     }

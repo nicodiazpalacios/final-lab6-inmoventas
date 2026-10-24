@@ -20,10 +20,10 @@ import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.NavGraph;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.NavigationUI;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.data.repository.ContratoRepository;
 import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -255,6 +255,12 @@ public class MainActivity extends AppCompatActivity {
             try {
                 com.example.inmobiliariaventa.data.repository.MensajeContactoRepositoryImpl.getInstance(getApplicationContext())
                         .sincronizarConNube(null);
+            } catch (Exception ignored) {}
+
+            // Sincronizar contratos al inicio únicamente si el usuario autenticado tiene rol de "Admin"
+            try {
+                ContratoRepository.getInstance(getApplicationContext())
+                        .sincronizarAlIniciarSiEsAdmin();
             } catch (Exception ignored) {}
         });
 

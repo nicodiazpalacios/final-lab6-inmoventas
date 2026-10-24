@@ -148,14 +148,18 @@ public class GeorefApiClient {
             return;
         }
 
+        final String trimmedInput = provinciaIdONombre.trim();
+        final boolean esIdNumerico = trimmedInput.matches("\\d{2}");
+
         String encodedProv;
         try {
-            encodedProv = URLEncoder.encode(provinciaIdONombre.trim(), StandardCharsets.UTF_8.name());
+            encodedProv = URLEncoder.encode(trimmedInput, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
-            encodedProv = provinciaIdONombre.trim();
+            encodedProv = trimmedInput;
         }
 
-        String url = BASE_URL + "/localidades?provincia=" + encodedProv + "&campos=id,nombre&max=1000&orden=nombre";
+        String url = BASE_URL + "/localidades?provincia=" + encodedProv
+                + "&campos=id,nombre,provincia.id,provincia.nombre&max=1000&orden=nombre";
         Request request = new Request.Builder()
                 .url(url)
                 .header("User-Agent", "InmobiliariaVentaApp/1.0")
@@ -192,6 +196,16 @@ public class GeorefApiClient {
                         for (JsonElement el : arr) {
                             if (el != null && el.isJsonObject()) {
                                 JsonObject obj = el.getAsJsonObject();
+
+                                // Verificar que la localidad pertenezca efectivamente a la provincia solicitada
+                                if (esIdNumerico && obj.has("provincia") && obj.get("provincia").isJsonObject()) {
+                                    JsonObject provObj = obj.getAsJsonObject("provincia");
+                                    String provIdItem = provObj.has("id") ? provObj.get("id").getAsString() : "";
+                                    if (!provIdItem.isEmpty() && !trimmedInput.equals(provIdItem)) {
+                                        continue;
+                                    }
+                                }
+
                                 String nombre = obj.has("nombre") ? obj.get("nombre").getAsString() : "";
                                 if (!nombre.trim().isEmpty()) {
                                     uniqueLocalidades.add(nombre.trim());

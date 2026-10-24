@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -25,6 +24,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.local.AppDatabase;
 import com.example.inmobiliariaventa.data.remote.SupabaseClient;
+import com.example.inmobiliariaventa.data.repository.ContratoRepository;
 import com.example.inmobiliariaventa.data.repository.FavoritoRepositoryImpl;
 import com.example.inmobiliariaventa.domain.entity.Usuario;
 import com.google.android.material.button.MaterialButton;
@@ -165,6 +165,11 @@ public class LoginFragment extends Fragment {
 
                     // Sincronizar favoritos del usuario
                     FavoritoRepositoryImpl.getInstance(requireContext()).sincronizarConNube(usuario.id, null);
+
+                    // Si el usuario tiene rol Admin, sincronizar contratos de forma segura
+                    if (esAdmin) {
+                        ContratoRepository.getInstance(requireContext()).sincronizarAlIniciarSiEsAdmin();
+                    }
 
                     NavController navController = Navigation.findNavController(v);
                     if (esAdmin) {

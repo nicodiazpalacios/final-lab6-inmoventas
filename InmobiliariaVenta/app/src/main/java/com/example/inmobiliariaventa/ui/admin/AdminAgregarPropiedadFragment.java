@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.inmobiliariaventa.R;
 import com.example.inmobiliariaventa.data.remote.GeorefApiClient;
 import com.example.inmobiliariaventa.data.repository.ActividadRepository;
+import com.example.inmobiliariaventa.data.repository.GeorefRepository;
 import com.example.inmobiliariaventa.domain.entity.Propiedad;
 import com.example.inmobiliariaventa.domain.entity.TipoPropiedad;
 import com.example.inmobiliariaventa.ui.propiedades.PropiedadViewModel;
@@ -48,6 +49,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
     private TextInputLayout tilProvincia, tilCiudad;
     private final Map<String, String> provinciaNombreAId = new HashMap<>();
     private final List<String> listaProvinciasNombres = new ArrayList<>();
+    private String provinciaSeleccionadaActual = null;
 
     private TextInputEditText etAmbientes, etBanos, etSuperficie;
     private AutoCompleteTextView spinnerTipoPropiedad;
@@ -156,7 +158,7 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             actualizarVisibilidadCaracteristicas(tipos[0]);
         }
 
-        // Configuración y enlace con el servicio de normalización Georef
+        // Configuración y enlace con el repositorio Georef con caché local permanente en Room
         configurarSelectoresGeoref();
 
         View btnBack = view.findViewById(R.id.btn_back);
@@ -186,10 +188,10 @@ public class AdminAgregarPropiedadFragment extends Fragment {
     }
 
     /**
-     * Inicializa los desplegables de Provincia y Ciudad con Georef API
+     * Inicializa los desplegables de Provincia y Ciudad con GeorefRepository (Room Cache + API)
      */
     private void configurarSelectoresGeoref() {
-        if (spinnerProvincia == null || spinnerCiudad == null) return;
+        if (spinnerProvincia == null || spinnerCiudad == null || getContext() == null) return;
 
         // Por defecto, ciudad deshabilitada hasta que se elija una provincia
         spinnerCiudad.setEnabled(false);
@@ -204,8 +206,8 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             onProvinciaSeleccionada(provinciaSeleccionada, null);
         });
 
-        // Cargar provincias desde Georef
-        GeorefApiClient.obtenerProvincias(new GeorefApiClient.GeorefCallback<List<GeorefApiClient.ProvinciaItem>>() {
+        // Cargar provincias desde GeorefRepository
+        GeorefRepository.getInstance(requireContext()).obtenerProvincias(new GeorefApiClient.GeorefCallback<List<GeorefApiClient.ProvinciaItem>>() {
             @Override
             public void onSuccess(List<GeorefApiClient.ProvinciaItem> provincias) {
                 if (!isAdded() || getContext() == null) return;
@@ -230,7 +232,6 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             @Override
             public void onError(Exception error) {
                 if (!isAdded() || getContext() == null) return;
-                // Si no hay conexión o falla la API, usar respaldo local de 24 provincias
                 listaProvinciasNombres.clear();
                 listaProvinciasNombres.addAll(GeorefApiClient.PROVINCIAS_FALLBACK);
                 poblarAdapterProvincias();
@@ -248,12 +249,28 @@ public class AdminAgregarPropiedadFragment extends Fragment {
         spinnerProvincia.setAdapter(adapterProvincias);
     }
 
+    private void limpiarAdapterCiudades() {
+        if (!isAdded() || getContext() == null || spinnerCiudad == null) return;
+        spinnerCiudad.dismissDropDown();
+        ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                new ArrayList<>()
+        );
+        spinnerCiudad.setAdapter(emptyAdapter);
+    }
+
     private void onProvinciaSeleccionada(String nombreProvincia, @Nullable String ciudadPrevia) {
         if (!isAdded() || getContext() == null || TextUtils.isEmpty(nombreProvincia)) return;
+
+        provinciaSeleccionadaActual = nombreProvincia;
 
         if (tilProvincia != null) {
             tilProvincia.setError(null);
         }
+
+        // Limpiar inmediatamente el adapter anterior para no mostrar ciudades de otra provincia
+        limpiarAdapterCiudades();
 
         // Limpiar ciudad seleccionada si el usuario cambió de provincia manualmente
         if (ciudadPrevia == null) {
@@ -268,16 +285,11 @@ public class AdminAgregarPropiedadFragment extends Fragment {
             tilCiudad.setHelperText("Cargando localidades de " + nombreProvincia + "...");
         }
 
-        // Obtener el ID de la provincia de Georef o usar el nombre como fallback
-        String idOProvincia = provinciaNombreAId.get(nombreProvincia);
-        if (idOProvincia == null || idOProvincia.isEmpty()) {
-            idOProvincia = nombreProvincia;
-        }
-
-        GeorefApiClient.obtenerLocalidadesPorProvincia(idOProvincia, new GeorefApiClient.GeorefCallback<List<String>>() {
+        // Consultar GeorefRepository: si la provincia ya fue consultada antes, resuelve 100% offline desde Room
+        GeorefRepository.getInstance(requireContext()).obtenerCiudadesPorProvincia(nombreProvincia, new GeorefApiClient.GeorefCallback<List<String>>() {
             @Override
             public void onSuccess(List<String> localidades) {
-                if (!isAdded() || getContext() == null) return;
+                if (!isAdded() || getContext() == null || !nombreProvincia.equals(provinciaSeleccionadaActual)) return;
 
                 spinnerCiudad.setEnabled(true);
                 if (tilCiudad != null) {
@@ -300,13 +312,16 @@ public class AdminAgregarPropiedadFragment extends Fragment {
 
             @Override
             public void onError(Exception error) {
-                if (!isAdded() || getContext() == null) return;
+                if (!isAdded() || getContext() == null || !nombreProvincia.equals(provinciaSeleccionadaActual)) return;
 
-                // Si no hay red, habilitar para permitir escritura manual
+                // Limpiar el adapter para que en offline no queden localidades de otra provincia seleccionada antes
+                limpiarAdapterCiudades();
+
+                // Si no hay red y la provincia aún no estaba en caché local, permitir escritura manual
                 spinnerCiudad.setEnabled(true);
                 if (tilCiudad != null) {
                     tilCiudad.setEnabled(true);
-                    tilCiudad.setHelperText("Ingrese la localidad manualmente");
+                    tilCiudad.setHelperText("Sin caché para " + nombreProvincia + ". Ingrese la localidad manualmente");
                 }
 
                 if (ciudadPrevia != null && !ciudadPrevia.isEmpty()) {

@@ -35,19 +35,36 @@ public interface ContratoDao {
     void eliminarTodosSincronizados();
 
     @Transaction
-    default void sincronizarConServidor(List<Contrato> listaServidor) {
-        if (listaServidor != null && !listaServidor.isEmpty()) {
-            insertarTodos(listaServidor);
-            List<String> ids = new java.util.ArrayList<>();
-            for (Contrato c : listaServidor) {
-                if (c.id != null) ids.add(c.id);
-            }
-            if (!ids.isEmpty()) {
-                eliminarNoEnServidor(ids);
-            }
-        } else {
-            eliminarTodosSincronizados();
+    default void upsertSeguroDesdeServidor(List<Contrato> listaServidor) {
+        if (listaServidor == null || listaServidor.isEmpty()) {
+            // Política de persistencia segura: bajo ninguna circunstancia se borran
+            // los contratos locales en Room si la respuesta remota es nula o vacía.
+            return;
         }
+        for (Contrato remoto : listaServidor) {
+            if (remoto == null || remoto.id == null || remoto.id.trim().isEmpty()) {
+                continue;
+            }
+            Contrato local = obtenerPorIdSync(remoto.id);
+            if (local != null) {
+                // No sobrescribir contratos locales que tengan modificaciones pendientes de subir
+                if ("PENDIENTE_SUBIR".equalsIgnoreCase(local.estadoSincronizacion)) {
+                    continue;
+                }
+                // Preservar rutaLocalPdf si el dispositivo ya tenía un PDF generado localmente
+                if (local.rutaLocalPdf != null && !local.rutaLocalPdf.trim().isEmpty()
+                        && (remoto.rutaLocalPdf == null || remoto.rutaLocalPdf.trim().isEmpty())) {
+                    remoto.rutaLocalPdf = local.rutaLocalPdf;
+                }
+            }
+            remoto.estadoSincronizacion = "SINCRONIZADO";
+            insertar(remoto);
+        }
+    }
+
+    @Transaction
+    default void sincronizarConServidor(List<Contrato> listaServidor) {
+        upsertSeguroDesdeServidor(listaServidor);
     }
 
     @Query("SELECT * FROM contratos ORDER BY timestamp DESC, id DESC")

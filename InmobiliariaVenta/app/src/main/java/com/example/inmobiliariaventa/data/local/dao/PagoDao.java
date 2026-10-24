@@ -31,6 +31,9 @@ public interface PagoDao {
     @Query("DELETE FROM pagos WHERE id = :id")
     void eliminarPorId(String id);
 
+    @Query("SELECT * FROM pagos WHERE id = :id LIMIT 1")
+    Pago obtenerPorIdSync(String id);
+
     @Query("DELETE FROM pagos WHERE id NOT IN (:idsServidor) AND (estadoSincronizacion IS NULL OR estadoSincronizacion != 'PENDIENTE_SUBIR')")
     void eliminarNoEnServidor(List<String> idsServidor);
 
@@ -38,19 +41,27 @@ public interface PagoDao {
     void eliminarTodosSincronizados();
 
     @Transaction
-    default void sincronizarConServidor(List<Pago> listaServidor) {
-        if (listaServidor != null && !listaServidor.isEmpty()) {
-            insertarTodos(listaServidor);
-            List<String> ids = new java.util.ArrayList<>();
-            for (Pago p : listaServidor) {
-                if (p.id != null) ids.add(p.id);
-            }
-            if (!ids.isEmpty()) {
-                eliminarNoEnServidor(ids);
-            }
-        } else {
-            eliminarTodosSincronizados();
+    default void upsertSeguroDesdeServidor(List<Pago> listaServidor) {
+        if (listaServidor == null || listaServidor.isEmpty()) {
+            // Política de persistencia segura: nunca borrar pagos locales si la respuesta es nula o vacía
+            return;
         }
+        for (Pago remoto : listaServidor) {
+            if (remoto == null || remoto.id == null || remoto.id.trim().isEmpty()) {
+                continue;
+            }
+            Pago local = obtenerPorIdSync(remoto.id);
+            if (local != null && "PENDIENTE_SUBIR".equalsIgnoreCase(local.estadoSincronizacion)) {
+                continue;
+            }
+            remoto.estadoSincronizacion = "SINCRONIZADO";
+            insertar(remoto);
+        }
+    }
+
+    @Transaction
+    default void sincronizarConServidor(List<Pago> listaServidor) {
+        upsertSeguroDesdeServidor(listaServidor);
     }
 
     @Query("SELECT * FROM pagos WHERE contratoId = :contratoId ORDER BY nroCuota ASC, id ASC")

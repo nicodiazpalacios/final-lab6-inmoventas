@@ -17,6 +17,7 @@ import com.example.inmobiliariaventa.domain.entity.Contrato;
 import com.example.inmobiliariaventa.domain.entity.ConfiguracionEmpresa;
 import com.example.inmobiliariaventa.domain.entity.MensajeContacto;
 import com.example.inmobiliariaventa.domain.entity.Pago;
+import com.example.inmobiliariaventa.domain.entity.CiudadGeoref;
 import com.example.inmobiliariaventa.data.local.dao.UsuarioDao;
 import com.example.inmobiliariaventa.data.local.dao.PropiedadDao;
 import com.example.inmobiliariaventa.data.local.dao.FavoritoDao;
@@ -25,8 +26,23 @@ import com.example.inmobiliariaventa.data.local.dao.ContratoDao;
 import com.example.inmobiliariaventa.data.local.dao.ConfiguracionEmpresaDao;
 import com.example.inmobiliariaventa.data.local.dao.MensajeContactoDao;
 import com.example.inmobiliariaventa.data.local.dao.PagoDao;
+import com.example.inmobiliariaventa.data.local.dao.CiudadGeorefDao;
 
-@Database(entities = {Usuario.class, Propiedad.class, Favorito.class, Notificacion.class, Contrato.class, ConfiguracionEmpresa.class, MensajeContacto.class, Pago.class}, version = 14, exportSchema = false)
+@Database(
+    entities = {
+        Usuario.class,
+        Propiedad.class,
+        Favorito.class,
+        Notificacion.class,
+        Contrato.class,
+        ConfiguracionEmpresa.class,
+        MensajeContacto.class,
+        Pago.class,
+        CiudadGeoref.class
+    },
+    version = 15,
+    exportSchema = false
+)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -38,6 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ConfiguracionEmpresaDao configuracionEmpresaDao();
     public abstract MensajeContactoDao mensajeContactoDao();
     public abstract PagoDao pagoDao();
+    public abstract CiudadGeorefDao ciudadGeorefDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -99,13 +116,26 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_14_15 = new Migration(14, 15) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `ciudades_georef` ("
+                    + "`provinciaKey` TEXT NOT NULL, "
+                    + "`nombreCiudad` TEXT NOT NULL, "
+                    + "`provinciaNombre` TEXT, "
+                    + "`timestampCache` INTEGER NOT NULL, "
+                    + "PRIMARY KEY(`provinciaKey`, `nombreCiudad`))");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_ciudades_georef_provinciaKey` ON `ciudades_georef` (`provinciaKey`)");
+        }
+    };
+
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "homefinder_database")
-                            .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+                            .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

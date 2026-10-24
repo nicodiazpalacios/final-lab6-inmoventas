@@ -541,16 +541,15 @@ public class AdminGestionUsuariosFragment extends Fragment {
         if (btnGuardar != null) {
             btnGuardar.setOnClickListener(v -> {
                 dialog.dismiss();
-                if (seleccionAdmin[0] == eraAdmin) return;
+                if (!isAdded() || getContext() == null || seleccionAdmin[0] == eraAdmin) return;
 
+                final Context appContext = requireContext().getApplicationContext();
                 String nuevoRol = seleccionAdmin[0] ? "ADMIN" : "CLIENTE";
                 String nuevoRolTexto = seleccionAdmin[0] ? "Administrador" : "Usuario";
                 usuario.rol = nuevoRol;
 
                 AppDatabase.databaseWriteExecutor.execute(() -> {
-                    if (getContext() != null) {
-                        AppDatabase.getInstance(requireContext()).usuarioDao().actualizar(usuario);
-                    }
+                    AppDatabase.getInstance(appContext).usuarioDao().actualizar(usuario);
                 });
                 SupabaseClient.actualizarRolUsuario(usuario.id, nuevoRol, null);
                 CartelUtils.mostrar(requireContext(), "Rol de " + nombreDisplay + " actualizado a " + nuevoRolTexto);
@@ -596,10 +595,10 @@ public class AdminGestionUsuariosFragment extends Fragment {
             btnConfirmar.setTextColor(Color.WHITE);
             btnConfirmar.setOnClickListener(v -> {
                 dialog.dismiss();
+                if (!isAdded() || getContext() == null) return;
+                final Context appContext = requireContext().getApplicationContext();
                 AppDatabase.databaseWriteExecutor.execute(() -> {
-                    if (getContext() != null) {
-                        AppDatabase.getInstance(requireContext()).usuarioDao().eliminar(usuario);
-                    }
+                    AppDatabase.getInstance(appContext).usuarioDao().eliminar(usuario);
                 });
                 SupabaseClient.eliminarUsuario(usuario.id, null);
                 CartelUtils.mostrar(requireContext(), "Usuario " + nombreDisplay + " eliminado");

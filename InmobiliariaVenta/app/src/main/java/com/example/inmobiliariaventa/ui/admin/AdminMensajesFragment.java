@@ -169,7 +169,8 @@ public class AdminMensajesFragment extends Fragment {
 
     private void initDatabaseAndObserve(View root) {
         if (getContext() == null) return;
-        MensajeContactoRepositoryImpl repository = MensajeContactoRepositoryImpl.getInstance(requireContext());
+        final Context appContext = requireContext().getApplicationContext();
+        MensajeContactoRepositoryImpl repository = MensajeContactoRepositoryImpl.getInstance(appContext);
 
         // Observar mensajes en tiempo real desde Room
         repository.getAllMensajesLiveData().observe(getViewLifecycleOwner(), mensajes -> {
@@ -202,7 +203,7 @@ public class AdminMensajesFragment extends Fragment {
         // Sincronizar en segundo plano con Supabase para traer mensajes enviados por los clientes
         repository.sincronizarConNube(() -> {
             AppDatabase.databaseWriteExecutor.execute(() -> {
-                AppDatabase db = AppDatabase.getInstance(requireContext());
+                AppDatabase db = AppDatabase.getInstance(appContext);
                 if (db.mensajeContactoDao().countMensajesSync() == 0) {
                     List<MensajeContacto> seed = createInitialDemoMessages();
                     db.mensajeContactoDao().insertAll(seed);
@@ -291,6 +292,7 @@ public class AdminMensajesFragment extends Fragment {
 
         return list;
     }
+
     private void renderMensajesList(View root) {
         if (!isAdded() || getContext() == null || layoutPage1Mensajes == null) return;
 
@@ -385,7 +387,7 @@ public class AdminMensajesFragment extends Fragment {
     }
 
     private void abrirModalDetalleMensaje(MensajeContacto item, View root) {
-        if (getContext() == null) return;
+        if (!isAdded() || getContext() == null) return;
 
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         View dialogView = inflater.inflate(R.layout.dialog_detalle_mensaje, null);
@@ -427,6 +429,7 @@ public class AdminMensajesFragment extends Fragment {
         // Acción: Copiar teléfono
         if (btnCopiarTel != null) {
             btnCopiarTel.setOnClickListener(v -> {
+                if (!isAdded() || getContext() == null) return;
                 ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("Teléfono cliente", item.clienteTelefono != null ? item.clienteTelefono : "");
                 if (clipboard != null) {
@@ -475,6 +478,7 @@ public class AdminMensajesFragment extends Fragment {
         if (btnMarcarLeido != null) {
             btnMarcarLeido.setOnClickListener(v -> {
                 dialog.dismiss();
+                if (!isAdded() || getContext() == null) return;
 
                 item.leido = true;
 
@@ -583,6 +587,7 @@ public class AdminMensajesFragment extends Fragment {
     private void setupDatePicker(View root) {
         if (chipFecha != null) {
             chipFecha.setOnClickListener(v -> {
+                if (!isAdded() || isStateSaved()) return;
                 MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
                         .setTitleText("Filtrar mensajes por fecha")
                         .setTheme(R.style.CustomDatePickerTheme)
@@ -806,7 +811,8 @@ public class AdminMensajesFragment extends Fragment {
     }
 
     private void mostrarSnackbarEleganteConDeshacer(MensajeContacto item, View root) {
-        if (!isAdded() || getActivity() == null || item == null) return;
+        if (!isAdded() || getActivity() == null || getContext() == null || item == null) return;
+        final Context appContext = requireContext().getApplicationContext();
 
         View rootView = requireActivity().findViewById(R.id.main);
         if (rootView == null) {
@@ -820,9 +826,11 @@ public class AdminMensajesFragment extends Fragment {
         Snackbar snackbar = Snackbar.make(rootView, "Mensaje marcado como visto", Snackbar.LENGTH_LONG)
                 .setAction("DESHACER", v -> {
                     item.leido = false;
-                    MensajeContactoRepositoryImpl.getInstance(requireContext()).marcarComoNoLeido(item);
-                    scheduleApplyFilters(root);
-                    mostrarSnackbarElegante("Se restableció a no leído");
+                    MensajeContactoRepositoryImpl.getInstance(appContext).marcarComoNoLeido(item);
+                    if (isAdded() && getContext() != null) {
+                        scheduleApplyFilters(root);
+                        mostrarSnackbarElegante("Se restableció a no leído");
+                    }
                 })
                 .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.colorSnackbarAction))
                 .setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
@@ -867,7 +875,7 @@ public class AdminMensajesFragment extends Fragment {
     }
 
     private void mostrarSnackbarElegante(String mensaje, View anchorOrRoot) {
-        if (!isAdded() || getActivity() == null || mensaje == null) return;
+        if (!isAdded() || getActivity() == null || getContext() == null || mensaje == null) return;
 
         View rootView = anchorOrRoot;
         if (rootView == null) {
